@@ -9,6 +9,7 @@ import {
 	ThumbsUp,
 	GraduationCap,
 	ShieldAlert,
+	ImageOff,
 } from 'lucide-react'
 import api, { API } from '../API'
 import { NavLink } from 'react-router-dom'
@@ -282,14 +283,15 @@ export const Header = ({ links = [], userInfo }) => {
 								<LogOut strokeWidth={2} size={20} />
 							</div>
 						</div>
-
-						<img
-							className='h-12 rounded-md object-cover aspect-square'
-							src={
-								'https://i.pinimg.com/736x/8a/e4/d9/8ae4d912265df514d5174bdc0f56a487.jpg'
-							}
-							alt=''
-						/>
+						{userInfo?.avatar_url ? (
+							<img
+								className='h-12 rounded-md object-cover aspect-square'
+								src={userInfo?.avatar_url}
+								alt=''
+							/>
+						) : (
+							<ImageOff className='h-12 rounded-md object-cover aspect-square w-auto p-3 text-[var(--middle)] bg-gray-100' />
+						)}
 					</div>
 				</div>
 			</div>

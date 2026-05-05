@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from 'react'
 import { Checkbox } from '../components/Buttons'
 import { AddTag, GetTags } from '../../service/APIs/CourseTagsSpecific'
+import { GetAllCourses } from '../../service/APIs/Couses'
 
 const CreateModal = ({ onClose }) => {
 	const [title, setTitle] = useState('')
@@ -222,7 +223,7 @@ const CreateBtn = ({ onClick, title }) => {
 	return (
 		<button
 			onClick={onClick}
-			className={`flex flex-col w-full items-center justify-center border-1 border-[var(--middle)] text-[var(--middle)] rounded-4xl group hover:border-[var(--hero-epta)] hover:text-[var(--hero-epta)] transition-all cursor-pointer h-full max-md:mb-30`}
+			className={`flex flex-col w-full items-center justify-center border-1 border-[var(--middle)] text-[var(--middle)] rounded-4xl group hover:border-[var(--hero-epta)] hover:text-[var(--hero-epta)] transition-all cursor-pointer h-full min-h-157 max-md:mb-30`}
 		>
 			<Blocks size={112} strokeWidth={0.5} />
 			<span className='text-base font-medium px-4 py-3 rounded-lg mt-4 transition-all'>
@@ -234,38 +235,26 @@ const CreateBtn = ({ onClick, title }) => {
 
 const Catalog = ({}) => {
 	const [isOpen, setIsOpen] = useState(false)
-	const courses = [
-		{
-			id: 1,
-			title: 'Курс говна тупого 1',
-			description:
-				'Ебать какое длинное описание курса для проверки адаптивности и переносов строк что бы именно ахуенно проверить все эти моменты и убедиться что все работает как надо',
-			image_url:
-				'https://i.pinimg.com/1200x/43/0f/e5/430fe5efb28f7409b4d901fa30e71659.jpg',
-			tag: 'Дизайн',
-			create_date: 'Июль 22, 2025',
-			author: {
-				name: 'Хуйкин Х. Х.',
-				image_url:
-					'https://i.pinimg.com/736x/8a/e4/d9/8ae4d912265df514d5174bdc0f56a487.jpg',
-			},
-		},
-		{
-			id: 2,
-			title: 'Достаточно длинное название курса для проверки адаптивности',
-			description:
-				'Ебать какое длинное описание курса для проверки адаптивности и переносов строк что бы именно ахуенно проверить все эти моменты и убедиться что все работает как надо',
-			image_url:
-				'https://i.pinimg.com/736x/68/e5/86/68e586c6a08c5f45128c36b877470d3d.jpg',
-			tag: 'Программирование',
-			create_date: 'Июль 23, 2025',
-			author: {
-				name: 'Хуйкин Х. Х.',
-				image_url:
-					'https://i.pinimg.com/736x/8a/e4/d9/8ae4d912265df514d5174bdc0f56a487.jpg',
-			},
-		},
-	]
+	const [courses, setCourses] = useState(null)
+	const [role, setRole] = useState('')
+
+	useEffect(() => {
+		const getAllCourses = async () => {
+			try {
+				const res = await GetAllCourses()
+				setCourses(res)
+			} catch (err) {}
+		}
+		getAllCourses()
+	}, [])
+
+	const getUserInfo = async e => {
+		try {
+			const res = await Me()
+			setRole(res?.role)
+		} catch (err) {}
+	}
+
 	return (
 		<>
 			{isOpen && <CreateModal onClose={() => setIsOpen(false)} />}
@@ -287,21 +276,23 @@ const Catalog = ({}) => {
 						<CourseCard data={course} />
 					</motion.div>
 				))}
-				<motion.div
-					key={courses.length + 1}
-					initial={{ scale: 0.8, opacity: 0 }}
-					animate={{ scale: 1, opacity: 1 }}
-					transition={{
-						duration: 0.3,
-						delay: courses.length * 0.1,
-						ease: 'easeOut',
-					}}
-				>
-					<CreateBtn
-						onClick={() => setIsOpen(true)}
-						title='Создать новый курс'
-					/>
-				</motion.div>
+				{role === 'teacher' && (
+					<motion.div
+						key={courses?.length + 1}
+						initial={{ scale: 0.8, opacity: 0 }}
+						animate={{ scale: 1, opacity: 1 }}
+						transition={{
+							duration: 0.3,
+							delay: courses?.length * 0.1,
+							ease: 'easeOut',
+						}}
+					>
+						<CreateBtn
+							onClick={() => setIsOpen(true)}
+							title='Создать новый курс'
+						/>
+					</motion.div>
+				)}
 			</div>
 		</>
 	)

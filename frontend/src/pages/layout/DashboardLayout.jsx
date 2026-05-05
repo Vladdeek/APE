@@ -9,7 +9,14 @@ export default function DashboardLayout({ onChange }) {
 	const navigate = useNavigate()
 	const HeaderLinkInfo = [
 		{
-			user: [
+			student: [
+				{
+					title: 'Мои курсы',
+					icon: GraduationCap,
+					to: '/catalog',
+				},
+			],
+			teacher: [
 				{
 					title: 'Мои курсы',
 					icon: GraduationCap,
@@ -26,19 +33,19 @@ export default function DashboardLayout({ onChange }) {
 		},
 	]
 
-	const links = HeaderLinkInfo[0]['user']
-
 	const [userInfo, setUserInfo] = useState([])
-	const getUserInfo = async e => {
-		try {
-			const res = await Me()
-			setUserInfo(res)
-		} catch (err) {}
-	}
 
 	useEffect(() => {
+		const getUserInfo = async e => {
+			try {
+				const res = await Me()
+				setUserInfo(res)
+			} catch (err) {}
+		}
 		getUserInfo()
 	}, [])
+
+	const links = HeaderLinkInfo[0][userInfo?.role]
 
 	return (
 		<>

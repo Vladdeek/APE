@@ -24,3 +24,8 @@ export const CreateCourse = async (
 	})
 	return response.data
 }
+
+export const GetAllCourses = async () => {
+	const response = await api.get(`${API}/course`)
+	return response.data
+}
