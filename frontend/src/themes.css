@@ -1,0 +1,134 @@
+:root {
+	--hero: #2bb4f3;
+}
+
+:root[data-theme='light'] {
+	--bg: #ededed;
+	--white: #ffffff;
+	--black: #111111;
+	--hero-epta: var(--hero);
+
+	--hero-pale: #faf1f4;
+	--middle: #989898;
+	--light-middle: #ededed;
+	--light-gray: #f8f8f8;
+	--light-light-gray: #fbfbfb;
+
+	--yellow-status-text: #946f33;
+	--yellow-status-middle-text: #bda47c;
+	--yellow-status-bg: #fff5da;
+	--green-status-text: #339436;
+	--green-status-middle-text: #7dbe7f;
+	--green-status-bg: #daffe6;
+	--red-status-text: #943333;
+	--red-status-middle-text: #ce8e8e;
+	--red-status-bg: #ffdada;
+
+	--easy-lvl-bg: #e6f4ea; /* светло-зелёный */
+	--easy-lvl-text: #1b5e20; /* тёмно-зелёный текст */
+
+	--mid-lvl-bg: #fff8e1; /* светло-жёлтый */
+	--mid-lvl-text: #ff6f00; /* насыщенный оранжево-жёлтый */
+
+	--hard-lvl-bg: #ffebee; /* светло-красный */
+	--hard-lvl-text: #b71c1c; /* тёмно-красный */
+
+	--glow-hero-epta: rgb(244, 59, 117);
+	--hero-shadow: 1px 2px 8px rgba(244, 59, 117, 0.25);
+
+	--shadow: 1px 2px 8px rgba(0, 0, 0, 0.125);
+
+	--button1-bg: #f43b75;
+	--button2-bg: #111111;
+	--button3-bg: #0066ff;
+	--button4-bg: #ffc400;
+	--button5-bg: #1daf00;
+	--button6-bg: #ff0f0f;
+
+	--mood-color1-bg: #c5f2c7;
+	--mood-color1-dark: #5c8d63;
+	--mood-color1-pale: #9ed9a5;
+	--mood-color2-bg: #f5f2c5;
+	--mood-color2-dark: #8d7f5c;
+	--mood-color2-pale: #e0dca2;
+	--mood-color3-bg: #f7c7c3;
+	--mood-color3-dark: #8d5c5c;
+	--mood-color3-pale: #e6a19b;
+
+	--correct: #daffe6;
+	--not-correct: #ffebee;
+	--correct-glow: 0px 4px 5px rgba(51, 148, 54, 0.15);
+	--middle-correct-glow: #0px 4px 5px rgba(255, 196, 0, 0.15);
+	--not-correct-glow: 0px 4px 5px rgba(193, 15, 28, 0.15);
+	--correct-lvl: #54ac57;
+	--middle-correct-lvl: #ffc400;
+	--not-correct-lvl: #c52c36;
+	--correct-shadow: 1px 2px 8px rgba(51, 148, 54, 0.2);
+	--not-correct-shadow: 1px 2px 8px rgba(193, 15, 28, 0.15);
+}
+
+:root[data-theme='dark'] {
+	--bg: #1a1a1a;
+	--white: #252525;
+	--black: #f0f0f0;
+	--hero-epta: var(--hero);
+	--hero-pale: #463037;
+	--middle: #bbbbbb;
+	--light-middle: #222222;
+	--light-gray: #1a1a1a;
+
+	--yellow-status-text: #ffd36b;
+	--yellow-status-middle-text: #c6a96a;
+	--yellow-status-bg: #3a2d1a;
+
+	--green-status-text: #7fd49f;
+	--green-status-middle-text: #6fbf8a;
+	--green-status-bg: #1e3b2a;
+
+	--red-status-text: #ff7b7b;
+	--red-status-middle-text: #d98b8b;
+	--red-status-bg: #682c2c;
+
+	--easy-lvl-bg: #1e3b2a; /* тёмно-зелёный фон */
+	--easy-lvl-text: #a5d6a7; /* светло-зелёный текст */
+
+	--mid-lvl-bg: #3b331a; /* тёмно-жёлтый фон */
+	--mid-lvl-text: #ffb74d; /* светло-оранжевый текст */
+
+	--hard-lvl-bg: #3b1a1a; /* тёмно-красный фон */
+	--hard-lvl-text: #ef9a9a; /* светло-красный текст */
+
+	--glow-hero-epta: rgb(244, 59, 117);
+	--hero-shadow: 1px 2px 8px rgba(244, 59, 117, 0.5);
+
+	--shadow: 1px 2px 8px rgba(0, 0, 0, 0.25);
+
+	--button1-bg: #f43b75;
+	--button2-bg: #ededed;
+	--button3-bg: #3399ff;
+	--button4-bg: #ffc400;
+	--button5-bg: #1daf00;
+	--button6-bg: #ff6f6f;
+
+	--mood-color1-bg: #7cd880;
+	--mood-color1-dark: #264c27;
+	--mood-color1-pale: #6bb96d;
+	--mood-color2-bg: #e3d96c;
+	--mood-color2-dark: #4c3f26;
+	--mood-color2-pale: #b9b06b;
+	--mood-color3-bg: #de564a;
+	--mood-color3-dark: #4c2626;
+	--mood-color3-pale: #bc3e33;
+
+	--correct: #1e3b2a;
+	--not-correct: #3b1a1a;
+
+	--correct-glow: 0px 4px 5px rgba(127, 212, 159, 0.25);
+	--middle-correct-glow: 0px 4px 5px rgba(255, 196, 0, 0.25);
+	--not-correct-glow: 0px 4px 5px rgba(255, 123, 123, 0.25);
+	--correct-lvl: #7fd49f;
+	--middle-correct-lvl: #ffc400;
+	--not-correct-lvl: #ff7b7b;
+	--correct-shadow: 1px 2px 8px rgba(127, 212, 159, 0.3);
+	--not-correct-shadow: 1px 2px 8px rgba(255, 123, 123, 0.3);
+}
