@@ -1,7 +1,7 @@
 import { ImageOff, RussianRuble } from 'lucide-react'
 import { data } from 'react-router-dom'
 
-const CourseCard = ({ data }) => {
+const CourseCard = ({ data, onClick }) => {
 	// Функция для красивого форматирования дат
 	const formatDate = dateStr => {
 		return new Date(dateStr).toLocaleDateString('ru-RU', {
@@ -11,7 +11,10 @@ const CourseCard = ({ data }) => {
 	}
 
 	return (
-		<div className='flex flex-col bg-[var(--white)] h-full w-full p-3 rounded-4xl shadow-lg cursor-pointer transition-all hover:scale-[101.5%] hover:shadow-md'>
+		<div
+			onClick={onClick}
+			className='flex flex-col bg-[var(--white)] h-full w-full p-3 rounded-4xl shadow-lg cursor-pointer transition-all hover:scale-[101.5%] hover:shadow-md'
+		>
 			<img
 				className='rounded-3xl aspect-[16/9] object-cover w-full'
 				src={data.preview_url}

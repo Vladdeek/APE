@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react'
 import { Checkbox } from '../components/Buttons'
 import { AddTag, GetTags } from '../../service/APIs/CourseTagsSpecific'
 import { GetAllCourses } from '../../service/APIs/Couses'
+import Modal from '../components/Modal'
 
 const CreateModal = ({ onClose }) => {
 	const [title, setTitle] = useState('')
@@ -234,9 +235,11 @@ const CreateBtn = ({ onClick, title }) => {
 }
 
 const Catalog = ({}) => {
-	const [isOpen, setIsOpen] = useState(false)
 	const [courses, setCourses] = useState(null)
 	const [role, setRole] = useState('')
+	const [isModalOpen, setIsModalOpen] = useState(false)
+
+	const [selectedCourse, setSelectedCourse] = useState(null)
 
 	useEffect(() => {
 		const getAllCourses = async () => {
@@ -257,7 +260,15 @@ const Catalog = ({}) => {
 
 	return (
 		<>
-			{isOpen && <CreateModal onClose={() => setIsOpen(false)} />}
+			<Modal
+				width={'w-100'}
+				isOpen={selectedCourse !== null}
+				onClose={() => setSelectedCourse(null)}
+			>
+				<div className='p-4'>
+					<CourseCard data={selectedCourse} />
+				</div>
+			</Modal>
 
 			<div
 				className={`grid 2xl:grid-cols-4 lg:grid-cols-3 sm:grid-cols-2 gap-5 py-30`}
@@ -273,7 +284,10 @@ const Catalog = ({}) => {
 							ease: 'easeOut',
 						}}
 					>
-						<CourseCard data={course} />
+						<CourseCard
+							onClick={() => setSelectedCourse(course)}
+							data={course}
+						/>
 					</motion.div>
 				))}
 				{role === 'teacher' && (

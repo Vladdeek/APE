@@ -22,6 +22,7 @@ import DashboardLayout from './pages/layout/DashboardLayout'
 import Catalog from './pages/Сatalog'
 import Authorization from './pages/Authorization'
 import StudentCourseRequest from './pages/StudentCourseRequest'
+import CoursePage from './pages/CoursePage'
 
 function MainApp() {
 	return (
@@ -31,6 +32,7 @@ function MainApp() {
 				<Route path='/' element={<DashboardLayout />}>
 					<Route path='/catalog' element={<Catalog />}></Route>
 					<Route path='/form' element={<StudentCourseRequest />}></Route>
+					<Route path='/course/:courseId?' element={<CoursePage />} />
 				</Route>
 			</Routes>
 		</Suspense>
