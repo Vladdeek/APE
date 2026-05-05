@@ -16,8 +16,10 @@ const Module = ({ title, index, isExpanded, onToggle, children }) => {
 				<div className='flex items-center gap-3 text-[var(--black)]'>
 					<Package size={20} className='text-[var(--middle)]' />
 					<div>
-						<p className='text-xs text-gray-500'>Модуль {index}</p>
-						<h3 className='font-bold text-sm leading-tight'>{title}</h3>
+						<p className='text-xs text-[var(--middle)]'>Модуль {index}</p>
+						<h3 className='font-semibold text-sm leading-tight text-[var(--black)]'>
+							{title}
+						</h3>
 					</div>
 				</div>
 
@@ -62,19 +64,21 @@ const Content = ({ type, title, isSelected, onClick }) => {
 			className={`flex flex-col gap-1 w-full p-3 rounded-xl transition-all shadow-sm border 
                 ${
 									isSelected
-										? 'border-blue-500 bg-blue-50'
+										? 'border-[var(--hero)] bg-[var(--transparent-hero)]'
 										: 'border-transparent bg-white hover:bg-gray-50 cursor-pointer'
 								}`}
 		>
 			<div className='flex items-center gap-2'>
-				<span className={isSelected ? 'text-blue-600' : 'text-gray-500'}>
+				<span
+					className={isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'}
+				>
 					{icons[type]}
 				</span>
 				<div className='flex flex-col'>
-					<span className='text-[10px] uppercase tracking-wider text-gray-400 font-bold'>
+					<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
 						{labels[type]}
 					</span>
-					<p className='font-medium text-sm text-gray-800'>{title}</p>
+					<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
 				</div>
 			</div>
 		</div>
