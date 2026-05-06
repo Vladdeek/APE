@@ -18,7 +18,6 @@ export const { API, FILE_API } = config[env]
 //====================== Axios API Error Context ===========================//
 
 import axios from 'axios'
-import toast from 'react-hot-toast'
 
 const api = axios.create({
 	withCredentials: true,

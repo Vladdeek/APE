@@ -17,7 +17,6 @@ import {
 } from 'react'
 import './index.css'
 import './themes.css'
-import { Toaster } from 'react-hot-toast'
 import DashboardLayout from './pages/layout/DashboardLayout'
 import Catalog from './pages/Сatalog'
 import Authorization from './pages/Authorization'
@@ -41,7 +40,6 @@ function MainApp() {
 
 createRoot(document.getElementById('root')).render(
 	<BrowserRouter>
-		<Toaster position='top-right' />
 		<MainApp />
 	</BrowserRouter>,
 )
