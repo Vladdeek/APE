@@ -290,7 +290,7 @@ export const Header = ({ links = [], userInfo }) => {
 								alt=''
 							/>
 						) : (
-							<ImageOff className='h-12 rounded-md object-cover aspect-square w-auto p-3 text-[var(--middle)] bg-gray-100' />
+							<ImageOff className='h-12 rounded-md object-cover aspect-square w-auto p-3 text-[var(--middle)] bg-[var(--light-middle)]' />
 						)}
 					</div>
 				</div>

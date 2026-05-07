@@ -1,6 +1,17 @@
-import { FileCode2, FileText, Film, Image, Upload } from 'lucide-react'
+import { FileCode2, FileText, Film, Image, Upload, X } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
+
+export const RemoveButton = ({ onDelete }) => {
+	return (
+		<button
+			onClick={onDelete}
+			className='self-start p-2 bg-[var(--white)] text-[var(--black)] shadow-[var(--shadow)] rounded-xl hover:bg-red-500 hover:text-white transition-all cursor-pointer '
+		>
+			<X size={20} />
+		</button>
+	)
+}
 
 export const UPLOAD_TYPES = {
 	video: {
@@ -133,7 +144,7 @@ export const FileUploaderZone = ({
 				setIsDragActive(false)
 				processFiles(Array.from(e.dataTransfer.files))
 			}}
-			className={`p-6 w-full flex flex-col items-center justify-center rounded-xl transition-all border-3 border-dashed ring-4 ring-[var(--light-middle)] ${
+			className={`p-6 w-full flex flex-col items-center justify-center rounded-2xl transition-all border-3 border-dashed ring-4 ring-[var(--light-middle)] ${
 				isUploading ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
 			} ${zoneClass}`}
 		>
@@ -158,13 +169,13 @@ export const FileUploaderZone = ({
 			</p>
 
 			<div className='flex gap-2 mb-8'>
-				<span className='bg-[var(--light-middle)] px-3 py-1 rounded-lg text-sm font-medium'>
+				<span className='bg-[var(--light-middle)] text-[var(--middle)] px-3 py-1 rounded-lg text-sm font-medium'>
 					общий вес до {config.maxSize} МБ
 				</span>
 				{config.exts.slice(0, 4).map(ext => (
 					<span
 						key={ext}
-						className='bg-[var(--light-middle)] px-3 py-1 rounded-lg text-sm font-medium'
+						className='bg-[var(--light-middle)] text-[var(--middle)] px-3 py-1 rounded-lg text-sm font-medium'
 					>
 						{ext}
 					</span>
@@ -174,7 +185,7 @@ export const FileUploaderZone = ({
 			{isUploading ? (
 				<UploadProgressBar progress={uploadProgress} />
 			) : (
-				<div className='bg-[var(--black)] text-white px-8 py-4 rounded-xl flex gap-3 font-bold hover:bg-[var(--hero-epta)] transition-all shadow-lg text-center'>
+				<div className='bg-[var(--black)] text-[var(--white)] px-8 py-4 rounded-xl flex gap-3 font-bold hover:bg-[var(--hero-epta)] hover:text-white transition-all shadow-lg text-center'>
 					<Upload strokeWidth={3} />
 					Выбрать {config.title === 'файл' ? 'файлы' : config.title}
 				</div>

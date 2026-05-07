@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useState } from 'react'
-import { FileUploaderZone } from './FileUploaderZone'
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
 import VideoPlayer from '../VideoPlayer'
 
 export const VideoImport = ({
@@ -60,13 +60,7 @@ export const VideoImport = ({
 	return (
 		<div className='flex gap-4 w-full items-start'>
 			{/* Кнопка удаления всего компонента из списка конструктора */}
-			<button
-				type='button'
-				onClick={DelComponent}
-				className='bg-white shadow-sm p-2 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer border border-gray-100'
-			>
-				<X size={20} />
-			</button>
+			<RemoveButton onDelete={DelComponent} />
 
 			<div className='flex justify-center w-full min-h-[350px]'>
 				{value ? (

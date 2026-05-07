@@ -3,6 +3,28 @@ import { CheckCheck } from 'lucide-react'
 import { useEffect } from 'react'
 import { useState } from 'react'
 
+export const DefaultButton = ({
+	children,
+	onClick,
+	disabled,
+	paddings = 'px-4 py-2',
+	rounded = 'rounded-xl',
+	width = 'w-fit',
+	height = '',
+	flexParams = 'gap-3',
+	invert = false,
+}) => {
+	return (
+		<button
+			disabled={disabled}
+			onClick={onClick}
+			className={` ${disabled ? 'bg-[var(--middle)] text-[var(--light-middle)] cursor-not-allowed' : `${invert ? 'bg-[var(--white)] text-[var(--black)]' : 'bg-[var(--black)] text-[var(--white)]'} hover:bg-[var(--hero)] hover:text-white cursor-pointer`}  ${paddings} ${rounded} ${width} flex  ${flexParams} font-bold transition-all shadow-[var(--shadow)] text-center `}
+		>
+			{children}
+		</button>
+	)
+}
+
 export const SubmitButton = ({
 	onClick,
 	icon: Icon,

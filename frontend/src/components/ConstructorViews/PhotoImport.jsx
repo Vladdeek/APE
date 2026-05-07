@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileUploaderZone } from './FileUploaderZone'
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
 
 // Модалка просмотра (без изменений по логике)
 const FullScreenModal = ({ photos, index, close, setIndex }) => {
@@ -88,15 +88,8 @@ export const PhotoBlock = ({ data = [], isEdit, onChange, onDelete }) => {
 	}
 
 	return (
-		<div className='flex gap-4 w-full items-start outline outline-red-500'>
-			{isEdit && (
-				<button
-					onClick={onDelete}
-					className='self-start p-2 bg-white shadow-md rounded-xl hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer border border-gray-100'
-				>
-					<X size={20} />
-				</button>
-			)}
+		<div className='flex gap-4 w-full items-start'>
+			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='grid grid-cols-2 w-full gap-4'>
 				{photos.map((url, idx) => (

@@ -10,7 +10,7 @@ import {
 	Trash2,
 	Download,
 } from 'lucide-react'
-import { FileUploaderZone } from './FileUploaderZone' // Путь к вашему новому компоненту
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone' // Путь к вашему новому компоненту
 
 /**
  * @param {Array} files - Список объектов { name, size, type, file_path }
@@ -131,6 +131,7 @@ export const FileManager = ({
 
 	return (
 		<div className='flex flex-col w-full gap-4'>
+			{isEdit && <RemoveButton onDelete={() => console.log('2')} />}
 			{/* Список файлов */}
 			{files.length > 0 && (
 				<div className='w-full flex flex-col border border-[var(--light-middle)] rounded-xl overflow-hidden shadow-[var(--shadow)]'>

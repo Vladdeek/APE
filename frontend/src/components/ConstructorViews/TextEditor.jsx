@@ -26,6 +26,7 @@ import {
 	AlignRight,
 	X,
 } from 'lucide-react'
+import { RemoveButton } from './FileUploaderZone'
 
 export const TextEditor = ({
 	DelComponent,
@@ -83,10 +84,10 @@ export const TextEditor = ({
 				e.preventDefault()
 				onClick()
 			}}
-			className={`p-2 rounded transition ${
+			className={`p-2 rounded-lg cursor-pointer transition ${
 				isActive
 					? 'bg-[var(--hero-epta)] text-white'
-					: 'hover:bg-[var(--hero-epta)] hover:text-white text-gray-500'
+					: 'hover:bg-[var(--hero-epta)] hover:text-white text-[var(--middle)]'
 			}`}
 		>
 			<Icon size={18} />
@@ -94,20 +95,12 @@ export const TextEditor = ({
 	)
 
 	return (
-		<div className={`flex gap-2 ${!isEdit ? 'w-full' : ''}`}>
-			{isEdit && (
-				<button
-					type='button'
-					className='self-start bg-white shadow-md p-2 rounded-lg hover:bg-gray-50'
-					onClick={DelComponent}
-				>
-					<X size={20} />
-				</button>
-			)}
+		<div className={`flex gap-4 ${!isEdit ? 'w-full' : ''}`}>
+			{isEdit && <RemoveButton onDelete={DelComponent} />}
 
 			<div className='w-full flex flex-col'>
 				{isEdit && (
-					<div className='flex flex-wrap gap-1 mb-2 bg-white shadow-sm border border-gray-200 p-1.5 rounded-lg w-fit'>
+					<div className='flex flex-wrap gap-1 mb-2 bg-[var(--white)] shadow-[var(--shadow)] p-1.5 rounded-xl w-fit'>
 						<ToolbarButton
 							onClick={() => editor.chain().focus().toggleBold().run()}
 							isActive={editor.isActive('bold')}
@@ -128,7 +121,7 @@ export const TextEditor = ({
 							isActive={editor.isActive('strike')}
 							icon={Strikethrough}
 						/>
-						<div className='w-px h-6 bg-gray-200 mx-1 self-center' />
+						<div className='w-px h-6 bg-[var(--middle)] mx-1 self-center' />
 						<ToolbarButton
 							onClick={() => editor.chain().focus().toggleBulletList().run()}
 							isActive={editor.isActive('bulletList')}
@@ -139,7 +132,7 @@ export const TextEditor = ({
 							isActive={editor.isActive('orderedList')}
 							icon={ListOrdered}
 						/>
-						<div className='w-px h-6 bg-gray-200 mx-1 self-center' />
+						<div className='w-px h-6 bg-[var(--middle)] mx-1 self-center' />
 						<ToolbarButton
 							onClick={() => editor.chain().focus().setTextAlign('left').run()}
 							isActive={editor.isActive({ textAlign: 'left' })}
@@ -171,11 +164,11 @@ export const TextEditor = ({
 					</style>
 					<EditorContent
 						editor={editor}
-						className={
+						className={`text-[var(--black)] ${
 							isEdit
-								? 'px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus-within:border-blue-400'
+								? 'px-4 py-3 rounded-2xl bg-[var(--light-gray)] border border-[var(--light-middle)] focus-within:border-[var(--hero)]'
 								: ''
-						}
+						}`}
 					/>
 				</div>
 			</div>

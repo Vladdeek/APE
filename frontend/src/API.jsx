@@ -64,10 +64,10 @@ api.interceptors.response.use(
 			return Promise.reject(error)
 		}
 
-		if (error.response?.status === 401) {
-			window.location.href = '/authorization'
-			return Promise.reject(error)
-		}
+		// if (error.response?.status === 401) {
+		// 	window.location.href = '/authorization'
+		// 	return Promise.reject(error)
+		// }
 
 		const status = error.response?.status || 500
 		showError(status)

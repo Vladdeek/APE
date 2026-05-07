@@ -83,7 +83,7 @@ export const InputDefault = ({
 				onChange={handleChange}
 				readOnly={disabled}
 				placeholder={placeholder}
-				className='rounded-2xl p-3 bg-white shadow-inner border-1 border-[#25252507] transition-all'
+				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)] text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[#25252507] transition-all'
 			/>
 		</div>
 	)

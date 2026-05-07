@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Copy, Trash } from 'lucide-react'
 import { CodeBlock, github, a11yDark } from 'react-code-blocks'
-import { FileUploaderZone } from './FileUploaderZone' // Импортируем твой готовый компонент
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone' // Импортируем твой готовый компонент
 
 export const CodeUploader = ({
 	isEdit = true,
@@ -59,15 +59,8 @@ export const CodeUploader = ({
 	if (!isEdit && !codeData) return null
 
 	return (
-		<div className='flex gap-2 w-full my-4'>
-			{isEdit && onDeleteComponent && (
-				<button
-					onClick={onDeleteComponent}
-					className='self-start bg-[var(--white)] shadow-[var(--shadow)] p-1.5 rounded-lg hover:text-red-500 transition-all cursor-pointer'
-				>
-					<X size={20} />
-				</button>
-			)}
+		<div className='flex gap-4 w-full my-4'>
+			{isEdit && <RemoveButton onDelete={onDeleteComponent} />}
 
 			<div className='flex-1'>
 				{codeData ? (
