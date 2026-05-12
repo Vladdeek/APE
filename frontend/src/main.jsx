@@ -23,6 +23,8 @@ import Authorization from './pages/Authorization'
 import StudentCourseRequest from './pages/StudentCourseRequest'
 import CoursePage from './pages/CoursePage'
 import { Me } from '../service/APIs/Authorization'
+import ModerateUsers from './pages/Moderator/ModerateUsers'
+import ModerateCourses from './pages/Moderator/ModerateCourses'
 
 function MainApp() {
 	const [role, setRole] = useState('teacher')
@@ -47,6 +49,14 @@ function MainApp() {
 					<Route
 						path='/course/:courseId?'
 						element={<CoursePage role={role} />}
+					/>
+					<Route
+						path='/moderation-users'
+						element={<ModerateUsers role={role} />}
+					/>
+					<Route
+						path='/moderation-courses'
+						element={<ModerateCourses role={role} />}
 					/>
 				</Route>
 			</Routes>

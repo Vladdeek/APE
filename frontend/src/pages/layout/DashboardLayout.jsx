@@ -1,7 +1,13 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { use, useContext, useEffect, useState } from 'react'
-import { GraduationCap, ShieldAlert } from 'lucide-react'
+import {
+	BookText,
+	BookUser,
+	FileUser,
+	GraduationCap,
+	ShieldAlert,
+} from 'lucide-react'
 import { Me } from '../../../service/APIs/Authorization'
 
 export default function DashboardLayout({ onChange }) {
@@ -25,9 +31,19 @@ export default function DashboardLayout({ onChange }) {
 			],
 			moderator: [
 				{
-					title: 'Проверка курсов',
-					icon: ShieldAlert,
-					to: '/moderation',
+					title: 'Пользователи',
+					icon: BookUser,
+					to: '/moderation-users',
+				},
+				{
+					title: 'Курсы',
+					icon: BookText,
+					to: '/moderation-courses',
+				},
+				{
+					title: 'Заявки',
+					icon: FileUser,
+					to: '/moderation-courses',
 				},
 			],
 		},
