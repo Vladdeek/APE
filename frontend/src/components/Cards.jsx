@@ -103,4 +103,52 @@ const CourseCard = ({ data, onClick }) => {
 		</div>
 	)
 }
+
+export const MiniCourseCard = ({ data, onClick }) => {
+	const formatDate = dateStr => {
+		return new Date(dateStr).toLocaleDateString('ru-RU', {
+			day: 'numeric',
+			month: 'short',
+		})
+	}
+
+	return (
+		<div
+			onClick={onClick}
+			className='flex flex-col bg-[var(--white)] w-full p-3 h-100 rounded-3xl shadow-lg cursor-pointer transition-all hover:scale-[101%]'
+		>
+			<div className='flex flex-col justify-between h-full'>
+				<img
+					className='rounded-2xl aspect-[5/3] object-cover w-full'
+					src={data.preview_url}
+					alt={data.name}
+				/>
+				<div className='flex items-start justify-between gap-2'>
+					<p className='text-lg font-semibold line-clamp-1' title={data.name}>
+						{data.name}
+					</p>
+				</div>
+				{data.tag && (
+					<p className='text-xs border w-fit border-[var(--hero)] px-2 py-1 rounded-full text-[var(--hero)] whitespace-nowrap'>
+						{data.tag}
+					</p>
+				)}
+
+				<p
+					className='text-sm text-[var(--middle)] line-clamp-2'
+					title={data.description}
+				>
+					{data.description}
+				</p>
+				<div className='flex justify-end'>
+					<p className='text-xl flex gap-1 items-center font-semibold text-[var(--hero)]'>
+						{data.is_free ? 'Бесплатно' : `${data.price.toLocaleString()}`}
+						<RussianRuble size={16} strokeWidth={3} />
+					</p>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 export default CourseCard

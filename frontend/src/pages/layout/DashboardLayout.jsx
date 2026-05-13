@@ -38,12 +38,12 @@ export default function DashboardLayout({ onChange }) {
 				{
 					title: 'Курсы',
 					icon: BookText,
-					to: '/moderation-courses',
+					to: '/moderation-courses/admit',
 				},
 				{
 					title: 'Заявки',
 					icon: FileUser,
-					to: '/moderation-courses',
+					to: '/acceptance-of-applications',
 				},
 			],
 		},

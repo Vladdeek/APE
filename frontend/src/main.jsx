@@ -54,9 +54,10 @@ function MainApp() {
 						path='/moderation-users'
 						element={<ModerateUsers role={role} />}
 					/>
+
 					<Route
-						path='/moderation-courses'
-						element={<ModerateCourses role={role} />}
+						path='/moderation-courses/:type'
+						element={<ModerateCourses />}
 					/>
 				</Route>
 			</Routes>

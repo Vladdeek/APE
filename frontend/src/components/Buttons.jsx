@@ -3,6 +3,44 @@ import { CheckCheck } from 'lucide-react'
 import { useEffect } from 'react'
 import { useState } from 'react'
 
+export const ToggleButton = ({
+	select,
+	setSelect,
+	toggles = ['вариант 1', 'вариант 2'],
+}) => {
+	return (
+		<div className='bg-[var(--white)] relative shadow-inner w-full h-12 rounded-3xl border border-[#25252507] overflow-hidden'>
+			{/* Переключатель (фон) */}
+			<div
+				className={`absolute top-[2px] left-[2px] w-[calc(50%-4px)] h-[calc(100%-4px)] bg-[var(--black)] rounded-[22px] transition-transform duration-300`}
+				style={{
+					transform: `translateX(${select === 1 ? '102%' : '0%'})`,
+				}}
+			/>
+
+			{/* Текст */}
+			<div className='relative flex h-full w-full items-center z-10'>
+				<p
+					onClick={() => setSelect?.(0)}
+					className={`w-1/2 text-center cursor-pointer font-medium transition-colors duration-300 ${
+						select === 0 ? 'text-[var(--white)]' : 'text-[var(--black)]'
+					}`}
+				>
+					{toggles[0]}
+				</p>
+				<p
+					onClick={() => setSelect?.(1)}
+					className={`w-1/2 text-center cursor-pointer font-medium transition-colors duration-300 ${
+						select === 1 ? 'text-[var(--white)]' : 'text-[var(--black)]'
+					}`}
+				>
+					{toggles[1]}
+				</p>
+			</div>
+		</div>
+	)
+}
+
 export const DefaultButton = ({
 	children,
 	onClick,

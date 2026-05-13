@@ -1,6 +1,24 @@
 :root {
 	--transparent-hero: #2bb4f325;
 	--hero: #2bb4f3;
+
+	/* Green - Success */
+	--green-base: #34d399;
+	--green-hover: #10b981;
+	--green-surface: #ecfdf5;
+	--green-text: #065f46;
+
+	/* Red - Danger */
+	--red-base: #f87171;
+	--red-hover: #ef4444;
+	--red-surface: #fef2f2;
+	--red-text: #991b1b;
+
+	/* Yellow - Warning */
+	--yellow-base: #fbbf24;
+	--yellow-hover: #f59e0b;
+	--yellow-surface: #fffbeb;
+	--yellow-text: #92400e;
 }
 
 :root[data-theme='light'] {
