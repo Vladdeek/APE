@@ -4,7 +4,9 @@ import { RussianRuble } from 'lucide-react'
 import { ChevronUp } from 'lucide-react'
 import { Eye } from 'lucide-react'
 import { CircleCheck, ImagePlus } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useClickOutside } from '../../service/Hooks/useClickOutside'
+import { useScrollListener } from '../../service/Hooks/useScrollListener'
 
 export const useInput = ({ value, validate, onChange, onStatusChange }) => {
 	const [internalValue, setInternalValue] = useState(value || '')
@@ -44,6 +46,7 @@ export const InputDefault = ({
 	disabled = false,
 	description,
 	name,
+	readOnly,
 }) => {
 	const {
 		value: val,
@@ -81,9 +84,9 @@ export const InputDefault = ({
 				type={type}
 				value={val}
 				onChange={handleChange}
-				readOnly={disabled}
+				readOnly={readOnly || disabled}
 				placeholder={placeholder}
-				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)] text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[#25252507] transition-all'
+				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)] text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all'
 			/>
 		</div>
 	)
@@ -133,7 +136,7 @@ export const FileInput = ({
 					readOnly
 					accept={accept}
 					placeholder='Файл не выбран'
-					className='w-full rounded-2xl p-3 pr-32 bg-white shadow-inner border border-[#25252507]'
+					className='w-full rounded-2xl p-3 pr-32 bg-[var(--white)] shadow-inner border border-[var(--black)]/2.5'
 				/>
 
 				<label className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer px-3 py-2.75 bg-black text-white rounded-xl text-sm'>
@@ -177,7 +180,7 @@ export const OptionInput = ({
 			)}
 			<div
 				onClick={() => setOpen(!open)}
-				className='w-full rounded-2xl p-3 bg-white shadow-inner border border-[#25252507] flex items-center justify-between cursor-pointer'
+				className='w-full rounded-2xl p-3 bg-[var(--white)] shadow-inner border border-[var(--black)]/2.5 flex items-center justify-between cursor-pointer'
 			>
 				<span className={`${!selected && 'text-gray-400'}`}>
 					{selected ? selected.label : 'Выбери вариант'}
@@ -236,7 +239,7 @@ export const DateInput = ({
 				type='date'
 				value={value || ''}
 				onChange={e => onChange && onChange(e.target.value)}
-				className={`w-full  ${value ? 'text-[var(--black)]' : 'text-[var(--middle)]'} rounded-2xl p-3 bg-white shadow-inner border border-[#25252507]`}
+				className={`w-full  ${value ? 'text-[var(--black)]' : 'text-[var(--middle)]'} rounded-2xl p-3 bg-[var(--white)] shadow-inner border-1 border-[var(--black)]/2.5`}
 			/>
 		</div>
 	)
@@ -300,7 +303,7 @@ export const MaskInput = ({
 				value={value}
 				onChange={handleChange}
 				placeholder={placeholder || mask}
-				className='w-full rounded-2xl p-3 bg-white shadow-inner border border-[#25252507]'
+				className='w-full rounded-2xl p-3 bg-white shadow-inner border border-[var(--black)]/2.5'
 			/>
 		</div>
 	)
@@ -364,7 +367,7 @@ export const InputPrice = ({
 					min={min}
 					max={max}
 					step={step}
-					className='w-full rounded-2xl p-3 pl-12 pr-14 bg-[var(--white)] text-[var(--black)] border border-[#25252507] placeholder:text-[var(--middle)] shadow-inner transition-all focus:outline-none focus:ring-2 focus:ring-[var(--hero)] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+					className='w-full rounded-2xl p-3 pl-12 pr-14 bg-[var(--white)] text-[var(--black)] border border-[var(--black)]/2.5 placeholder:text-[var(--middle)] shadow-inner transition-all focus:outline-none focus:ring-2 focus:ring-[var(--hero)] appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
 				/>
 				{/* Кастомные стрелки */}
 				<div className='absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1'>
@@ -431,7 +434,7 @@ export const TextArea = ({
 				readOnly={readOnly}
 				placeholder={placeholder}
 				maxLength={300}
-				className=' rounded-2xl p-3 shadow-inner border-1 border-[#25252507] transition-all resize-none min-h-25'
+				className=' rounded-2xl p-3 shadow-inner border-1 border-[var(--black)]/2.5 transition-all resize-none min-h-25'
 			/>
 		</div>
 	)
@@ -508,7 +511,7 @@ export const FileInputZone = ({
 			)}
 
 			<label
-				className={`grid grid-cols-5 gap-3 p-1 rounded-2xl bg-white shadow-[var(--shadow)] cursor-pointer transition ${
+				className={`grid grid-cols-5 gap-3 p-1 rounded-2xl bg-[var(--white)] shadow-[var(--shadow)] cursor-pointer transition ${
 					drag && 'ring-2 ring-[var(--hero-epta)]'
 				}`}
 				onDragOver={e => {
@@ -625,7 +628,7 @@ export const OptionSearch = ({
 
 	return (
 		<div className='relative w-full'>
-			<div className='flex items-center rounded-2xl shadow-inner px-4 py-3 bg-white'>
+			<div className='flex items-center rounded-2xl shadow-inner px-4 py-3 bg-[var(--white)]'>
 				<input
 					value={query}
 					onChange={e => {
@@ -640,7 +643,7 @@ export const OptionSearch = ({
 			</div>
 
 			{isOpen && (
-				<div className='absolute w-full bg-white shadow-[var(--shadow)] rounded-2xl mt-1 max-h-35 overflow-y-scroll z-10'>
+				<div className='absolute w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-2xl mt-1 max-h-35 overflow-y-scroll z-10'>
 					{filtered.length === 0 ? (
 						<button
 							type='button'
@@ -681,10 +684,14 @@ export const OptionInputWithSearch = ({
 	title,
 	required,
 	CreateOrNot = false,
+	formRef = null,
 }) => {
 	const [isOpen, setIsOpen] = useState(false)
 	const [search, setSearch] = useState('')
 	const [selected, setSelected] = useState(value)
+
+	// Реф для всего компонента, чтобы ловить клики "мимо"
+	const containerRef = useRef(null)
 
 	// синхра
 	useEffect(() => {
@@ -692,6 +699,18 @@ export const OptionInputWithSearch = ({
 			setSelected(value)
 		}
 	}, [value])
+
+	// Функция закрытия дропдауна
+	const handleClose = () => {
+		setIsOpen(false)
+		setSearch('') // Очищаем поиск при закрытии, чтобы при следующем открытии был весь список
+	}
+
+	// 1. Хук клика наружу: если открыто и кликнули мимо containerRef -> закрываем
+	useClickOutside(containerRef, handleClose, isOpen)
+
+	// 2. Хук скролла: если открыто и начали скроллить форму/окно -> закрываем
+	useScrollListener(handleClose, isOpen, formRef)
 
 	const filtered = useMemo(() => {
 		return options?.filter(item =>
@@ -707,7 +726,7 @@ export const OptionInputWithSearch = ({
 	}
 
 	return (
-		<div className='w-full flex flex-col gap-2'>
+		<div ref={containerRef} className='w-full flex flex-col gap-2'>
 			{/* 🔥 TITLE */}
 			{title && (
 				<div className='flex items-center gap-2'>
@@ -725,7 +744,7 @@ export const OptionInputWithSearch = ({
 				{/* 🔥 ОСНОВНОЙ INPUT */}
 				<div
 					onClick={() => setIsOpen(prev => !prev)}
-					className='flex items-center rounded-2xl shadow-inner border-1 border-[#00000005] px-4 py-3 bg-white cursor-pointer'
+					className='flex items-center rounded-2xl shadow-inner border-1 border-[var(--black)]/2.5 px-4 py-3 bg-[var(--white)] cursor-pointer'
 				>
 					<input
 						readOnly
@@ -737,7 +756,7 @@ export const OptionInputWithSearch = ({
 
 				{/* 🔥 DROPDOWN */}
 				{isOpen && (
-					<div className='absolute w-full bg-white shadow-[var(--shadow)] rounded-3xl mt-2 max-h-50 overflow-hidden z-10 flex flex-col'>
+					<div className='absolute w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-3xl mt-2 max-h-50 overflow-hidden z-10 flex flex-col'>
 						{/* 🔍 ПОИСК ВНУТРИ */}
 						<div className='p-2'>
 							<InputDefault

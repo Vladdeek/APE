@@ -23,7 +23,10 @@ const CourseCard = ({ data, onClick }) => {
 			<div className='flex flex-col h-full p-3 mt-3 gap-3'>
 				{/* Секция Тега и Заголовка */}
 				<div className='flex flex-col gap-3'>
-					<p className='text-2xl font-medium' title={data.name}>
+					<p
+						className='text-2xl font-medium text-[var(--black)]'
+						title={data.name}
+					>
 						{data.name}
 					</p>
 					{/* Рендерим тег, если он пришел с бэка */}
@@ -44,12 +47,14 @@ const CourseCard = ({ data, onClick }) => {
 				<div className='grid grid-cols-2 gap-y-3 text-sm border-y border-[var(--light-middle)] py-4'>
 					<div className='flex flex-col'>
 						<span className='text-[var(--middle)]'>Формат</span>
-						<span className='font-medium'>{data.format_name}</span>
+						<span className='font-medium text-[var(--black)]'>
+							{data.format_name}
+						</span>
 					</div>
 					<div className='flex flex-col'>
-						<span className='text-[var(--middle)]'>Сертификат</span>
+						<span className='text-[var(--middle)] '>Сертификат</span>
 						<span
-							className='font-medium truncate'
+							className='font-medium truncate text-[var(--black)]'
 							title={data.certificate_type_name}
 						>
 							{data.certificate_type_name}
@@ -57,7 +62,9 @@ const CourseCard = ({ data, onClick }) => {
 					</div>
 					<div className='flex flex-col'>
 						<span className='text-[var(--middle)]'>Старт курса</span>
-						<span className='font-medium'>{formatDate(data.start_date)}</span>
+						<span className='font-medium text-[var(--black)]'>
+							{formatDate(data.start_date)}
+						</span>
 					</div>
 					<div className='flex flex-col'>
 						<span className='text-[var(--middle)] text-orange-500'>
@@ -83,7 +90,7 @@ const CourseCard = ({ data, onClick }) => {
 						)}
 
 						<div className='flex flex-col'>
-							<p className='text-md font-medium leading-tight'>
+							<p className='text-md font-medium leading-tight text-[var(--black)]'>
 								{`${data?.creator?.first_name} ${data?.creator?.last_name[0]}. ${data?.creator?.patronymic[0]}.`}
 							</p>
 							<p className='text-xs font-normal text-[var(--middle)]'>
@@ -95,7 +102,7 @@ const CourseCard = ({ data, onClick }) => {
 					<div className='text-right'>
 						<p className='text-2xl flex gap-1 items-center font-medium text-[var(--hero)]'>
 							{data.is_free ? 'Бесплатно' : `${data.price.toLocaleString()}`}
-							<RussianRuble size={18} strokeWidth={3} />
+							{!data.is_free && <RussianRuble size={18} strokeWidth={3} />}
 						</p>
 					</div>
 				</div>
@@ -104,7 +111,7 @@ const CourseCard = ({ data, onClick }) => {
 	)
 }
 
-export const MiniCourseCard = ({ data, onClick }) => {
+export const CourseMiniCard = ({ data, onClick }) => {
 	const formatDate = dateStr => {
 		return new Date(dateStr).toLocaleDateString('ru-RU', {
 			day: 'numeric',
@@ -115,36 +122,72 @@ export const MiniCourseCard = ({ data, onClick }) => {
 	return (
 		<div
 			onClick={onClick}
-			className='flex flex-col bg-[var(--white)] w-full p-3 h-100 rounded-3xl shadow-lg cursor-pointer transition-all hover:scale-[101%]'
+			className='flex gap-4 bg-[var(--white)] p-2 rounded-3xl shadow-[var(--shadow)] border border-[var(--light-middle)] transition-all cursor-pointer group items-center'
 		>
-			<div className='flex flex-col justify-between h-full'>
+			<div className='relative shrink-0'>
 				<img
-					className='rounded-2xl aspect-[5/3] object-cover w-full'
+					className='rounded-2xl w-28 h-28 object-cover'
 					src={data.preview_url}
 					alt={data.name}
 				/>
-				<div className='flex items-start justify-between gap-2'>
-					<p className='text-lg font-semibold line-clamp-1' title={data.name}>
-						{data.name}
-					</p>
-				</div>
 				{data.tag && (
-					<p className='text-xs border w-fit border-[var(--hero)] px-2 py-1 rounded-full text-[var(--hero)] whitespace-nowrap'>
+					<span className='absolute -top-2 -left-2 bg-[var(--hero)] text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm'>
 						{data.tag}
-					</p>
+					</span>
 				)}
+			</div>
 
-				<p
-					className='text-sm text-[var(--middle)] line-clamp-2'
-					title={data.description}
-				>
-					{data.description}
-				</p>
-				<div className='flex justify-end'>
-					<p className='text-xl flex gap-1 items-center font-semibold text-[var(--hero)]'>
-						{data.is_free ? 'Бесплатно' : `${data.price.toLocaleString()}`}
-						<RussianRuble size={16} strokeWidth={3} />
-					</p>
+			<div className='flex flex-col flex-1 h-full min-w-0 justify-between'>
+				<div>
+					<div className='flex justify-between items-start gap-2'>
+						<p
+							className='text-lg font-bold leading-tight truncate'
+							title={data.name}
+						>
+							{data.name}
+						</p>
+					</div>
+
+					<div className='flex items-center gap-2 mt-1.5'>
+						<p className='text-[11px] text-[var(--middle)]'>
+							Старт:{' '}
+							<span className='text-[var(--black)] font-semibold'>
+								{formatDate(data.start_date)}
+							</span>
+						</p>
+
+						<span className='text-[var(--light-middle)]'>•</span>
+						<p className='text-[10px] uppercase text-[var(--middle)] font-medium'>
+							{data.format_name}
+						</p>
+					</div>
+				</div>
+
+				<div className='flex justify-between items-center mt-3 pt-2 border-t border-[var(--light-middle)]/50'>
+					<div className='flex gap-3 items-center'>
+						{data.creator?.avatar_url ? (
+							<img
+								className='rounded-lg w-6 h-6 object-cover bg-gray-100'
+								src={data.creator?.avatar_url}
+								alt='author'
+							/>
+						) : (
+							<ImageOff className='w-6 h-6 p-1 text-[var(--middle)] bg-gray-100 rounded-lg' />
+						)}
+						<p className='text-xs text-[var(--middle)] truncate'>
+							{data.creator?.first_name} {data.creator?.last_name[0]}.{' '}
+							{data.creator?.patronymic[0]}.
+						</p>
+					</div>
+
+					<div className='flex items-center gap-0.5 text-[var(--hero)] font-semibold'>
+						<span className='text-md'>
+							{data.is_free
+								? 'Бесплатно'
+								: Math.round(data.price).toLocaleString()}
+						</span>
+						{!data.is_free && <RussianRuble size={14} strokeWidth={3.5} />}
+					</div>
 				</div>
 			</div>
 		</div>

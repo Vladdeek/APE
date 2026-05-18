@@ -18,7 +18,7 @@ import {
 	FlaskConical,
 	FilePlus2,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { TextEditor } from '../components/ConstructorViews/TextEditor'
@@ -31,6 +31,12 @@ import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstruc
 import { Callout } from '../components/ConstructorViews/Callout'
 import { DefaultButton } from '../components/Buttons'
 import { InputDefault } from '../components/Inputs'
+import {
+	CreateCourse,
+	CreateLesson,
+	CreateModule,
+	ReadCourseById,
+} from '../../service/APIs/Couses'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -43,29 +49,33 @@ const COMPONENT_MAP = {
 	callout: Callout,
 }
 
-export const LESSON_TYPES = [
+// Если LESSON_TYPES импортируется из другого места, этот массив можно удалить
+const DEFAULT_LESSON_TYPES = [
 	{
 		label: 'Лекция',
 		apiType: 'lecture',
-		icon: <BookMarked size={24} />,
-		description:
-			'Теоретический материал с поддержкой текста, изображений, видео и аудио.',
+		icon: <BookMarked size={18} />,
+		description: 'Теоретический материал с блоками текста и медиа.',
 	},
 	{
 		label: 'Практика',
 		apiType: 'practice',
-		icon: <NotebookPen size={24} />,
-		description:
-			'Задания для самостоятельного выполнения. Включает инструкции и примеры.',
+		icon: <NotebookPen size={18} />,
+		description: 'Практическое задание для закрепления материала.',
 	},
 	{
 		label: 'Тест',
 		apiType: 'test',
-		icon: <LaptopMinimalCheck size={24} />,
-		description: 'Проверка знаний с помощью различных типов вопросов.',
+		icon: <LaptopMinimalCheck size={18} />,
+		description: 'Контрольное тестирование для проверки знаний.',
 	},
 ]
-const CreateItemButton = ({ type = 'module', onAdd }) => {
+
+const CreateItemButton = ({
+	type = 'module',
+	onAdd,
+	LESSON_TYPES = DEFAULT_LESSON_TYPES,
+}) => {
 	const [isOpen, setIsOpen] = useState(false)
 	const [step, setStep] = useState(0)
 	const [title, setTitle] = useState('')
@@ -86,9 +96,8 @@ const CreateItemButton = ({ type = 'module', onAdd }) => {
 			onAdd({ name: title })
 		} else {
 			onAdd({
-				title: title,
-				type: LESSON_TYPES[selectedTypeIndex].apiType,
-				content: {},
+				name: title, // Меняем 'title' на 'name', чтобы соответствовать аргументам API
+				module_content_type: LESSON_TYPES[selectedTypeIndex].apiType,
 			})
 		}
 		resetState()
@@ -140,7 +149,7 @@ const CreateItemButton = ({ type = 'module', onAdd }) => {
 						</>
 					)}
 
-					{/* Шаг ввода названия (для модулей сразу, для уроков - вторым шагом) */}
+					{/* Шаг ввода названия */}
 					{(isModule || step === 1) && (
 						<div className='flex flex-col gap-3'>
 							<InputDefault
@@ -165,7 +174,7 @@ const CreateItemButton = ({ type = 'module', onAdd }) => {
 								<DefaultButton
 									width='w-full'
 									flexParams='justify-center'
-									onClick={() => setStep(0)}
+									onClick={handleSave} // ИСПРАВЛЕНО: Вместо setStep(0) вызываем сохранение данных
 									disabled={!isNameValid}
 								>
 									{isModule ? 'Добавить модуль' : 'Создать'}
@@ -439,35 +448,47 @@ const Content = ({ type, title, isSelected, onClick }) => {
 const CoursePage = ({ role }) => {
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
-	const activeSectionId = searchParams.get('section') || 'sec-1'
+	const activeSectionId = searchParams.get('section') || ''
+
 	const [blocks, setBlocks] = useState([])
-
 	const [isEdit, setIsEdit] = useState(false)
+	const [modules, setModules] = useState([])
+	const [isLoading, setIsLoading] = useState(true) // Состояние загрузки
 
-	const [modules, setModules] = useState([
-		{
-			id: 'mod-1',
-			title: 'Основы React',
-			isExpanded: true,
-			sections: [
-				{ id: 'sec-1', title: 'Введение в SX', type: 'lecture' },
-				{ id: 'sec-2', title: 'Props и State', type: 'practice' },
-			],
-		},
-		{
-			id: 'mod-2',
-			title: 'Hooks & API',
-			isExpanded: false,
-			sections: [
-				{ id: 'sec-3', title: 'useEffect Deep Dive', type: 'lecture' },
-				{ id: 'sec-4', title: 'Итоговый тест', type: 'test' },
-			],
-		},
-	])
+	// Переносим чтение курса в useCallback, чтобы функцию можно было вызывать из других методов
+	const fetchCourseData = useCallback(async () => {
+		if (!courseId) return
+		try {
+			// Убираем setIsLoading(true) отсюда, чтобы интерфейс не «моргал» при создании уроков
+			const res = await ReadCourseById(courseId)
+			if (res && res.modules) {
+				setModules(res.modules)
 
+				// Если в URL еще не выбран section, выбираем первый доступный из пришедших данных
+				if (!searchParams.get('section') && res.modules[0]?.sections[0]?.id) {
+					setSearchParams(
+						{ section: res.modules[0].sections[0].id },
+						{ replace: true },
+					)
+				}
+			}
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
+		} finally {
+			setIsLoading(false)
+		}
+	}, [courseId, searchParams, setSearchParams])
+
+	// Первый рендер и смена courseId
+	useEffect(() => {
+		setIsLoading(true)
+		fetchCourseData()
+	}, [courseId, fetchCourseData])
+
+	// Поиск активной секции (лекции/теста) для отображения в шапке контента
 	const activeSection = modules
-		.flatMap(module => module.sections)
-		.find(section => section.id === activeSectionId)
+		?.flatMap(m => m.content)
+		.find(s => s.id === activeSectionId)
 
 	const toggleModule = id => {
 		setModules(prev =>
@@ -476,23 +497,49 @@ const CoursePage = ({ role }) => {
 	}
 
 	const handleSectionClick = id => {
-		// Обновляем query-параметр.
-		// { replace: true } нужен, чтобы не спамить в историю браузера при каждом клике
 		setSearchParams({ section: id }, { replace: true })
 	}
+
+	// Обработчики создания с async/await
+	const createModule = async name => {
+		try {
+			await CreateModule(name, courseId)
+			await fetchCourseData() // Обновляем данные с сервера
+		} catch (err) {
+			console.error('Ошибка при создании модуля:', err)
+		}
+	}
+
+	const createLesson = async (name, module_content_type, module_id) => {
+		try {
+			await CreateLesson(name, module_content_type, module_id)
+			await fetchCourseData() // Обновляем данные с сервера
+		} catch (err) {
+			console.error('Ошибка при создании урока:', err)
+		}
+	}
+
+	const addBlock = type => setBlocks(prev => [...prev, { type, content: null }])
 
 	const icons = {
 		lecture: <BookMarked />,
 		practice: <NotebookPen />,
 		test: <LaptopMinimalCheck />,
 	}
+
 	const labels = {
 		lecture: 'Лекция',
 		practice: 'Практика',
 		test: 'Тест',
 	}
 
-	const addBlock = type => setBlocks(prev => [...prev, { type, content: null }])
+	if (isLoading) {
+		return (
+			<div className='flex items-center justify-center h-screen'>
+				<p className='text-lg text-[var(--middle)]'>Загрузка курса...</p>
+			</div>
+		)
+	}
 
 	return (
 		<div className='grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 '>
@@ -501,17 +548,17 @@ const CoursePage = ({ role }) => {
 				<h2 className='text-xl font-bold mb-3 px-2 text-[var(--black)]'>
 					Содержание курса
 				</h2>
-				{modules.map((module, idx) => (
+				{modules?.map((module, idx) => (
 					<Module
 						key={module.id}
-						title={module.title}
+						title={module.name}
 						index={idx + 1}
 						isExpanded={module.isExpanded}
 						onToggle={() => toggleModule(module.id)}
 					>
-						{module.sections.map((section, index) => (
+						{module?.content?.map((section, index) => (
 							<motion.div
-								key={index}
+								key={section.id}
 								initial={{ scale: 0.8, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 								transition={{
@@ -521,29 +568,38 @@ const CoursePage = ({ role }) => {
 								}}
 							>
 								<Content
-									key={section.id}
-									title={section.title}
+									title={section.name}
 									type={section.type}
 									isSelected={activeSectionId === section.id}
 									onClick={() => handleSectionClick(section.id)}
 								/>
 							</motion.div>
 						))}
+
+						{/* Кнопка создания УРОКА внутри модуля */}
 						{role === 'teacher' && (
 							<CreateItemButton
 								type='lesson'
-								onAdd={() => {
-									console.log('create lesson')
+								onAdd={lessonData => {
+									// lessonData содержит { name, module_content_type }
+									createLesson(
+										lessonData.name,
+										lessonData.module_content_type,
+										module.id,
+									)
 								}}
 							/>
 						)}
 					</Module>
 				))}
+
+				{/* Кнопка создания МОДУЛЯ в самом низу списка */}
 				{role === 'teacher' && (
 					<CreateItemButton
 						type='module'
-						onAdd={() => {
-							console.log('create module')
+						onAdd={moduleData => {
+							// moduleData содержит { name }
+							createModule(moduleData.name)
 						}}
 					/>
 				)}
@@ -551,35 +607,45 @@ const CoursePage = ({ role }) => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				<div className='flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2'>
-					<div className='flex items-center gap-3'>
-						<span className={'text-[var(--middle)] h-full w-auto'}>
-							{icons[activeSection.type]}
-						</span>
-						<div className='flex flex-col'>
-							<p
-								className={'text-[var(--middle)] text-sm uppercase font-medium'}
-							>
-								{labels[activeSection.type]}
-							</p>
-							<p className={'text-[var(--black)] text-lg'}>
-								{activeSection.title}
-							</p>
+				{activeSection && (
+					<div className='flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2'>
+						<div className='flex items-center gap-3'>
+							{activeSection && (
+								<>
+									<span className={'text-[var(--middle)] h-full w-auto'}>
+										{icons[activeSection.type]}
+									</span>
+									<div className='flex flex-col'>
+										<p
+											className={
+												'text-[var(--middle)] text-sm uppercase font-medium'
+											}
+										>
+											{labels[activeSection.type]}
+										</p>
+										<p className={'text-[var(--black)] text-lg'}>
+											{activeSection.name}
+										</p>
+									</div>
+								</>
+							)}
 						</div>
+						{role === 'teacher' && (
+							<DefaultButton
+								onClick={() => setIsEdit(prev => !prev)}
+								rounded={'rounded-lg'}
+								width='w-38'
+								flexParams='justify-center'
+							>
+								{isEdit ? 'Сохранить' : 'Редактировать'}
+							</DefaultButton>
+						)}
 					</div>
-					{role === 'teacher' && (
-						<DefaultButton
-							onClick={() => setIsEdit(prev => !prev)}
-							rounded={'rounded-lg'}
-							width='w-38'
-							flexParams='justify-center'
-						>
-							{isEdit ? 'Сохранить' : 'Редактировать'}
-						</DefaultButton>
-					)}
-				</div>
+				)}
+
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
-					<ContentView isEdit={isEdit} />
+					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
+					<ContentView isEdit={isEdit} sectionId={activeSectionId} />
 				</div>
 			</div>
 		</div>

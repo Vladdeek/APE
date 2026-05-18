@@ -28,7 +28,7 @@ import {
 import BasicPagination from '../../components/Pagination'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'react-router-dom'
-import CourseCard, { MiniCourseCard } from '../../components/Cards'
+import CourseCard from '../../components/Cards'
 import Modal from '../../components/Modal'
 
 const UserCard = ({ FullName, avatar_url, email, role, onClick }) => {

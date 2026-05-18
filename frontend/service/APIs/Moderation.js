@@ -48,7 +48,19 @@ export const ToSendTheMessageAgainUserById = async id => {
 }
 
 // --- courses ---
-export const GetModerationCourses = async () => {
-	const response = await api.get(`${API}/courses`)
+export const GetModerationCourses = async course_status => {
+	const response = await api.get(`${API}/course?course_status=${course_status}`)
+	return response.data
+}
+
+export const GetCourseInfoById = async course_id => {
+	const response = await api.get(`${API}/course/${course_id}/info`)
+	return response.data
+}
+
+export const AccessCourse = async (course_id, status) => {
+	const response = await api.patch(`${API}/course/status/${course_id}/change`, {
+		status,
+	})
 	return response.data
 }
