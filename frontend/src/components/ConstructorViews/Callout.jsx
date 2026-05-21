@@ -13,7 +13,13 @@ import {
 import { useState, useEffect, useMemo } from 'react'
 import { RemoveButton } from './FileUploaderZone'
 
-export const Callout = ({ isEdit = false, values, onChange, onDelete }) => {
+export const Callout = ({
+	isEdit = false,
+	values,
+	onChange,
+	onDelete,
+	data,
+}) => {
 	// Выносим иконки в useMemo, чтобы не пересоздавать их при каждом рендере
 	const icons = useMemo(
 		() => [
@@ -44,6 +50,14 @@ export const Callout = ({ isEdit = false, values, onChange, onDelete }) => {
 	const [selectedIconName, setSelectedIconName] = useState(
 		values?.icon || 'Megaphone',
 	)
+
+	useEffect(() => {
+		if (data) {
+			setTitle(data.title)
+			setDescription(data.description)
+			setSelectedIconName(data.icon)
+		}
+	}, [data])
 
 	// Находим текущий объект иконки
 	const currentIconObj =
