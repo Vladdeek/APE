@@ -184,7 +184,7 @@ export const FileManager = ({
 									<div className='flex items-center gap-2'>
 										<button
 											onClick={() => handleDownload(file)}
-											className='p-2 hover:bg-[var(--green-status-bg)] hover:text-[var(--green-status-text)] rounded-lg transition-all text-[var(--black)]'
+											className='p-2 hover:bg-[var(--green-base)] hover:text-[var(--green-text)] cursor-pointer rounded-lg transition-all text-[var(--black)]'
 											title='Скачать'
 										>
 											<Download size={20} />
@@ -193,7 +193,7 @@ export const FileManager = ({
 										{isEdit && (
 											<button
 												onClick={() => onDelete?.(index, file)}
-												className='p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all text-[var(--black)]'
+												className='p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-[var(--black)]'
 												title='Удалить'
 											>
 												<Trash2 size={20} />

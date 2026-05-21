@@ -177,10 +177,10 @@ export const FileUploaderZone = ({
 
 	// --- Дальше идет твой JSX без изменений ---
 	const zoneClass = isDragActive
-		? 'bg-[var(--transparent-hero)] border-[var(--hero)]'
+		? 'bg-[var(--transparent-hero)] border-[var(--hero)] ring-[var(--transparent-hero)]'
 		: !isValid
-			? 'bg-[var(--hard-lvl-bg)] border-[var(--hard-lvl-text)]'
-			: 'bg-[var(--light-gray)] border-[var(--middle)]'
+			? 'bg-[var(--hard-lvl-bg)] border-[var(--hard-lvl-text)] ring-[var(--hard-lvl-bg)]'
+			: 'bg-[var(--light-gray)] border-[var(--middle)] ring-[var(--light-middle)]'
 
 	return (
 		<label
@@ -194,7 +194,7 @@ export const FileUploaderZone = ({
 				setIsDragActive(false)
 				processFiles(Array.from(e.dataTransfer.files))
 			}}
-			className={`p-6 w-full flex flex-col items-center justify-center rounded-2xl transition-all border-3 border-dashed ring-4 ring-[var(--light-middle)] ${
+			className={`p-6 w-full flex flex-col items-center justify-center rounded-2xl transition-all border-3 border-dashed ring-4  ${
 				isUploading ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
 			} ${zoneClass}`}
 		>
