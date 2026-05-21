@@ -30,6 +30,7 @@ export const FileManager = ({
 	sectionId,
 	isUploading = false,
 	progress = 0,
+	onChange,
 }) => {
 	const formatFileSize = bytes => {
 		if (!bytes || bytes === 0) return '0 Bytes'
@@ -195,6 +196,7 @@ export const FileManager = ({
 						}}
 						isUploading={isUploading}
 						uploadProgress={progress}
+						onChange={onChange}
 					/>
 				</div>
 			)}

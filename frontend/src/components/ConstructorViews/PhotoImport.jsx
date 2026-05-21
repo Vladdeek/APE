@@ -63,7 +63,7 @@ export const PhotoBlock = ({
 	// Следим за входящими данными и вытаскиваем только file_path
 	useEffect(() => {
 		if (data) {
-			const urls = data.map(file => file.file_path)
+			const urls = data.files.map(file => file.file_path)
 			setPhotos(urls)
 		} else {
 			setPhotos([])

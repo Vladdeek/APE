@@ -1,28 +1,39 @@
 import { X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
 import VideoPlayer from '../VideoPlayer'
 
 export const VideoImport = ({
 	onStatusChange,
-	DelComponent,
+	onDelete,
 	onChange,
-	value, // Текущий URL видео (строка)
+	data, // Принимаем весь объект: { type: "video", block: { files: [...] } }
 	sectionId,
+	isEdit,
 }) => {
 	const [uploading, setUploading] = useState(false)
 	const [progress, setProgress] = useState(0)
+
+	// Локальное состояние для извлеченного URL видео
+	const [videoUrl, setVideoUrl] = useState('')
+
+	console.log(data)
+
+	// Синхронизируем входящие данные бэка с локальным URL
+	useEffect(() => {
+		const file = data.file_metadata
+		if (file?.file_path) {
+			setVideoUrl(file.file_path)
+		} else {
+			setVideoUrl('')
+		}
+	}, [data])
 
 	const handleUpload = async file => {
 		setUploading(true)
 		setProgress(0)
 
 		try {
-			// --- ЛОГИКА БУДУЩЕГО БЭКЕНДА ---
-			// Пример того, как это будет выглядеть:
-			// const uploadedUrl = await s3Service.upload(file, (p) => setProgress(p))
-
-			// Имитация загрузки для теста:
 			const mockInterval = setInterval(() => {
 				setProgress(prev => {
 					if (prev >= 100) {
@@ -33,61 +44,65 @@ export const VideoImport = ({
 				})
 			}, 200)
 
-			// Ждем завершения "загрузки"
 			await new Promise(resolve => setTimeout(resolve, 2500))
 
-			const mockUrl = 'https://sample-videos.com/video123.mp4'
+			// Временно создаем blob-url для превью, пока нет реального S3
+			const localUrl = URL.createObjectURL(file)
 
-			onChange?.(mockUrl) // Передаем URL в родительский компонент/стейт
+			// Передаем наверх.
+			// ВАЖНО: Если родитель ждет готовую структуру для отправки на бэк,
+			// то вместо localUrl нужно будет передавать объект.
+			// Если родитель пока принимает просто массив/строку — оставляем так.
+			onChange?.(localUrl)
 			onStatusChange?.(true)
 		} catch (error) {
 			console.error('Ошибка при загрузке видео:', error)
-			// Здесь можно добавить уведомление об ошибке
 		} finally {
 			setUploading(false)
-			// Не обнуляем прогресс мгновенно, чтобы пользователь увидел 100%
 			setTimeout(() => setProgress(0), 1000)
 		}
 	}
 
 	const handleRemove = async () => {
-		// Если нужно удалять файл с сервера при очистке:
-		// if (value) await s3Service.delete(value)
-
+		// Очищаем значение в родителе
 		onChange?.('')
 		onStatusChange?.(false)
 	}
 
+	console.log('videourl:', videoUrl)
+
 	return (
 		<div className='flex gap-4 w-full items-start'>
 			{/* Кнопка удаления всего компонента из списка конструктора */}
-			<RemoveButton onDelete={DelComponent} />
+			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='flex justify-center w-full min-h-[350px]'>
-				{value ? (
-					// Если видео уже загружено — показываем плеер
-					<div className='relative w-full group'>
-						<VideoPlayer url={value} />
+				{videoUrl ? (
+					// Если видео есть в структуре данных — показываем плеер
+					<div className='relative w-full group rounded-2xl overflow-hidden'>
+						<VideoPlayer url={videoUrl} />
 
 						{/* Кнопка "Удалить видео и загрузить заново" */}
-						<button
+						{/* <button
 							type='button'
 							onClick={handleRemove}
 							className='absolute top-3 right-3 z-10 bg-white/90 backdrop-blur text-black p-2 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-xl opacity-0 group-hover:opacity-100'
 							title='Удалить видео'
 						>
 							<X size={18} strokeWidth={3} />
-						</button>
+						</button> */}
 					</div>
 				) : (
-					// Если видео нет — показываем зону загрузки
-					<FileUploaderZone
-						sectionId={sectionId}
-						type='video'
-						onFilesSelected={handleUpload}
-						isUploading={uploading}
-						uploadProgress={progress}
-					/>
+					isEdit && (
+						<FileUploaderZone
+							sectionId={sectionId}
+							type='video'
+							onFilesSelected={handleUpload}
+							isUploading={uploading}
+							uploadProgress={progress}
+							onChange={onChange}
+						/>
+					)
 				)}
 			</div>
 		</div>

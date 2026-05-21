@@ -320,7 +320,7 @@ const ContentView = ({
 									}}
 								>
 									<Component
-										data={isSpecialBlock ? block.content : block.files}
+										data={isSpecialBlock ? block.content : block}
 										plainText={block.plain_text}
 										isEdit={isEdit}
 										onChange={data => putContentInBlock(block.id, data, type)}
