@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
-// Вместо StarterKit берем только нужные модули по отдельности
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -24,27 +23,58 @@ import {
 	AlignLeft,
 	AlignCenter,
 	AlignRight,
-	X,
 } from 'lucide-react'
 import { RemoveButton } from './FileUploaderZone'
 
 export const TextEditor = ({
-	DelComponent,
+	data,
+	onDelete,
 	onChange,
-	takeValue,
 	isEdit = false,
+	plainText,
+	courseId,
 }) => {
+	// 1. ПРЕОБРАЗОВАНИЕ ПРИ ВХОДЕ: Из строки Slate-формата в схему Tiptap
 	const initialContent = useMemo(() => {
-		if (!takeValue) return ''
+		if (!data) return ''
+
 		try {
-			return JSON.parse(takeValue)
+			// Если пришла строка, парсим её в массив
+			const parsed = typeof data === 'string' ? JSON.parse(data) : data
+
+			// Если это уже структура Tiptap ({type: 'doc'}), отдаем как есть
+			if (parsed && parsed.type === 'doc') return parsed
+
+			// Если это массив в стиле Slate, собираем из него валидный Tiptap doc
+			if (Array.isArray(parsed)) {
+				const tiptapContent = parsed.map(block => {
+					// Конвертируем children в content
+					const blockContent =
+						block.children?.map(child => ({
+							type: 'text',
+							text: child.text || '',
+							// Если будут marks (bold, italic), Tiptap их подхватит, если передавать правильно
+						})) || []
+
+					return {
+						type: 'paragraph',
+						attrs: { textAlign: null },
+						content: blockContent,
+					}
+				})
+
+				return {
+					type: 'doc',
+					content: tiptapContent,
+				}
+			}
 		} catch (e) {
-			return takeValue
+			console.error('Ошибка парсинга входящего контента:', e)
 		}
-	}, [takeValue])
+		return data
+	}, [data])
 
 	const editor = useEditor({
-		// Явно перечисляем расширения. Теперь конфликту взяться просто неоткуда.
 		extensions: [
 			Document,
 			Paragraph,
@@ -64,16 +94,47 @@ export const TextEditor = ({
 		content: initialContent,
 		editable: !!isEdit,
 		onUpdate: ({ editor }) => {
+			const tiptapJson = editor.getJSON()
+
+			// 2. ПРЕОБРАЗОВАНИЕ ПРИ ВЫХОДЕ: Из Tiptap в JSON-строку Slate-формата
+			// Вытаскиваем только массив параграфов/блоков
+			const tiptapBlocks = tiptapJson.content || []
+
+			const slateBlocks = tiptapBlocks.map(block => {
+				// Пересобираем элементы контента в формат { text: "..." } внутри children
+				const children = block.content?.map(item => ({
+					text: item.text || '',
+				})) || [{ text: '' }] // Если параграф пустой, оставляем пустую строку
+
+				return {
+					type: 'paragraph',
+					children: children,
+				}
+			})
+
+			// Сериализуем полученный массив обратно в строку, как просит бэкенд
 			onChange?.({
-				content: JSON.stringify(editor.getJSON()),
+				content: JSON.stringify(slateBlocks),
 				plainText: editor.getText(),
 			})
 		},
 	})
 
 	useEffect(() => {
-		if (editor) editor.setEditable(!!isEdit)
+		if (editor) {
+			editor.setEditable(!!isEdit)
+		}
 	}, [isEdit, editor])
+
+	// Синхронизация, если данные изменились извне
+	useEffect(() => {
+		if (editor && data) {
+			// Быстрая проверка изменений, чтобы не сбрасывать фокус при вводе
+			if (!editor.isFocused) {
+				editor.commands.setContent(initialContent, false)
+			}
+		}
+	}, [initialContent, editor])
 
 	if (!editor) return null
 
@@ -96,7 +157,7 @@ export const TextEditor = ({
 
 	return (
 		<div className={`flex gap-4 ${!isEdit ? 'w-full' : ''}`}>
-			{isEdit && <RemoveButton onDelete={DelComponent} />}
+			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='w-full flex flex-col'>
 				{isEdit && (
@@ -156,7 +217,7 @@ export const TextEditor = ({
 				<div className='w-full'>
 					<style>
 						{`
-                            .ProseMirror { outline: none !important; min-height: 100px; }
+                            .ProseMirror { outline: none !important; min-height: 60px; }
                             .ProseMirror p { margin-bottom: 8px; }
                             .ProseMirror ul { list-style-type: disc; padding-left: 20px; }
                             .ProseMirror ol { list-style-type: decimal; padding-left: 20px; }

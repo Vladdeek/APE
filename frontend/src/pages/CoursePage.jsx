@@ -37,6 +37,12 @@ import {
 	CreateModule,
 	ReadCourseById,
 } from '../../service/APIs/Couses'
+import {
+	AppendLectureContent,
+	ReadLectureContent,
+	UpdateLectureContent,
+} from '../../service/APIs/LectureContent'
+import { debounce } from 'lodash'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -204,45 +210,61 @@ const ContentView = ({
 	const [blocks, setBlocks] = useState([])
 	const { courseId } = useParams()
 
-	// Синхронизация данных
+	const handleUpdate = (i, type, data) => {
+		console.log(i, type, data)
+	}
+
+	const addBlock = async (id, type) => {
+		try {
+			await AppendLectureContent(id, type)
+			readContent()
+		} catch (err) {}
+	}
+
+	const readContent = async () => {
+		try {
+			const res = await ReadLectureContent(sectionId)
+			setBlocks(res.items)
+		} catch (err) {}
+	}
+
+	// Дебаунс оставляем для защиты от спама при реальном вводе букв
+	const debouncedUpdate = useCallback(
+		debounce(async (blockId, body, type) => {
+			try {
+				await UpdateLectureContent(sectionId, blockId, body, type)
+			} catch (err) {}
+		}, 500),
+		[sectionId],
+	)
+
+	const putContentInBlock = (blockId, body, type) => {
+		// Защита от авто-вызова пустого Tiptap-редактора
+		if (type === 'text') {
+			// Проверяем plain_text или plainText на пустоту
+			const isEmptyString = !body.plainText && !body.plain_text
+
+			// Защита по JSON-структуре (если параграф пустой и в нем нет массива content)
+			const firstParagraph = body.content?.content?.[0]
+			const hasNoParagraphText = firstParagraph && !firstParagraph.content
+
+			if (isEmptyString || hasNoParagraphText) {
+				// Прерываем функцию, не пуская пустой запрос в дебаунс
+				console.log('⚠️ Заблокирован пустой авто-вызов для блока:', blockId)
+				return
+			}
+		}
+
+		// Если это не пустой текст или другой тип блока (кнопка и т.д.) — пускаем дальше
+		debouncedUpdate(blockId, body, type)
+	}
+
+	// Добавляем sectionId в зависимости, чтобы контент обновлялся при смене лекции
 	useEffect(() => {
-		if (!content) return
-		onSectionTypeChange?.(content.type)
-
-		if (content.type === 'test') {
-			setQuestions(content.content || [])
-			setBlocks([])
-		} else {
-			setBlocks(content.content || [])
-			setQuestions([])
+		if (sectionId) {
+			readContent()
 		}
-		setActiveIndex(0)
-	}, [content])
-
-	// Универсальный обработчик для всех типов блоков
-	const handleUpdate = (index, newData) => {
-		const updated = blocks.map((b, i) =>
-			i === index ? { ...b, content: newData } : b,
-		)
-		setBlocks(updated)
-		onBlocksChange?.(updated)
-	}
-
-	const handleRemove = index => {
-		const block = blocks[index]
-		const updated = blocks.filter((_, i) => i !== index)
-
-		// Если в блоке были файлы — чистим сервер (твоя логика)
-		if (blockHadContent(block)) {
-			getBlockFilePaths(block).forEach(removeFile)
-			onBlocksChange?.(updated, { forceSave: true })
-		} else {
-			onBlocksChange?.(updated)
-		}
-		setBlocks(updated)
-	}
-
-	console.log(blocks)
+	}, [sectionId])
 
 	if (SectionType && !content) return <Loader />
 
@@ -259,13 +281,16 @@ const ContentView = ({
 					/>
 				) : (
 					<div className='flex flex-col gap-4'>
-						{blocks.map((block, i) => {
-							const Component = COMPONENT_MAP[block.type]
+						{blocks?.map((item, i) => {
+							const { type, block } = item
+							if (!block) return null
+
+							const Component = COMPONENT_MAP[type]
 							if (!Component) return null
 
 							return (
 								<motion.div
-									key={i}
+									key={block.id}
 									initial={{ scale: 0.8, opacity: 0 }}
 									animate={{ scale: 1, opacity: 1 }}
 									transition={{
@@ -276,19 +301,18 @@ const ContentView = ({
 								>
 									<Component
 										data={block.content}
+										plainText={block.plain_text}
 										isEdit={isEdit}
-										onChange={data => handleUpdate(i, data)}
+										onChange={data => putContentInBlock(block.id, data, type)}
 										onDelete={() => handleRemove(i)}
-										courseId={courseId} // для загрузки файлов
+										courseId={courseId}
 									/>
 								</motion.div>
 							)
 						})}
 
 						{isEdit && (
-							<ConstructorMenu
-								onAdd={type => setBlocks([...blocks, { type, content: null }])}
-							/>
+							<ConstructorMenu onAdd={type => addBlock(sectionId, type)} />
 						)}
 					</div>
 				)}
