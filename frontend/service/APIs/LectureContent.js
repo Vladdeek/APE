@@ -25,7 +25,9 @@ export const UpdateLectureContent = async (
 		{
 			data: {
 				type,
-				...body, // Разворачиваем все свойства из body на один уровень с type
+				// Если тип text — разворачиваем body целиком на верхний уровень
+				// Если другой тип — создаем поле content и разворачиваем body внутрь него
+				...(type === 'text' ? { ...body } : { content: { ...body } }),
 			},
 		},
 	)

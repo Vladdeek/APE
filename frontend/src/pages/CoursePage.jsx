@@ -18,7 +18,7 @@ import {
 	FlaskConical,
 	FilePlus2,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { TextEditor } from '../components/ConstructorViews/TextEditor'
@@ -210,6 +210,14 @@ const ContentView = ({
 	const [blocks, setBlocks] = useState([])
 	const { courseId } = useParams()
 
+	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
+	const firstRenderMap = useRef({})
+
+	// Сбрасываем карту первых рендеров, если пользователь переключился на другую лекцию
+	useEffect(() => {
+		firstRenderMap.current = {}
+	}, [sectionId])
+
 	const handleUpdate = (i, type, data) => {
 		console.log(i, type, data)
 	}
@@ -228,7 +236,6 @@ const ContentView = ({
 		} catch (err) {}
 	}
 
-	// Дебаунс оставляем для защиты от спама при реальном вводе букв
 	const debouncedUpdate = useCallback(
 		debounce(async (blockId, body, type) => {
 			try {
@@ -239,27 +246,20 @@ const ContentView = ({
 	)
 
 	const putContentInBlock = (blockId, body, type) => {
-		// Защита от авто-вызова пустого Tiptap-редактора
-		if (type === 'text') {
-			// Проверяем plain_text или plainText на пустоту
-			const isEmptyString = !body.plainText && !body.plain_text
-
-			// Защита по JSON-структуре (если параграф пустой и в нем нет массива content)
-			const firstParagraph = body.content?.content?.[0]
-			const hasNoParagraphText = firstParagraph && !firstParagraph.content
-
-			if (isEmptyString || hasNoParagraphText) {
-				// Прерываем функцию, не пуская пустой запрос в дебаунс
-				console.log('⚠️ Заблокирован пустой авто-вызов для блока:', blockId)
-				return
-			}
+		// ЕСЛИ ЭТОТ БЛОК ТРИГГЕРИТСЯ ВПЕРВЫЕ ПОСЛЕ ЗАГРУЗКИ
+		if (firstRenderMap.current[blockId] === undefined) {
+			// Помечаем, что первый холостой вызов произошел
+			firstRenderMap.current[blockId] = false
+			console.log(
+				`[Блокировка авто-вызова]: Скипнут первый рендер для блока ${type} (${blockId})`,
+			)
+			return // СТОПАЕМ функцию, запрос на бэк не идет!
 		}
 
-		// Если это не пустой текст или другой тип блока (кнопка и т.д.) — пускаем дальше
+		// Все последующие вызовы — это уже реальные действия пользователя
 		debouncedUpdate(blockId, body, type)
 	}
 
-	// Добавляем sectionId в зависимости, чтобы контент обновлялся при смене лекции
 	useEffect(() => {
 		if (sectionId) {
 			readContent()
