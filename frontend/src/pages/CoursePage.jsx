@@ -39,6 +39,7 @@ import {
 } from '../../service/APIs/Couses'
 import {
 	AppendLectureContent,
+	DeleteBlock,
 	ReadLectureContent,
 	UpdateLectureContent,
 } from '../../service/APIs/LectureContent'
@@ -218,8 +219,12 @@ const ContentView = ({
 		firstRenderMap.current = {}
 	}, [sectionId])
 
-	const handleUpdate = (i, type, data) => {
-		console.log(i, type, data)
+	const handleRemove = async blockId => {
+		console.log('delete block - ', blockId)
+		try {
+			await DeleteBlock(sectionId, blockId)
+			readContent()
+		} catch (err) {}
 	}
 
 	const addBlock = async (id, type) => {
@@ -305,7 +310,7 @@ const ContentView = ({
 										plainText={block.plain_text}
 										isEdit={isEdit}
 										onChange={data => putContentInBlock(block.id, data, type)}
-										onDelete={() => handleRemove(i)}
+										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
 									/>
 								</motion.div>

@@ -33,3 +33,9 @@ export const UpdateLectureContent = async (
 	)
 	return response.data
 }
+export const DeleteBlock = async (lecture_content_id, block_content_id) => {
+	const response = await api.delete(
+		`${API}/lecture-content/${lecture_content_id}/block/${block_content_id}`,
+	)
+	return response.data
+}

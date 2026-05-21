@@ -8,7 +8,7 @@ export const CodeUploader = ({
 	isEdit = true,
 	value = null, // { code: string, language: string }
 	onChange,
-	onDeleteComponent,
+	onDelete,
 	isUploading = false,
 	uploadProgress = 0,
 	data,
@@ -16,8 +16,41 @@ export const CodeUploader = ({
 	const [codeData, setCodeData] = useState(data)
 	const [copied, setCopied] = useState(false)
 
-	const themeAttr = document.documentElement.getAttribute('data-theme')
+	//Создаем стейт под тему, чтобы триггерить ререндер
+	const [theme, setTheme] = useState(
+		() => document.documentElement.getAttribute('data-theme') || 'light',
+	)
+
 	const themes = { light: github, dark: a11yDark }
+
+	//Следим за изменением атрибута на теге <html>
+	useEffect(() => {
+		const targetNode = document.documentElement
+
+		// Функция, которая сработает при мутации
+		const observerCallback = mutationsList => {
+			for (const mutation of mutationsList) {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.attributeName === 'data-theme'
+				) {
+					const currentTheme = targetNode.getAttribute('data-theme') || 'light'
+					setTheme(currentTheme)
+				}
+			}
+		}
+
+		const observer = new MutationObserver(observerCallback)
+
+		// Настраиваем обсервер конкретно на атрибуты html
+		observer.observe(targetNode, {
+			attributes: true,
+			attributeFilter: ['data-theme'],
+		})
+
+		// Не забываем отписаться при размонтировании компонента, чтобы не плодить утечки памяти
+		return () => observer.disconnect()
+	}, [])
 
 	const getLanguage = filename => {
 		const ext = filename.split('.').pop().toLowerCase()
@@ -26,20 +59,44 @@ export const CodeUploader = ({
 
 	const handleCopy = async () => {
 		if (!codeData?.code) return
-		await navigator.clipboard.writeText(codeData.code)
-		setCopied(true)
-		setTimeout(() => setCopied(false), 2000)
+
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			try {
+				await navigator.clipboard.writeText(codeData.code)
+				setCopied(true)
+				setTimeout(() => setCopied(false), 2000)
+				return
+			} catch (err) {
+				console.error('Не удалось скопировать через Clipboard API: ', err)
+			}
+		}
+
+		try {
+			const textArea = document.createElement('textarea')
+			textArea.value = codeData.code
+			textArea.style.position = 'fixed'
+			textArea.style.left = '-999999px'
+			textArea.style.top = '-999999px'
+			document.body.appendChild(textArea)
+
+			textArea.focus()
+			textArea.select()
+
+			const successful = document.execCommand('copy')
+			if (successful) {
+				setCopied(true)
+				setTimeout(() => setCopied(false), 2000)
+			} else {
+			}
+
+			document.body.removeChild(textArea)
+		} catch (err) {}
 	}
 
-	// ТУТ ИСПРАВЛЕНО: Принимаем массив файлов от зоны загрузки
 	const handleFilesSelected = files => {
 		if (!files || files.length === 0) return
 
-		console.log('1')
-
-		// Так как это загрузчик ОДНОГО блока кода, берём самый первый файл из массива
 		const file = files[0]
-
 		const reader = new FileReader()
 		reader.onload = e => {
 			const result = {
@@ -47,7 +104,6 @@ export const CodeUploader = ({
 				language: getLanguage(file.name),
 				fileName: file.name,
 			}
-			console.log('2')
 			setCodeData(result)
 			onChange?.(result)
 		}
@@ -58,11 +114,10 @@ export const CodeUploader = ({
 
 	return (
 		<div className='flex gap-4 w-full my-4'>
-			{isEdit && <RemoveButton onDelete={onDeleteComponent} />}
+			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='flex-1'>
 				{codeData ? (
-					/* Блок отображения кода */
 					<div className='relative bg-[var(--white)] rounded-xl shadow-[var(--shadow)] overflow-hidden border border-[var(--light-middle)]'>
 						<div className='flex justify-between items-center bg-[var(--white)] pr-2 pl-3 py-2 border-b border-[var(--light-middle)]'>
 							<div className='flex items-center gap-3'>
@@ -79,16 +134,17 @@ export const CodeUploader = ({
 							<div className='flex gap-2'>
 								<button
 									onClick={handleCopy}
-									className='flex items-center gap-2 px-3 py-1.5 bg-[var(--light-gray)] text-[var(--middle)] rounded-md text-sm hover:brightness-95 transition-all'
+									className={`flex items-center gap-2 px-3 py-1.5 ${copied ? 'bg-[var(--green-base)] text-[var(--green-text)]' : 'bg-[var(--light-gray)] text-[var(--middle)]'}  rounded-md text-sm hover:brightness-95 transition-all`}
 								>
-									<Copy size={14} /> <span>{copied ? 'Готово!' : 'Копия'}</span>
+									<Copy size={14} />{' '}
+									<span>{copied ? 'Скопировано' : 'Скопировать'}</span>
 								</button>
 
 								{isEdit && (
 									<button
 										onClick={() => {
 											setCodeData(null)
-											onChange?.(null) // ТУТ ИСПРАВЛЕНО: вызываем onChange вместо onFileChange
+											onChange?.(null)
 										}}
 										className='flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-md text-sm hover:bg-red-500 hover:text-white transition-all'
 									>
@@ -103,17 +159,17 @@ export const CodeUploader = ({
 								text={codeData.code}
 								language={codeData.language}
 								showLineNumbers={true}
-								theme={themes[themeAttr] || themes.light}
+								// ТУТ ИСПРАВЛЕНО: Передаем актуальную тему из стейта
+								theme={themes[theme] || themes.light}
 								customStyle={{ background: 'transparent', padding: '1rem' }}
 							/>
 						</div>
 					</div>
 				) : (
-					/* Используем твой существующий компонент */
 					isEdit && (
 						<FileUploaderZone
 							type='code'
-							onFilesSelected={handleFilesSelected} // Передаем исправленный обработчик
+							onFilesSelected={handleFilesSelected}
 							isUploading={isUploading}
 							uploadProgress={uploadProgress}
 						/>
