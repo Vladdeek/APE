@@ -27,6 +27,7 @@ export const FileManager = ({
 	onUpload,
 	onDelete,
 	onDownload,
+	sectionId,
 	isUploading = false,
 	progress = 0,
 }) => {
@@ -130,7 +131,7 @@ export const FileManager = ({
 	}
 
 	return (
-		<div className='flex flex-col w-full gap-4'>
+		<div className='flex flex w-full gap-4'>
 			{isEdit && <RemoveButton onDelete={() => console.log('2')} />}
 			{/* Список файлов */}
 			{files.length > 0 && (
@@ -184,6 +185,7 @@ export const FileManager = ({
 			{isEdit && (
 				<div className='w-full'>
 					<FileUploaderZone
+						sectionId={sectionId}
 						type='files'
 						onFilesSelected={selectedFiles => {
 							// Если FileUploaderZone возвращает массив, берем первый или итерируем

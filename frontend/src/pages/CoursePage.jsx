@@ -47,7 +47,7 @@ import { debounce } from 'lodash'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
-	image: PhotoBlock,
+	images: PhotoBlock,
 	video: VideoImport,
 	code: CodeUploader,
 	files: FileManager,
@@ -241,29 +241,36 @@ const ContentView = ({
 		} catch (err) {}
 	}
 
-	const debouncedUpdate = useCallback(
-		debounce(async (blockId, body, type) => {
-			try {
-				await UpdateLectureContent(sectionId, blockId, body, type)
-			} catch (err) {}
-		}, 500),
-		[sectionId],
-	)
+	// const debouncedUpdate = useCallback(
+	// 	debounce(async (blockId, body, type) => {
+	// 		try {
+	// 			await UpdateLectureContent(sectionId, blockId, body, type)
+	// 		} catch (err) {}
+	// 	}, 500),
+	// 	[sectionId],
+	// )
 
-	const putContentInBlock = (blockId, body, type) => {
-		console.log('body i put: ', body)
-		// ЕСЛИ ЭТОТ БЛОК ТРИГГЕРИТСЯ ВПЕРВЫЕ ПОСЛЕ ЗАГРУЗКИ
-		if (firstRenderMap.current[blockId] === undefined) {
-			// Помечаем, что первый холостой вызов произошел
-			firstRenderMap.current[blockId] = false
-			console.log(
-				`[Блокировка авто-вызова]: Скипнут первый рендер для блока ${type} (${blockId})`,
-			)
-			return // СТОПАЕМ функцию, запрос на бэк не идет!
-		}
+	// const putContentInBlock = (blockId, body, type) => {
+	// 	console.log('body i put: ', body)
+	// 	// ЕСЛИ ЭТОТ БЛОК ТРИГГЕРИТСЯ ВПЕРВЫЕ ПОСЛЕ ЗАГРУЗКИ
+	// 	if (firstRenderMap.current[blockId] === undefined) {
+	// 		// Помечаем, что первый холостой вызов произошел
+	// 		firstRenderMap.current[blockId] = false
+	// 		console.log(
+	// 			`[Блокировка авто-вызова]: Скипнут первый рендер для блока ${type} (${blockId})`,
+	// 		)
+	// 		return // СТОПАЕМ функцию, запрос на бэк не идет!
+	// 	}
 
-		// Все последующие вызовы — это уже реальные действия пользователя
-		debouncedUpdate(blockId, body, type)
+	// 	// Все последующие вызовы — это уже реальные действия пользователя
+	// 	debouncedUpdate(blockId, body, type)
+	// }
+
+	const putContentInBlock = async (blockId, body, type) => {
+		try {
+			await UpdateLectureContent(sectionId, blockId, body, type)
+			readContent()
+		} catch (err) {}
 	}
 
 	useEffect(() => {
@@ -294,6 +301,13 @@ const ContentView = ({
 							const Component = COMPONENT_MAP[type]
 							if (!Component) return null
 
+							const isSpecialBlock = [
+								'callout',
+								'formula',
+								'code',
+								'text',
+							].includes(type)
+
 							return (
 								<motion.div
 									key={block.id}
@@ -306,12 +320,13 @@ const ContentView = ({
 									}}
 								>
 									<Component
-										data={block.content}
+										data={isSpecialBlock ? block.content : block.files}
 										plainText={block.plain_text}
 										isEdit={isEdit}
 										onChange={data => putContentInBlock(block.id, data, type)}
 										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
+										sectionId={sectionId}
 									/>
 								</motion.div>
 							)
@@ -341,7 +356,7 @@ const ConstructorMenu = ({ onAdd }) => {
 		},
 		{
 			title: 'Фото',
-			type: 'image',
+			type: 'images',
 			icon: <Image size={32} />,
 		},
 		{

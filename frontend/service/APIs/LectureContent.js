@@ -4,10 +4,15 @@ export const ReadLectureContent = async id => {
 	const response = await api.get(`${API}/lecture-content/${id}`)
 	return response.data
 }
-export const GetPresignedUrlToUploadMedia = async id => {
-	const response = await api.get(`${API}/lecture-content/upload-url/${id}`)
+
+export const GetPresignedUrlToUploadMedia = async (id, fileMetadata) => {
+	const response = await api.post(
+		`${API}/lecture-content/upload-url/${id}`,
+		fileMetadata,
+	)
 	return response.data
 }
+
 export const AppendLectureContent = async (id, type) => {
 	const response = await api.post(`${API}/lecture-content/append/${id}`, {
 		data: { type },
@@ -20,15 +25,17 @@ export const UpdateLectureContent = async (
 	body,
 	type,
 ) => {
+	const isText = type === 'text'
+	const isSpecialBlock = ['callout', 'formula', 'code'].includes(type)
+
 	const response = await api.put(
 		`${API}/lecture-content/${lecture_content_id}/block-content/${block_content_id}`,
 		{
-			data: {
-				type,
-				// Если тип text — разворачиваем body целиком на верхний уровень
-				// Если другой тип — создаем поле content и разворачиваем body внутрь него
-				...(type === 'text' ? { ...body } : { content: { ...body } }),
-			},
+			data: isText
+				? { type, ...body }
+				: isSpecialBlock
+					? { type, content: { ...body } }
+					: { type, file_metadata_id: body }, // Оставили data, убрали type и деструктуризацию body
 		},
 	)
 	return response.data

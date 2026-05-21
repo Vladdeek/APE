@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
+import { useEditor } from '@tiptap/react'
 
 // Модалка просмотра (без изменений по логике)
 const FullScreenModal = ({ photos, index, close, setIndex }) => {
@@ -44,20 +45,36 @@ const FullScreenModal = ({ photos, index, close, setIndex }) => {
 	)
 }
 
-export const PhotoBlock = ({ data = [], isEdit, onChange, onDelete }) => {
+export const PhotoBlock = ({
+	data, // Приходит объект с бэка: { type: "images", block: { files: [...] } }
+	isEdit,
+	onChange,
+	onDelete,
+	sectionId,
+	// Убрали дубликат data
+}) => {
 	const [uploading, setUploading] = useState(false)
 	const [progress, setProgress] = useState(0)
 	const [fullScreenIdx, setFullScreenIdx] = useState(null)
 
-	// Приводим данные к массиву строк (URL)
-	const photos = Array.isArray(data) ? data : []
+	// Правильная инициализация useState
+	const [photos, setPhotos] = useState([])
+
+	// Следим за входящими данными и вытаскиваем только file_path
+	useEffect(() => {
+		if (data) {
+			const urls = data.map(file => file.file_path)
+			setPhotos(urls)
+		} else {
+			setPhotos([])
+		}
+	}, [data])
 
 	const handleUpload = async file => {
 		setUploading(true)
 		setProgress(0)
 
 		try {
-			// Имитация загрузки (потом заменишь на свой S3 сервис)
 			const mockInterval = setInterval(() => {
 				setProgress(prev => (prev >= 100 ? 100 : prev + 15))
 			}, 150)
@@ -65,7 +82,11 @@ export const PhotoBlock = ({ data = [], isEdit, onChange, onDelete }) => {
 			await new Promise(resolve => setTimeout(resolve, 1500))
 			clearInterval(mockInterval)
 
-			const newPhotoUrl = URL.createObjectURL(file) // Временно, пока нет S3
+			const newPhotoUrl = URL.createObjectURL(file)
+
+			// Важно: если onChange ожидает обновленный объект в формате бэкенда,
+			// тебе нужно будет переписать этот коллбэк в родителе.
+			// Сейчас мы просто прокидываем наверх новый массив урлов.
 			onChange([...photos, newPhotoUrl])
 		} catch (error) {
 			console.error('Ошибка загрузки фото:', error)
@@ -80,7 +101,6 @@ export const PhotoBlock = ({ data = [], isEdit, onChange, onDelete }) => {
 		onChange(newPhotos)
 	}
 
-	// Твоя логика размеров сетки
 	const getGridClass = index => {
 		if (photos.length === 1) return 'col-span-2 aspect-[32/9]'
 		if (photos.length === 3 && index === 2) return 'col-span-2 aspect-video'
@@ -92,48 +112,53 @@ export const PhotoBlock = ({ data = [], isEdit, onChange, onDelete }) => {
 			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='grid grid-cols-2 w-full gap-4'>
-				{photos.map((url, idx) => (
-					<motion.div
-						key={url}
-						layout
-						initial={{ opacity: 0, scale: 0.9 }}
-						animate={{ opacity: 1, scale: 1 }}
-						exit={{ opacity: 0, scale: 0.8 }}
-						className={`relative rounded-2xl overflow-hidden shadow-sm group ${getGridClass(idx)}`}
-					>
-						<img
-							src={url}
-							onClick={() => !isEdit && setFullScreenIdx(idx)}
-							className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer'
-							alt=''
-						/>
-						{isEdit && (
-							<button
-								onClick={() => removePhoto(idx)}
-								className=' p-2 bg-white/90 backdrop-blur-md rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg opacity-0 group-hover:opacity-100'
-							>
-								<X size={16} strokeWidth={3} />
-							</button>
-						)}
-					</motion.div>
-				))}
+				{photos.map((url, idx) => {
+					return (
+						<motion.div
+							key={url}
+							layout
+							initial={{ opacity: 0, scale: 0.9 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.8 }}
+							className={`relative rounded-2xl overflow-hidden shadow-sm group ${getGridClass(idx)}`}
+						>
+							<img
+								src={url}
+								onClick={() => !isEdit && setFullScreenIdx(idx)}
+								className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer'
+								alt=''
+							/>
+							{/* {isEdit && (
+								<button
+									onClick={() => removePhoto(idx)}
+									// Абсолютное позиционирование, чтобы кнопка была поверх картинки
+									className='absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg opacity-0 group-hover:opacity-100 z-10'
+								>
+									<X size={16} strokeWidth={3} />
+								</button>
+							)} */}
+						</motion.div>
+					)
+				})}
 
 				{isEdit && photos.length < 4 && (
 					<motion.div
 						layout
-						className={` ${
+						className={`${
 							photos.length === 0
 								? 'col-span-2'
 								: photos.length === 2
-									? 'col-span-2' // Чтобы загрузчик на 3-м месте не ломал ряд
+									? 'col-span-2'
 									: 'col-span-1'
 						}`}
 					>
 						<FileUploaderZone
+							sectionId={sectionId}
 							type='image'
 							onFilesSelected={handleUpload}
 							isUploading={uploading}
 							uploadProgress={progress}
+							onChange={onChange}
 						/>
 					</motion.div>
 				)}

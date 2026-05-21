@@ -8,6 +8,7 @@ export const VideoImport = ({
 	DelComponent,
 	onChange,
 	value, // Текущий URL видео (строка)
+	sectionId,
 }) => {
 	const [uploading, setUploading] = useState(false)
 	const [progress, setProgress] = useState(0)
@@ -81,6 +82,7 @@ export const VideoImport = ({
 				) : (
 					// Если видео нет — показываем зону загрузки
 					<FileUploaderZone
+						sectionId={sectionId}
 						type='video'
 						onFilesSelected={handleUpload}
 						isUploading={uploading}
