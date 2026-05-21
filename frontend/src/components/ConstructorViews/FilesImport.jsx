@@ -10,28 +10,32 @@ import {
 	Trash2,
 	Download,
 } from 'lucide-react'
-import { FileUploaderZone, RemoveButton } from './FileUploaderZone' // Путь к вашему новому компоненту
+import { useState, useEffect } from 'react'
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
 
-/**
- * @param {Array} files - Список объектов { name, size, type, file_path }
- * @param {Boolean} isEdit - Режим редактирования или только просмотр
- * @param {Function} onUpload - Колбэк для загрузки (принимает File)
- * @param {Function} onDelete - Колбэк для удаления (принимает index или path)
- * @param {Function} onDownload - Колбэк для скачивания (принимает file объект)
- * @param {Boolean} isUploading - Состояние загрузки из родителя
- * @param {Number} progress - Процент загрузки из родителя
- */
 export const FileManager = ({
-	files = [],
+	data, // Принимаем объект: { type: "files", block: { files: [...] } }
 	isEdit = false,
 	onUpload,
 	onDelete,
-	onDownload,
+	DelComponent, // Проп для удаления всего блока из конструктора
 	sectionId,
 	isUploading = false,
 	progress = 0,
 	onChange,
 }) => {
+	// Внутренний стейт для хранения нормализованного массива файлов
+	const [localFiles, setLocalFiles] = useState([])
+
+	// Синхронизируем данные с бэкенда
+	useEffect(() => {
+		if (data) {
+			setLocalFiles(data.files)
+		} else {
+			setLocalFiles([])
+		}
+	}, [data])
+
 	const formatFileSize = bytes => {
 		if (!bytes || bytes === 0) return '0 Bytes'
 		const k = 1024
@@ -40,9 +44,8 @@ export const FileManager = ({
 		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 	}
 
-	const getFileIcon = (fileName, fileType) => {
-		const extension =
-			fileName?.split('.').pop().toLowerCase() || fileType?.split('/').pop()
+	const getFileIcon = extension => {
+		const ext = extension?.toLowerCase()
 
 		const formatMap = {
 			image: {
@@ -56,7 +59,7 @@ export const FileManager = ({
 				),
 			},
 			document: {
-				formats: ['pdf', 'doc', 'docx', 'txt', 'rtf'],
+				formats: ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'],
 				icon: (
 					<FileText
 						size={24}
@@ -76,7 +79,7 @@ export const FileManager = ({
 				),
 			},
 			archive: {
-				formats: ['zip', 'rar', '7z', 'tar'],
+				formats: ['zip', 'rar', '7z', 'tar', 'gz'],
 				icon: (
 					<FileArchive
 						size={24}
@@ -86,7 +89,7 @@ export const FileManager = ({
 				),
 			},
 			video: {
-				formats: ['mp4', 'avi', 'mov', 'webm'],
+				formats: ['mp4', 'avi', 'mov', 'webm', 'mkv'],
 				icon: (
 					<FilePlay
 						size={24}
@@ -106,7 +109,7 @@ export const FileManager = ({
 				),
 			},
 			code: {
-				formats: ['js', 'ts', 'py', 'html', 'css', 'json', 'php'],
+				formats: ['js', 'jsx', 'ts', 'tsx', 'py', 'html', 'css', 'json', 'php'],
 				icon: (
 					<FileCode
 						size={24}
@@ -118,7 +121,7 @@ export const FileManager = ({
 		}
 
 		for (const category in formatMap) {
-			if (formatMap[category].formats.includes(extension)) {
+			if (formatMap[category].formats.includes(ext)) {
 				return formatMap[category].icon
 			}
 		}
@@ -131,75 +134,96 @@ export const FileManager = ({
 		)
 	}
 
+	// Хендлер скачивания файла по прямой ссылке
+	const handleDownload = file => {
+		if (onDownload) {
+			onDownload(file)
+		} else if (file.file_path) {
+			// Дефолтный фолбек: просто открываем ссылку в новой вкладке для скачивания
+			window.open(file.file_path, '_blank')
+		}
+	}
+
 	return (
-		<div className='flex flex w-full gap-4'>
-			{isEdit && <RemoveButton onDelete={() => console.log('2')} />}
-			{/* Список файлов */}
-			{files.length > 0 && (
-				<div className='w-full flex flex-col border border-[var(--light-middle)] rounded-xl overflow-hidden shadow-[var(--shadow)]'>
-					{files.map((file, index) => (
-						<div
-							key={index}
-							className={`flex items-center justify-between p-3 border-b last:border-0 ${
-								index % 2 === 0 ? 'bg-[var(--white)]' : 'bg-[var(--light-gray)]'
-							}`}
-						>
-							<div className='flex items-center gap-3 overflow-hidden'>
-								{getFileIcon(file.name, file.type)}
-								<div className='overflow-hidden'>
-									<p className='text-sm font-medium truncate text-[var(--black)] max-w-[200px] md:max-w-md'>
-										{file.name}
-									</p>
-									<p className='text-xs text-[var(--middle)]'>
-										{formatFileSize(file.size)}
-									</p>
-								</div>
-							</div>
-
-							<div className='flex items-center gap-2'>
-								{/* Кнопка скачивания доступна всегда */}
-								<button
-									onClick={() => onDownload?.(file)}
-									className='p-2 hover:bg-[var(--green-status-bg)] hover:text-[var(--green-status-text)] rounded-lg transition-all text-[var(--black)]'
-									title='Скачать'
+		<div className='flex gap-2 w-full'>
+			{isEdit && <RemoveButton onDelete={DelComponent} />}
+			<div className='flex flex-col gap-4 w-full '>
+				<div className='flex flex-col w-full'>
+					{/* Список файлов */}
+					{localFiles.length > 0 && (
+						<div className='w-full flex flex-col  rounded-xl overflow-hidden shadow-[var(--shadow)] bg-[var(--white)]'>
+							{localFiles.map((file, index) => (
+								<div
+									key={file.id || index}
+									className={`flex items-center justify-between p-3 border-b border-[var(--light-gray)] last:border-0 ${
+										index % 2 === 0
+											? 'bg-[var(--white)]'
+											: 'bg-[var(--light-gray)]'
+									}`}
 								>
-									<Download size={20} />
-								</button>
+									<div className='flex items-center gap-3 overflow-hidden'>
+										{/* Передаем file_extension напрямую из объекта бэка */}
+										{getFileIcon(file.file_extension)}
+										<div className='overflow-hidden'>
+											<p
+												className='text-sm font-medium truncate text-[var(--black)] max-w-[200px] md:max-w-md'
+												title={file.original_name}
+											>
+												{file.original_name}
+												{/* Дописываем расширение, если его нет в имени */}
+												{file.original_name?.includes('.')
+													? ''
+													: `.${file.file_extension}`}
+											</p>
+											<p className='text-xs text-[var(--middle)]'>
+												{formatFileSize(file.file_size)}
+											</p>
+										</div>
+									</div>
 
-								{/* Кнопка удаления только в режиме редактирования */}
-								{isEdit && (
-									<button
-										onClick={() => onDelete?.(index, file)}
-										className='p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all text-[var(--black)]'
-										title='Удалить'
-									>
-										<Trash2 size={20} />
-									</button>
-								)}
-							</div>
+									<div className='flex items-center gap-2'>
+										<button
+											onClick={() => handleDownload(file)}
+											className='p-2 hover:bg-[var(--green-status-bg)] hover:text-[var(--green-status-text)] rounded-lg transition-all text-[var(--black)]'
+											title='Скачать'
+										>
+											<Download size={20} />
+										</button>
+
+										{isEdit && (
+											<button
+												onClick={() => onDelete?.(index, file)}
+												className='p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all text-[var(--black)]'
+												title='Удалить'
+											>
+												<Trash2 size={20} />
+											</button>
+										)}
+									</div>
+								</div>
+							))}
 						</div>
-					))}
+					)}
 				</div>
-			)}
 
-			{/* Зона загрузки только в режиме редактирования */}
-			{isEdit && (
-				<div className='w-full'>
-					<FileUploaderZone
-						sectionId={sectionId}
-						type='files'
-						onFilesSelected={selectedFiles => {
-							// Если FileUploaderZone возвращает массив, берем первый или итерируем
-							if (selectedFiles.length > 0) {
-								onUpload?.(selectedFiles[0])
-							}
-						}}
-						isUploading={isUploading}
-						uploadProgress={progress}
-						onChange={onChange}
-					/>
-				</div>
-			)}
+				{/* Зона загрузки только в режиме редактирования */}
+				{isEdit && (
+					<div className='w-full'>
+						<FileUploaderZone
+							sectionId={sectionId}
+							type='files'
+							onFilesSelected={selectedFiles => {
+								if (selectedFiles.length > 0) {
+									onUpload?.(selectedFiles[0])
+								}
+							}}
+							isUploading={isUploading}
+							uploadProgress={progress}
+							onChange={onChange}
+						/>
+					</div>
+				)}
+			</div>
 		</div>
 	)
 }

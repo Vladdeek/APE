@@ -17,8 +17,6 @@ export const VideoImport = ({
 	// Локальное состояние для извлеченного URL видео
 	const [videoUrl, setVideoUrl] = useState('')
 
-	console.log(data)
-
 	// Синхронизируем входящие данные бэка с локальным URL
 	useEffect(() => {
 		const file = data.file_metadata
@@ -68,8 +66,6 @@ export const VideoImport = ({
 		onChange?.('')
 		onStatusChange?.(false)
 	}
-
-	console.log('videourl:', videoUrl)
 
 	return (
 		<div className='flex gap-4 w-full items-start'>
