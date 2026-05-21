@@ -1,6 +1,7 @@
 import { FileCode2, FileText, Film, Image, Upload, X } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
+import { languageMap } from '../../../service/data/lanaguagesMap'
 
 export const RemoveButton = ({ onDelete }) => {
 	return (
@@ -36,20 +37,10 @@ export const UPLOAD_TYPES = {
 		icon: FileCode2, // из lucide-react
 		title: 'код',
 		maxSize: Number(import.meta.env.VITE_MAX_CODE_SIZE), // или из констант
-		exts: [
-			'.js',
-			'.jsx',
-			'.ts',
-			'.tsx',
-			'.py',
-			'.java',
-			'.cpp',
-			'.c',
-			'.cs',
-			'.json',
-			'.html',
-			'.css',
-		],
+		// ВЫТАСКИВАЕМ ДИНАМИЧЕСКИ:
+		// Object.keys(languageMap) выдаст ['js', 'mjs', 'jsx', ...]
+		// .map(ext => `.${ext}`) превратит их в ['.js', '.mjs', '.jsx', ...]
+		exts: Object.keys(languageMap).map(ext => `.${ext}`),
 	},
 }
 

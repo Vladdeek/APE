@@ -1,38 +1,27 @@
 import { useState, useEffect } from 'react'
 import { X, Copy, Trash } from 'lucide-react'
 import { CodeBlock, github, a11yDark } from 'react-code-blocks'
-import { FileUploaderZone, RemoveButton } from './FileUploaderZone' // Импортируем твой готовый компонент
+import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
+import { languageMap } from '../../../service/data/lanaguagesMap'
 
 export const CodeUploader = ({
 	isEdit = true,
 	value = null, // { code: string, language: string }
-	onFileChange,
+	onChange,
 	onDeleteComponent,
 	isUploading = false,
 	uploadProgress = 0,
+	data,
 }) => {
-	const [codeData, setCodeData] = useState(value)
+	const [codeData, setCodeData] = useState(data)
 	const [copied, setCopied] = useState(false)
 
 	const themeAttr = document.documentElement.getAttribute('data-theme')
 	const themes = { light: github, dark: a11yDark }
 
-	useEffect(() => {
-		setCodeData(value)
-	}, [value])
-
 	const getLanguage = filename => {
 		const ext = filename.split('.').pop().toLowerCase()
-		const map = {
-			js: 'javascript',
-			ts: 'typescript',
-			py: 'python',
-			cpp: 'cpp',
-			cs: 'csharp',
-			rb: 'ruby',
-			rs: 'rust',
-		}
-		return map[ext] || ext
+		return languageMap[ext] || ext
 	}
 
 	const handleCopy = async () => {
@@ -42,7 +31,15 @@ export const CodeUploader = ({
 		setTimeout(() => setCopied(false), 2000)
 	}
 
-	const handleFileSelected = file => {
+	// ТУТ ИСПРАВЛЕНО: Принимаем массив файлов от зоны загрузки
+	const handleFilesSelected = files => {
+		if (!files || files.length === 0) return
+
+		console.log('1')
+
+		// Так как это загрузчик ОДНОГО блока кода, берём самый первый файл из массива
+		const file = files[0]
+
 		const reader = new FileReader()
 		reader.onload = e => {
 			const result = {
@@ -50,8 +47,9 @@ export const CodeUploader = ({
 				language: getLanguage(file.name),
 				fileName: file.name,
 			}
+			console.log('2')
 			setCodeData(result)
-			onFileChange?.(result)
+			onChange?.(result)
 		}
 		reader.readAsText(file)
 	}
@@ -90,7 +88,7 @@ export const CodeUploader = ({
 									<button
 										onClick={() => {
 											setCodeData(null)
-											onFileChange?.(null)
+											onChange?.(null) // ТУТ ИСПРАВЛЕНО: вызываем onChange вместо onFileChange
 										}}
 										className='flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-md text-sm hover:bg-red-500 hover:text-white transition-all'
 									>
@@ -114,8 +112,8 @@ export const CodeUploader = ({
 					/* Используем твой существующий компонент */
 					isEdit && (
 						<FileUploaderZone
-							type='code' // Убедись, что в FileUploaderZone есть этот тип
-							onFilesSelected={handleFileSelected}
+							type='code'
+							onFilesSelected={handleFilesSelected} // Передаем исправленный обработчик
 							isUploading={isUploading}
 							uploadProgress={uploadProgress}
 						/>

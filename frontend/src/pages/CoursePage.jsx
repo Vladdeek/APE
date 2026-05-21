@@ -246,6 +246,7 @@ const ContentView = ({
 	)
 
 	const putContentInBlock = (blockId, body, type) => {
+		console.log('body i put: ', body)
 		// ЕСЛИ ЭТОТ БЛОК ТРИГГЕРИТСЯ ВПЕРВЫЕ ПОСЛЕ ЗАГРУЗКИ
 		if (firstRenderMap.current[blockId] === undefined) {
 			// Помечаем, что первый холостой вызов произошел
