@@ -18,6 +18,7 @@ export const FileManager = ({
 	isEdit = false,
 	onUpload,
 	onDelete,
+	onDeleteFile,
 	DelComponent, // Проп для удаления всего блока из конструктора
 	sectionId,
 	isUploading = false,
@@ -192,7 +193,7 @@ export const FileManager = ({
 
 										{isEdit && (
 											<button
-												onClick={() => onDelete?.(index, file)}
+												onClick={() => onDeleteFile?.(file.id)}
 												className='p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-[var(--black)]'
 												title='Удалить'
 											>

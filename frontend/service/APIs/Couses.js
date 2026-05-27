@@ -27,6 +27,11 @@ export const GetAllCourses = async () => {
 	return response.data
 }
 
+export const GetAllCoursesForStudent = async () => {
+	const response = await api.get(`${API}/course/preview/students`)
+	return response.data
+}
+
 export const GetAllCoursesForTeacher = async () => {
 	const response = await api.get(`${API}/course/teacher/created`)
 	return response.data

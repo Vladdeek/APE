@@ -64,3 +64,13 @@ export const AccessCourse = async (course_id, status) => {
 	})
 	return response.data
 }
+
+export const GetAllCoursesWithRequest = async () => {
+	const response = await api.get(`${API}/course/all/with-requests/`)
+	return response.data
+}
+
+export const GetAllStudentRequests = async course_id => {
+	const response = await api.get(`${API}/course/${course_id}/student-requests/`)
+	return response.data
+}

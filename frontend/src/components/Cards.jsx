@@ -1,13 +1,35 @@
 import { ImageOff, RussianRuble } from 'lucide-react'
 import { data } from 'react-router-dom'
 
-const CourseCard = ({ data, onClick }) => {
+const CourseCard = ({ data, onClick, status }) => {
 	// Функция для красивого форматирования дат
 	const formatDate = dateStr => {
 		return new Date(dateStr).toLocaleDateString('ru-RU', {
 			day: 'numeric',
 			month: 'long',
 		})
+	}
+	const statuses = {
+		draft: {
+			title: 'В разработке',
+			color: 'text-[var(--yellow-base)] border-[var(--yellow-base)]',
+		},
+		pending_review: {
+			title: 'На модерации',
+			color: 'text-[var(--hero)] border-[var(--hero)]',
+		},
+		approved: {
+			title: 'Опубликован',
+			color: 'text-[var(--green-base)] border-[var(--green-base)]',
+		},
+		rejected: {
+			title: 'Доработка',
+			color: 'text-[var(--yellow-base)] border-[var(--yellow-base)]',
+		},
+		rejected_preview: {
+			title: 'Отклонен',
+			color: 'text-[var(--red-base)] border-[var(--red-base)]',
+		},
 	}
 
 	return (
@@ -106,6 +128,15 @@ const CourseCard = ({ data, onClick }) => {
 						</p>
 					</div>
 				</div>
+				{status && (
+					<div className='flex'>
+						<p
+							className={`flex items-center text-sm font-normal border w-fit px-4 py-1 rounded-full opacity-80 group-hover:opacity-100 transition-opacity ${statuses[status]?.color}`}
+						>
+							{statuses[status]?.title}
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	)
@@ -130,35 +161,28 @@ export const CourseMiniCard = ({ data, onClick }) => {
 					src={data.preview_url}
 					alt={data.name}
 				/>
-				{data.tag && (
-					<span className='absolute -top-2 -left-2 bg-[var(--hero)] text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm'>
-						{data.tag}
-					</span>
-				)}
+				{data.student_request_count
+					? data.student_request_count && (
+							<span className='absolute -top-2 -left-2 bg-[var(--hero)] text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm'>
+								Заявок: {data.student_request_count}
+							</span>
+						)
+					: data.tag && (
+							<span className='absolute -top-2 -left-2 bg-[var(--hero)] text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm'>
+								{data.tag}
+							</span>
+						)}
+				{}
 			</div>
 
 			<div className='flex flex-col flex-1 h-full min-w-0 justify-between'>
 				<div>
 					<div className='flex justify-between items-start gap-2'>
 						<p
-							className='text-lg font-bold leading-tight truncate'
+							className='text-lg font-bold h-12 text-[var(--black)]'
 							title={data.name}
 						>
 							{data.name}
-						</p>
-					</div>
-
-					<div className='flex items-center gap-2 mt-1.5'>
-						<p className='text-[11px] text-[var(--middle)]'>
-							Старт:{' '}
-							<span className='text-[var(--black)] font-semibold'>
-								{formatDate(data.start_date)}
-							</span>
-						</p>
-
-						<span className='text-[var(--light-middle)]'>•</span>
-						<p className='text-[10px] uppercase text-[var(--middle)] font-medium'>
-							{data.format_name}
 						</p>
 					</div>
 				</div>

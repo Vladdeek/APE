@@ -10,6 +10,7 @@ export const VideoImport = ({
 	data, // Принимаем весь объект: { type: "video", block: { files: [...] } }
 	sectionId,
 	isEdit,
+	onDeleteFile,
 }) => {
 	const [uploading, setUploading] = useState(false)
 	const [progress, setProgress] = useState(0)
@@ -20,8 +21,8 @@ export const VideoImport = ({
 	// Синхронизируем входящие данные бэка с локальным URL
 	useEffect(() => {
 		const file = data.file_metadata
-		if (file?.file_path) {
-			setVideoUrl(file.file_path)
+		if (file) {
+			setVideoUrl(file)
 		} else {
 			setVideoUrl('')
 		}
@@ -76,17 +77,17 @@ export const VideoImport = ({
 				{videoUrl ? (
 					// Если видео есть в структуре данных — показываем плеер
 					<div className='relative w-full group rounded-2xl overflow-hidden'>
-						<VideoPlayer url={videoUrl} />
+						<VideoPlayer url={videoUrl.file_path} />
 
 						{/* Кнопка "Удалить видео и загрузить заново" */}
-						{/* <button
+						<button
 							type='button'
-							onClick={handleRemove}
+							onClick={() => onDeleteFile?.(videoUrl.id)}
 							className='absolute top-3 right-3 z-10 bg-white/90 backdrop-blur text-black p-2 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-xl opacity-0 group-hover:opacity-100'
 							title='Удалить видео'
 						>
 							<X size={18} strokeWidth={3} />
-						</button> */}
+						</button>
 					</div>
 				) : (
 					isEdit && (

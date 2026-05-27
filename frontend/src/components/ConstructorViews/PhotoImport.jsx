@@ -51,6 +51,7 @@ export const PhotoBlock = ({
 	onChange,
 	onDelete,
 	sectionId,
+	onDeleteFile,
 	// Убрали дубликат data
 }) => {
 	const [uploading, setUploading] = useState(false)
@@ -63,7 +64,7 @@ export const PhotoBlock = ({
 	// Следим за входящими данными и вытаскиваем только file_path
 	useEffect(() => {
 		if (data) {
-			const urls = data.files.map(file => file.file_path)
+			const urls = data.files.map(file => file)
 			setPhotos(urls)
 		} else {
 			setPhotos([])
@@ -112,10 +113,10 @@ export const PhotoBlock = ({
 			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='grid grid-cols-2 w-full gap-4'>
-				{photos.map((url, idx) => {
+				{photos.map((item, idx) => {
 					return (
 						<motion.div
-							key={url}
+							key={item.file_path}
 							layout
 							initial={{ opacity: 0, scale: 0.9 }}
 							animate={{ opacity: 1, scale: 1 }}
@@ -123,20 +124,20 @@ export const PhotoBlock = ({
 							className={`relative rounded-2xl overflow-hidden shadow-sm group ${getGridClass(idx)}`}
 						>
 							<img
-								src={url}
+								src={item.file_path}
 								onClick={() => !isEdit && setFullScreenIdx(idx)}
 								className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer'
 								alt=''
 							/>
-							{/* {isEdit && (
+							{isEdit && (
 								<button
-									onClick={() => removePhoto(idx)}
+									onClick={() => onDeleteFile?.(item.id)}
 									// Абсолютное позиционирование, чтобы кнопка была поверх картинки
 									className='absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg opacity-0 group-hover:opacity-100 z-10'
 								>
 									<X size={16} strokeWidth={3} />
 								</button>
-							)} */}
+							)}
 						</motion.div>
 					)
 				})}

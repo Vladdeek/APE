@@ -40,6 +40,7 @@ import {
 import {
 	AppendLectureContent,
 	DeleteBlock,
+	DeleteFile,
 	ReadLectureContent,
 	UpdateLectureContent,
 } from '../../service/APIs/LectureContent'
@@ -227,6 +228,13 @@ const ContentView = ({
 		} catch (err) {}
 	}
 
+	const handleRemoveFile = async (blockId, fileId) => {
+		try {
+			await DeleteFile(blockId, fileId)
+			readContent()
+		} catch (err) {}
+	}
+
 	const addBlock = async (id, type) => {
 		try {
 			await AppendLectureContent(id, type)
@@ -327,6 +335,7 @@ const ContentView = ({
 										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
 										sectionId={sectionId}
+										onDeleteFile={data => handleRemoveFile(block.id, data)}
 									/>
 								</motion.div>
 							)
