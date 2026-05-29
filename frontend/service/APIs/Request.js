@@ -47,3 +47,10 @@ export const GetCourseRequestById = async request_id => {
 	const response = await api.get(`${API}/course-request/${request_id}`)
 	return response.data
 }
+
+export const UpdateRequestStatus = async (request_id, status) => {
+	const response = await api.patch(`${API}/course-request/${request_id}`, {
+		status,
+	})
+	return response.data
+}

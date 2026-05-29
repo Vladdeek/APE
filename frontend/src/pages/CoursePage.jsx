@@ -18,7 +18,7 @@ import {
 	FlaskConical,
 	FilePlus2,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { TextEditor } from '../components/ConstructorViews/TextEditor'
@@ -45,6 +45,7 @@ import {
 	UpdateLectureContent,
 } from '../../service/APIs/LectureContent'
 import { debounce } from 'lodash'
+import { Me } from '../../service/APIs/Authorization'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -245,9 +246,11 @@ const ContentView = ({
 	const readContent = async () => {
 		try {
 			const res = await ReadLectureContent(sectionId)
-			setBlocks(res.items)
+			setBlocks(res?.items)
 		} catch (err) {}
 	}
+
+	console.log(blocks)
 
 	// const debouncedUpdate = useCallback(
 	// 	debounce(async (blockId, body, type) => {
@@ -274,12 +277,71 @@ const ContentView = ({
 	// 	debouncedUpdate(blockId, body, type)
 	// }
 
-	const putContentInBlock = async (blockId, body, type) => {
-		try {
-			await UpdateLectureContent(sectionId, blockId, body, type)
-			readContent()
-		} catch (err) {}
-	}
+	// const putContentInBlock = async (blockId, body, type) => {
+	// 	try {
+	// 		await UpdateLectureContent(sectionId, blockId, body, type)
+	// 	} catch (err) {}
+	// }
+
+	// 1. Выносим список типов, которым нужен дебаунс, в константу
+	const DEBOUNCED_TYPES = ['text', 'callout', 'formula']
+
+	// 2. Создаем дебаунс-функцию.
+	// Важно обернуть в useMemo, чтобы debounce не пересоздавался на каждом рендере
+	const debouncedUpdate = useMemo(
+		() =>
+			debounce(async (sectionId, blockId, body, type) => {
+				try {
+					await UpdateLectureContent(sectionId, blockId, body, type)
+				} catch (err) {
+					console.error(err)
+				}
+			}, 500),
+		[], // пустой массив, чтобы ссылка была стабильной
+	)
+
+	// 3. Основная функция, которую ты вызываешь
+	const putContentInBlock = useCallback(
+		async (blockId, body, type) => {
+			// ЕСЛИ ТИП НЕ НУЖДАЕТСЯ В ДЕБАУНСЕ — отправляем мгновенно и выходим
+			if (!DEBOUNCED_TYPES.includes(type)) {
+				try {
+					await UpdateLectureContent(sectionId, blockId, body, type)
+				} catch (err) {
+					console.error(err)
+				}
+				return
+			}
+
+			// --- ДАЛЬШЕ ЛОГИКА ТОЛЬКО ДЛЯ text, callout, formula ---
+
+			// Проверка на первый (холостой) рендер
+			if (firstRenderMap.current[blockId] === undefined) {
+				firstRenderMap.current[blockId] = false
+				console.log(
+					`[Блокировка]: Пропущен первый рендер для ${type} (${blockId})`,
+				)
+				return
+			}
+
+			// Защита от "хуйни с пустым текстом" (дополнительный предохранитель)
+			// Если body пришел пустой (или null/undefined), не пускаем его в дебаунс
+			if (
+				body === undefined ||
+				body === null ||
+				(typeof body === 'string' && body.trim() === '')
+			) {
+				console.log(
+					`[Блокировка]: Попытка отправить пустой контент для ${type} (${blockId})`,
+				)
+				return
+			}
+
+			// Если все проверки пройдены — пускаем в дебаунс
+			debouncedUpdate(sectionId, blockId, body, type)
+		},
+		[sectionId, debouncedUpdate],
+	)
 
 	useEffect(() => {
 		if (sectionId) {
@@ -329,7 +391,6 @@ const ContentView = ({
 								>
 									<Component
 										data={isSpecialBlock ? block.content : block}
-										plainText={block.plain_text}
 										isEdit={isEdit}
 										onChange={data => putContentInBlock(block.id, data, type)}
 										onDelete={() => handleRemove(block.id)}
@@ -499,10 +560,21 @@ const Content = ({ type, title, isSelected, onClick }) => {
 	)
 }
 
-const CoursePage = ({ role }) => {
+const CoursePage = () => {
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
 	const activeSectionId = searchParams.get('section') || ''
+
+	const [role, setRole] = useState()
+	useEffect(() => {
+		const getUserInfo = async e => {
+			try {
+				const res = await Me()
+				setRole(res?.role)
+			} catch (err) {}
+		}
+		getUserInfo()
+	}, [])
 
 	const [blocks, setBlocks] = useState([])
 	const [isEdit, setIsEdit] = useState(false)

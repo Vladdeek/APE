@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
@@ -26,53 +26,22 @@ import {
 } from 'lucide-react'
 import { RemoveButton } from './FileUploaderZone'
 
-export const TextEditor = ({
-	data,
-	onDelete,
-	onChange,
-	isEdit = false,
-	plainText,
-	courseId,
-}) => {
-	// 1. ПРЕОБРАЗОВАНИЕ ПРИ ВХОДЕ: Из строки Slate-формата в схему Tiptap
-	const initialContent = useMemo(() => {
-		if (!data) return ''
+export const TextEditor = ({ data, onDelete, onChange, isEdit = false }) => {
+	// Храним строку последнего состояния, чтобы избежать бесконечного рендера при синхронизации
+	const lastExternalDataRef = useRef(data)
 
+	// Парсер стал тупым как пробка: если строка — парсим, если объект — отдаем как есть
+	const parseContent = incomingData => {
+		if (!incomingData) return { type: 'doc', content: [] }
 		try {
-			// Если пришла строка, парсим её в массив
-			const parsed = typeof data === 'string' ? JSON.parse(data) : data
-
-			// Если это уже структура Tiptap ({type: 'doc'}), отдаем как есть
-			if (parsed && parsed.type === 'doc') return parsed
-
-			// Если это массив в стиле Slate, собираем из него валидный Tiptap doc
-			if (Array.isArray(parsed)) {
-				const tiptapContent = parsed.map(block => {
-					// Конвертируем children в content
-					const blockContent =
-						block.children?.map(child => ({
-							type: 'text',
-							text: child.text || '',
-							// Если будут marks (bold, italic), Tiptap их подхватит, если передавать правильно
-						})) || []
-
-					return {
-						type: 'paragraph',
-						attrs: { textAlign: null },
-						content: blockContent,
-					}
-				})
-
-				return {
-					type: 'doc',
-					content: tiptapContent,
-				}
-			}
+			return typeof incomingData === 'string'
+				? JSON.parse(incomingData)
+				: incomingData
 		} catch (e) {
-			console.error('Ошибка парсинга входящего контента:', e)
+			console.error('Ошибка парсинга данных в редакторе:', e)
+			return { type: 'doc', content: [] }
 		}
-		return data
-	}, [data])
+	}
 
 	const editor = useEditor({
 		extensions: [
@@ -91,50 +60,46 @@ export const TextEditor = ({
 				types: ['heading', 'paragraph'],
 			}),
 		],
-		content: initialContent,
+		// Инициализируем тем, что пришло в самом начале
+		content: parseContent(data),
 		editable: !!isEdit,
+
 		onUpdate: ({ editor }) => {
+			// Получаем чистый JSON самого Tiptap
 			const tiptapJson = editor.getJSON()
+			const stringifiedJson = JSON.stringify(tiptapJson)
 
-			// 2. ПРЕОБРАЗОВАНИЕ ПРИ ВЫХОДЕ: Из Tiptap в JSON-строку Slate-формата
-			// Вытаскиваем только массив параграфов/блоков
-			const tiptapBlocks = tiptapJson.content || []
+			// Запоминаем, что это мы сами только что ввели
+			lastExternalDataRef.current = stringifiedJson
 
-			const slateBlocks = tiptapBlocks.map(block => {
-				// Пересобираем элементы контента в формат { text: "..." } внутри children
-				const children = block.content?.map(item => ({
-					text: item.text || '',
-				})) || [{ text: '' }] // Если параграф пустой, оставляем пустую строку
-
-				return {
-					type: 'paragraph',
-					children: children,
-				}
-			})
-
-			// Сериализуем полученный массив обратно в строку, как просит бэкенд
+			// Отдаем наверх чистую строку JSON и plainText (если он нужен родителю для поиска/превью)
 			onChange?.({
-				content: JSON.stringify(slateBlocks),
+				content: stringifiedJson,
 				plainText: editor.getText(),
 			})
 		},
 	})
 
+	// Включение / выключение режима редактирования
 	useEffect(() => {
 		if (editor) {
 			editor.setEditable(!!isEdit)
 		}
 	}, [isEdit, editor])
 
-	// Синхронизация, если данные изменились извне
+	// Синхронизация с бэком: если данные СНАРУЖИ реально изменились и они не равны тому,
+	// что внутри редактора — жестко сетаем их (только когда пользователь не пишет)
 	useEffect(() => {
-		if (editor && data) {
-			// Быстрая проверка изменений, чтобы не сбрасывать фокус при вводе
+		if (!editor || !data) return
+
+		if (data !== lastExternalDataRef.current) {
+			lastExternalDataRef.current = data
+
 			if (!editor.isFocused) {
-				editor.commands.setContent(initialContent, false)
+				editor.commands.setContent(parseContent(data), false)
 			}
 		}
-	}, [initialContent, editor])
+	}, [data, editor])
 
 	if (!editor) return null
 

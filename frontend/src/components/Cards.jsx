@@ -2,6 +2,7 @@ import { ImageOff, RussianRuble } from 'lucide-react'
 import { data } from 'react-router-dom'
 
 const CourseCard = ({ data, onClick, status }) => {
+	console.log(data)
 	// Функция для красивого форматирования дат
 	const formatDate = dateStr => {
 		return new Date(dateStr).toLocaleDateString('ru-RU', {
@@ -39,8 +40,8 @@ const CourseCard = ({ data, onClick, status }) => {
 		>
 			<img
 				className='rounded-3xl aspect-[16/9] object-cover w-full'
-				src={data.preview_url}
-				alt={data.name}
+				src={data?.preview_url}
+				alt={''}
 			/>
 			<div className='flex flex-col h-full p-3 mt-3 gap-3'>
 				{/* Секция Тега и Заголовка */}
@@ -113,7 +114,7 @@ const CourseCard = ({ data, onClick, status }) => {
 
 						<div className='flex flex-col'>
 							<p className='text-md font-medium leading-tight text-[var(--black)]'>
-								{`${data?.creator?.first_name} ${data?.creator?.last_name[0]}. ${data?.creator?.patronymic[0]}.`}
+								{`${data?.creator?.first_name || ''} ${data?.creator?.last_name ? `${data.creator.last_name[0]}.` : ''}${data?.creator?.patronymic ? ` ${data.creator.patronymic[0]}.` : ''}`}
 							</p>
 							<p className='text-xs font-normal text-[var(--middle)]'>
 								Автор курса

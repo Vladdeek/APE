@@ -33,7 +33,10 @@ import {
 } from 'lucide-react'
 import Modal from '../../components/Modal'
 import { InputDefault } from '../../components/Inputs'
-import { GetCourseRequestById } from '../../../service/APIs/Request'
+import {
+	GetCourseRequestById,
+	UpdateRequestStatus,
+} from '../../../service/APIs/Request'
 
 // Компонент текстовой строки просмотра
 const TextStroke = ({ title, value, textarea }) => {
@@ -136,6 +139,15 @@ const StudentCourseRequestView = ({ requestId, onClose }) => {
 		}
 		if (requestId) getCourseRequestById()
 	}, [requestId])
+
+	const updateRequestStatus = async status => {
+		try {
+			const res = await UpdateRequestStatus(requestId, status)
+			onClose()
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
+		}
+	}
 
 	return (
 		<div className='w-full h-full flex flex-col gap-6 overflow-y-auto pr-2'>
@@ -298,6 +310,20 @@ const StudentCourseRequestView = ({ requestId, onClose }) => {
 					</div>
 				</section>
 			</div>
+			<div className='flex gap-3 w-full items-center justify-end mb-2'>
+				<button
+					onClick={() => updateRequestStatus('accepted')}
+					className='px-6 py-3 bg-[var(--black)] text-[var(--white)] hover:bg-[var(--green-base)] hover:text-[var(--green-surface)] rounded-2xl shadow-[var(--shadow)] active:scale-99 active:shadow-inner active:brightness-90 transition-all cursor-pointer'
+				>
+					Зачислить
+				</button>
+				<button
+					onClick={() => updateRequestStatus('rejected')}
+					className='px-6 py-3 text-[var(--black)] bg-[var(--light-middle)] hover:bg-[var(--red-base)] hover:text-[var(--red-surface)] rounded-2xl active:shadow-inner active:brightness-90 active:scale-99 transition-all cursor-pointer'
+				>
+					Отклонить
+				</button>
+			</div>
 		</div>
 	)
 }
@@ -401,7 +427,7 @@ const UsersTable = ({ courseId, onUserClick }) => {
 							FullName={user.student}
 							avatar_url={user.student.avatar_url}
 							email={user.student.email}
-							role={user.role}
+							status={user.request_status}
 							appliedAt={user.submitted_at}
 							onClick={() => onUserClick(user.student_request_id)} // Передаем ID наружу
 						/>
@@ -420,17 +446,27 @@ const UserCard = ({
 	role,
 	appliedAt,
 	onClick,
+	status,
 }) => {
-	const roles = {
-		student: 'Студент',
-		teacher: 'Преподаватель',
-		moderator: 'Модератор',
+	const statuses = {
+		accepted: {
+			label: 'Одобрен',
+			color: 'bg-[var(--green-base)] text-[var(--green-surface)]',
+		},
+		rejected: {
+			label: 'Отклонен',
+			color: 'bg-[var(--red-base)] text-[var(--red-surface)]',
+		},
+		pending: {
+			label: 'Ожидает одобрения',
+			color: 'bg-[var(--light-middle)] text-[var(--middle)]',
+		},
 	}
 
 	return (
 		<div
 			onClick={onClick}
-			className='w-full h-fit flex gap-4 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] p-3 hover:translate-y-[-2px] transition-all duration-200 border border-[var(--light-middle)]/10 hover:border-[var(--light-middle)]/30 cursor-pointer items-center'
+			className={`w-full h-fit flex gap-4 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] p-3  transition-all duration-200 border border-[var(--light-middle)]/10  ${status === 'pending' && 'cursor-pointer hover:translate-y-[-2px] hover:border-[var(--light-middle)]/30'}  items-center `}
 		>
 			<div className='w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-inner bg-[var(--light-gray)]'>
 				{avatar_url ? (
@@ -449,11 +485,15 @@ const UserCard = ({
 			<div className='flex flex-col flex-1 min-w-0 gap-0.5'>
 				<div className='flex items-center justify-between gap-2 w-full'>
 					<p className='text-sm font-bold text-[var(--black)] truncate'>
-						{FullName?.last_name} {FullName?.first_name} {FullName?.patronymic}
+						{FullName?.last_name} {FullName?.first_name[0]}
+						{'. '}
+						{FullName?.patronymic[0]}.
 					</p>
-					{role && roles[role] && (
-						<span className='text-[10px] font-semibold bg-[var(--transparent-hero)] text-[var(--hero)] px-2 py-0.5 rounded-full shrink-0'>
-							{roles[role]}
+					{status && statuses[status] && (
+						<span
+							className={`text-[10px] font-semibold ${statuses[status].color}  px-2 py-0.5 rounded-full shrink-0`}
+						>
+							{statuses[status].label}
 						</span>
 					)}
 				</div>

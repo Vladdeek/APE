@@ -30,6 +30,7 @@ import { Checkbox, RadioButton } from '../components/Buttons'
 import { AddTag, GetTags } from '../../service/APIs/CourseTagsSpecific'
 import {
 	CreateCourse,
+	GetAllAvailableCoursesForStudent,
 	GetAllCourses,
 	GetAllCoursesForStudent,
 	GetAllCoursesForTeacher,
@@ -39,6 +40,7 @@ import {
 import Modal from '../components/Modal'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { GetCourseInfoById } from '../../service/APIs/Moderation'
+import { Me } from '../../service/APIs/Authorization'
 
 const CourseViewForStudent = ({ data, onApply }) => {
 	const navigate = useNavigate()
@@ -506,7 +508,17 @@ const CreateBtn = ({ onClick, title }) => {
 }
 
 const Catalog = () => {
-	const [role, setRole] = useState()
+	const [userInfo, setUserInfo] = useState([])
+
+	useEffect(() => {
+		const getUserInfo = async e => {
+			try {
+				const res = await Me()
+				setUserInfo(res)
+			} catch (err) {}
+		}
+		getUserInfo()
+	}, [])
 
 	useEffect(() => {
 		const getUserInfo = async e => {
@@ -549,19 +561,22 @@ const Catalog = () => {
 				setCourses(res)
 			} catch (err) {}
 		}
-		if (role === 'teacher') {
-			getAllTeacherCourses()
-		} else {
-			getAllStudentCourses()
+		const getAllAvailableCoursesForStudent = async () => {
+			try {
+				const res = await GetAllAvailableCoursesForStudent()
+				setCourses(res)
+			} catch (err) {}
 		}
-	}, [])
-
-	const getUserInfo = async e => {
-		try {
-			const res = await Me()
-			setRole(res?.role)
-		} catch (err) {}
-	}
+		if (userInfo?.role === 'teacher') {
+			getAllTeacherCourses()
+		} else if (userInfo?.role === 'student') {
+			if (type === 'all') {
+				getAllStudentCourses()
+			} else if (type === 'patched') {
+				getAllAvailableCoursesForStudent()
+			}
+		}
+	}, [userInfo, type])
 
 	const handleScroll = e => {
 		const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
@@ -578,7 +593,7 @@ const Catalog = () => {
 	}
 
 	const handleCourseClick = course => {
-		if (role === 'teacher') {
+		if (userInfo?.role === 'teacher') {
 			// Статусы, при которых преподаватель сразу переходит внутрь курса
 			const editableOrActiveStatuses = ['draft', 'rejected', 'approved']
 
@@ -589,11 +604,13 @@ const Catalog = () => {
 				setSelectedCourse(course)
 			}
 		} else {
-			setSelectedCourse(course)
+			if (type === 'all') {
+				setSelectedCourse(course)
+			} else if (type === 'patched') {
+				navigate(`/course/${course.id}`)
+			}
 		}
 	}
-
-	console.log(role)
 
 	return (
 		<>
@@ -652,7 +669,7 @@ const Catalog = () => {
 				)}
 			</Modal>
 			<div className='flex flex-col w-full gap-5 py-30'>
-				{role === 'student' && (
+				{userInfo?.role === 'student' && (
 					<div className='flex items-center gap-3'>
 						{options?.map(option => (
 							<RadioButton
@@ -685,12 +702,12 @@ const Catalog = () => {
 						>
 							<CourseCard
 								onClick={() => handleCourseClick(course)}
-								status={role === 'teacher' && course.status}
+								status={userInfo?.role === 'teacher' && course.status}
 								data={course}
 							/>
 						</motion.div>
 					))}
-					{role === 'teacher' && (
+					{userInfo?.role === 'teacher' && (
 						<motion.div
 							key={courses?.length + 1}
 							initial={{ scale: 0.8, opacity: 0 }}
