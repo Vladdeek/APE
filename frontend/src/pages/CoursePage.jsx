@@ -31,7 +31,7 @@ import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
 import { Checkbox, DefaultButton } from '../components/Buttons'
-import { InputDefault, QuestionOptionInput } from '../components/Inputs'
+import { InputDefault } from '../components/Inputs'
 import {
 	CreateCourse,
 	CreateLesson,
@@ -323,7 +323,7 @@ const ContentView = ({
 
 	useEffect(() => {
 		if (sectionId) {
-			readContent()
+			readContent() // Теперь это вызовется при смене sectionId
 		}
 	}, [sectionId])
 

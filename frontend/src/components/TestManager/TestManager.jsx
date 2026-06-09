@@ -46,23 +46,26 @@ const TestHeader = ({ isEdit = true }) => {
 
 	const [questionsData, setQuestionsData] = useState([])
 
-	const addQuestion = async () => {
+	const getQuestions = async () => {
 		try {
-			await AddQuestion(testId)
+			const res = await GetQuestions(activeSection)
+			setQuestionsData(res)
 		} catch (err) {
 			console.log(err)
 		}
 	}
 
-	useEffect(() => {
-		const getQuestions = async () => {
-			try {
-				const res = await GetQuestions(activeSection)
-				setQuestionsData(res)
-			} catch (err) {
-				console.log(err)
-			}
+	const addQuestion = async () => {
+		try {
+			await AddQuestion(activeSection)
+		} catch (err) {
+			console.log(err)
+		} finally {
+			getQuestions()
 		}
+	}
+
+	useEffect(() => {
 		activeSection && getQuestions()
 	}, [activeSection])
 
@@ -144,7 +147,7 @@ const QuestionOptionInput = ({
 		} catch (error) {
 			console.error('Ошибка имени:', error)
 		}
-	}, 500)
+	}, 1000)
 
 	const handleTextChange = e => {
 		const val = e.target.value
@@ -304,7 +307,7 @@ const TestView = () => {
 		} catch (error) {
 			console.error('Ошибка сохранения:', error)
 		}
-	}, 500)
+	}, 1500)
 
 	// 4. Эффект для вызова дебаунса
 	useEffect(() => {
@@ -390,10 +393,18 @@ const TestView = () => {
 }
 
 const TestManager = () => {
+	const [searchParams] = useSearchParams() // Достаем хук
+	const activeQuestionId = searchParams.get('questionId')
 	return (
 		<>
 			<TestHeader />
-			<TestView />
+			{activeQuestionId ? (
+				<TestView />
+			) : (
+				<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
+					Вопрос не выбран
+				</div>
+			)}
 		</>
 	)
 }
