@@ -361,8 +361,7 @@ const CreateModal = ({ onChange }) => {
 
 		try {
 			// Отправляем собранный объект в нашу функцию
-			const result = await CreateCourse(dataToSend)
-			console.log('Курс успешно создан:', result)
+			await CreateCourse(dataToSend)
 			onChange?.()
 		} catch (error) {
 			console.error('Ошибка при создании курса:', error)
@@ -651,7 +650,7 @@ const Catalog = () => {
 							<CreateModal
 								onChange={() => {
 									setIsModalOpen(false)
-									getAllCourses()
+									getAllTeacherCourses()
 								}}
 							/>
 						</div>

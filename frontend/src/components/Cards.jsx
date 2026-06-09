@@ -200,8 +200,7 @@ export const CourseMiniCard = ({ data, onClick }) => {
 							<ImageOff className='w-6 h-6 p-1 text-[var(--middle)] bg-gray-100 rounded-lg' />
 						)}
 						<p className='text-xs text-[var(--middle)] truncate'>
-							{data.creator?.first_name} {data.creator?.last_name[0]}.{' '}
-							{data.creator?.patronymic[0]}.
+							{data?.creator?.first_name} {data?.creator?.last_name[0]}.{' '}
 						</p>
 					</div>
 

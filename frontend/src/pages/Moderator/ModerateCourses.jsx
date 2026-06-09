@@ -319,7 +319,7 @@ const ModerateCourses = () => {
 
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
 							{/* Пример списка курсов */}
-							{courses.map(course => (
+							{courses?.map(course => (
 								<motion.div
 									initial={{ scale: 0.9, opacity: 0 }}
 									animate={{ scale: 1, opacity: 1 }}

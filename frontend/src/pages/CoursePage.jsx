@@ -17,6 +17,7 @@ import {
 	Loader,
 	FlaskConical,
 	FilePlus2,
+	Plus,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -29,8 +30,8 @@ import { FileManager } from '../components/ConstructorViews/FilesImport'
 import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
-import { DefaultButton } from '../components/Buttons'
-import { InputDefault } from '../components/Inputs'
+import { Checkbox, DefaultButton } from '../components/Buttons'
+import { InputDefault, QuestionOptionInput } from '../components/Inputs'
 import {
 	CreateCourse,
 	CreateLesson,
@@ -46,6 +47,15 @@ import {
 } from '../../service/APIs/LectureContent'
 import { debounce } from 'lodash'
 import { Me } from '../../service/APIs/Authorization'
+import {
+	AddOptionOnQuestion,
+	AddQuestion,
+	DeleteOption,
+	EditQuestionType,
+	GetDetailQuestion,
+	GetQuestions,
+} from '../../service/APIs/Test'
+import TestManager from '../components/TestManager/TestManager'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -208,9 +218,10 @@ const ContentView = ({
 	isEdit,
 	clearSelection,
 }) => {
-	const [questions, setQuestions] = useState([])
 	const [activeIndex, setActiveIndex] = useState(0)
 	const [blocks, setBlocks] = useState([])
+	const [searchParams] = useSearchParams() // Достаем хук
+	const activeQuestionId = searchParams.get('questionId')
 	const { courseId } = useParams()
 
 	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
@@ -249,39 +260,6 @@ const ContentView = ({
 			setBlocks(res?.items)
 		} catch (err) {}
 	}
-
-	console.log(blocks)
-
-	// const debouncedUpdate = useCallback(
-	// 	debounce(async (blockId, body, type) => {
-	// 		try {
-	// 			await UpdateLectureContent(sectionId, blockId, body, type)
-	// 		} catch (err) {}
-	// 	}, 500),
-	// 	[sectionId],
-	// )
-
-	// const putContentInBlock = (blockId, body, type) => {
-	// 	console.log('body i put: ', body)
-	// 	// ЕСЛИ ЭТОТ БЛОК ТРИГГЕРИТСЯ ВПЕРВЫЕ ПОСЛЕ ЗАГРУЗКИ
-	// 	if (firstRenderMap.current[blockId] === undefined) {
-	// 		// Помечаем, что первый холостой вызов произошел
-	// 		firstRenderMap.current[blockId] = false
-	// 		console.log(
-	// 			`[Блокировка авто-вызова]: Скипнут первый рендер для блока ${type} (${blockId})`,
-	// 		)
-	// 		return // СТОПАЕМ функцию, запрос на бэк не идет!
-	// 	}
-
-	// 	// Все последующие вызовы — это уже реальные действия пользователя
-	// 	debouncedUpdate(blockId, body, type)
-	// }
-
-	// const putContentInBlock = async (blockId, body, type) => {
-	// 	try {
-	// 		await UpdateLectureContent(sectionId, blockId, body, type)
-	// 	} catch (err) {}
-	// }
 
 	// 1. Выносим список типов, которым нужен дебаунс, в константу
 	const DEBOUNCED_TYPES = ['text', 'callout', 'formula']
@@ -349,19 +327,11 @@ const ContentView = ({
 		}
 	}, [sectionId])
 
-	if (SectionType && !content) return <Loader />
-
 	return (
 		<div className='h-fit overflow-y-scroll hide-scrollbar'>
 			<div className='flex flex-col gap-3 p-2'>
 				{SectionType === 'test' ? (
-					<TestManager
-						questions={questions}
-						activeIndex={activeIndex}
-						isEdit={isEdit}
-						onUpdate={setQuestions}
-						onIndexChange={setActiveIndex}
-					/>
+					<TestManager />
 				) : (
 					<div className='flex flex-col gap-4'>
 						{blocks?.map((item, i) => {
@@ -563,7 +533,10 @@ const Content = ({ type, title, isSelected, onClick }) => {
 const CoursePage = () => {
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
-	const activeSectionId = searchParams.get('section') || ''
+	const [activeSectionId, setActiveSectionId] = useState(
+		searchParams.get('section') || '',
+	)
+	const [activeType, setActiveType] = useState('')
 
 	const [role, setRole] = useState()
 	useEffect(() => {
@@ -659,13 +632,18 @@ const CoursePage = () => {
 		test: 'Тест',
 	}
 
-	if (isLoading) {
-		return (
-			<div className='flex items-center justify-center h-screen'>
-				<p className='text-lg text-[var(--middle)]'>Загрузка курса...</p>
-			</div>
-		)
-	}
+	useEffect(() => {
+		const id = searchParams.get('section')
+		setActiveSectionId(id)
+
+		// Находим тип активной секции из массива модулей
+		if (id && modules.length > 0) {
+			const section = modules.flatMap(m => m.content).find(s => s.id === id)
+			if (section) {
+				setActiveType(section.type)
+			}
+		}
+	}, [searchParams, modules])
 
 	return (
 		<div className='grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 '>
@@ -697,7 +675,10 @@ const CoursePage = () => {
 									title={section.name}
 									type={section.type}
 									isSelected={activeSectionId === section.id}
-									onClick={() => handleSectionClick(section.id)}
+									onClick={() => {
+										handleSectionClick(section.id)
+										setActiveType(section.type)
+									}}
 								/>
 							</motion.div>
 						))}
@@ -756,7 +737,7 @@ const CoursePage = () => {
 								</>
 							)}
 						</div>
-						{role === 'teacher' && (
+						{/* {role === 'teacher' && (
 							<DefaultButton
 								onClick={() => setIsEdit(prev => !prev)}
 								rounded={'rounded-lg'}
@@ -765,13 +746,17 @@ const CoursePage = () => {
 							>
 								{isEdit ? 'Сохранить' : 'Редактировать'}
 							</DefaultButton>
-						)}
+						)} */}
 					</div>
 				)}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-					<ContentView isEdit={isEdit} sectionId={activeSectionId} />
+					<ContentView
+						isEdit={role === 'teacher' && true}
+						sectionId={activeSectionId}
+						SectionType={activeType}
+					/>
 				</div>
 			</div>
 		</div>
