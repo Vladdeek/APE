@@ -4,6 +4,7 @@ import {
 	AddOptionOnQuestion,
 	AddQuestion,
 	DeleteOption,
+	DeleteQuestion,
 	EditOptionCorrectStatus,
 	EditOptionName,
 	EditQuestion,
@@ -14,10 +15,16 @@ import {
 import { InputDefault } from '../Inputs'
 import { useDebounce } from '../../../service/Hooks/useDebounce'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Plus, Trash2 } from 'lucide-react'
+import { Check, Plus, Trash2, X } from 'lucide-react'
 import { DefaultButton } from '../Buttons'
 
-const TestHeaderBlock = ({ num, questionId, isActive, onClick }) => {
+const TestHeaderBlock = ({
+	num,
+	questionId,
+	isActive,
+	onClick,
+	delQuestion,
+}) => {
 	const STYLES = {
 		// По умолчанию все блоки в дефолтном стиле
 		default: 'bg-[var(--white)] text-[var(--middle)] hover:text-[var(--hero)] ',
@@ -28,11 +35,15 @@ const TestHeaderBlock = ({ num, questionId, isActive, onClick }) => {
 	return (
 		<div
 			onClick={() => onClick(questionId)} // Передаем UUID вопроса при клике
-			className={`w-10 h-10 flex items-center justify-center rounded-[10px] font-semibold text-xl shadow-[var(--shadow)] select-none cursor-pointer transition-all hover:scale-101 active:scale-99 active:shadow-inner
+			className={`w-10 h-10 flex items-center justify-center rounded-[10px] relative font-semibold text-xl shadow-[var(--shadow)] select-none cursor-pointer transition-all hover:scale-101 active:scale-99 active:shadow-inner group
                 ${isActive ? STYLES.active : STYLES.default}
             `}
 		>
 			<p>{num}</p> {/* Порядковый номер для красоты отображения */}
+			<X
+				onClick={e => delQuestion(e)}
+				className='w-[16px] h-[16px] absolute -top-1 -right-1 bg-[var(--red-base)] rounded-full p-[3px] text-[var(--red-surface)] opacity-0 group-hover:opacity-100 hover:contrast-150 hover:scale-105 active:scale-95 transition-all z-10'
+			/>
 		</div>
 	)
 }
@@ -80,6 +91,22 @@ const TestHeader = ({ isEdit = true }) => {
 		setSearchParams(newParams)
 	}
 
+	const deleteQuestion = async e => {
+		// Передаем ID конкретного вопроса
+		e.stopPropagation()
+		try {
+			await DeleteQuestion(activeQuestionId)
+
+			// После успешного удаления сбрасываем параметры URL
+			setSearchParams({})
+
+			// Если нужно обновить список вопросов
+			await getQuestions()
+		} catch (err) {
+			console.log(err)
+		}
+	}
+
 	return (
 		<div className='flex flex-col gap-4 w-full mb-15'>
 			{questionsData && (
@@ -102,6 +129,7 @@ const TestHeader = ({ isEdit = true }) => {
 								// Сверяем UUID из URL с UUID текущего вопроса в цикле
 								isActive={q === activeQuestionId}
 								onClick={handleBlockClick}
+								delQuestion={e => deleteQuestion(e)}
 							/>
 						</motion.div>
 					))}

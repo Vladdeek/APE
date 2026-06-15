@@ -61,3 +61,9 @@ export const EditOptionCorrectStatus = async (
 	)
 	return response.data
 }
+export const DeleteQuestion = async question_id => {
+	const response = await api.delete(
+		`${API}/test-content/question/${question_id}`,
+	)
+	return response.data
+}
