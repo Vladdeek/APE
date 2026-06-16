@@ -24,6 +24,7 @@ const TestHeaderBlock = ({
 	isActive,
 	onClick,
 	delQuestion,
+	isEdit,
 }) => {
 	const STYLES = {
 		// По умолчанию все блоки в дефолтном стиле
@@ -40,15 +41,17 @@ const TestHeaderBlock = ({
             `}
 		>
 			<p>{num}</p> {/* Порядковый номер для красоты отображения */}
-			<X
-				onClick={e => delQuestion(e)}
-				className='w-[16px] h-[16px] absolute -top-1 -right-1 bg-[var(--red-base)] rounded-full p-[3px] text-[var(--red-surface)] opacity-0 group-hover:opacity-100 hover:contrast-150 hover:scale-105 active:scale-95 transition-all z-10'
-			/>
+			{isEdit && (
+				<X
+					onClick={e => delQuestion(e)}
+					className='w-[16px] h-[16px] absolute -top-1 -right-1 bg-[var(--red-base)] rounded-full p-[3px] text-[var(--red-surface)] opacity-0 group-hover:opacity-100 hover:contrast-150 hover:scale-105 active:scale-95 transition-all z-10'
+				/>
+			)}
 		</div>
 	)
 }
 
-const TestHeader = ({ isEdit = true }) => {
+const TestHeader = ({ isEdit }) => {
 	const [searchParams, setSearchParams] = useSearchParams()
 
 	// Достаем текущий questionId из URL (строка, содержащая UUID)
@@ -108,7 +111,7 @@ const TestHeader = ({ isEdit = true }) => {
 	}
 
 	return (
-		<div className='flex flex-col gap-4 w-full mb-15'>
+		<div className='flex gap-4 w-full mb-15 items-center'>
 			{questionsData && (
 				<div className='flex flex-wrap w-full gap-2'>
 					{questionsData?.map((q, idx) => (
@@ -123,6 +126,7 @@ const TestHeader = ({ isEdit = true }) => {
 							}}
 						>
 							<TestHeaderBlock
+								isEdit={isEdit}
 								key={q}
 								num={idx + 1}
 								questionId={q}
@@ -133,25 +137,28 @@ const TestHeader = ({ isEdit = true }) => {
 							/>
 						</motion.div>
 					))}
-					<motion.div
-						key={questionsData?.length + 1}
-						initial={{ scale: 0.8, opacity: 0 }}
-						animate={{ scale: 1, opacity: 1 }}
-						transition={{
-							duration: 0.3,
-							delay: questionsData?.length * 0.1,
-							ease: 'easeOut',
-						}}
-					>
-						<div
-							onClick={() => addQuestion()} // Передаем UUID вопроса при клике
-							className={`w-10 h-10 flex items-center justify-center rounded-[10px] font-semibold text-xl shadow-[var(--shadow)] select-none cursor-pointer transition-all bg-[var(--white)] text-[var(--middle)] hover:bg-[var(--hero)] hover:text-white hover:scale-101 active:scale-99 active:shadow-inner`}
+					{isEdit && (
+						<motion.div
+							key={questionsData?.length + 1}
+							initial={{ scale: 0.8, opacity: 0 }}
+							animate={{ scale: 1, opacity: 1 }}
+							transition={{
+								duration: 0.3,
+								delay: questionsData?.length * 0.1,
+								ease: 'easeOut',
+							}}
 						>
-							<Plus strokeWidth={3} />
-						</div>
-					</motion.div>
+							<div
+								onClick={() => addQuestion()} // Передаем UUID вопроса при клике
+								className={`w-10 h-10 flex items-center justify-center rounded-[10px] font-semibold text-xl shadow-[var(--shadow)] select-none cursor-pointer transition-all bg-[var(--white)] text-[var(--middle)] hover:bg-[var(--hero)] hover:text-white hover:scale-101 active:scale-99 active:shadow-inner`}
+							>
+								<Plus strokeWidth={3} />
+							</div>
+						</motion.div>
+					)}
 				</div>
 			)}
+			<div className='flex gap-1 items-center w-fit'></div>
 		</div>
 	)
 }
@@ -162,6 +169,7 @@ const QuestionOptionInput = ({
 	initialIsCorrect,
 	disabled,
 	onOptionUpdate, // Колбэк для обновления данных в родителе (опционально)
+	isEdit,
 }) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const [textValue, setTextValue] = useState(initialText || '')
@@ -239,7 +247,26 @@ const QuestionOptionInput = ({
 	)
 }
 
-const TestView = () => {
+const QuestionOptionButton = ({ id, initialText, initialIsCorrect }) => {
+	const [searchParams] = useSearchParams() // Достаем хук
+	const [textValue, setTextValue] = useState(initialText || '')
+	const [isCorrect, setIsCorrect] = useState(initialIsCorrect || false)
+
+	return (
+		<div className='flex gap-2 w-full'>
+			{/* Инпут с дебаунсом */}
+			<div className='flex-1'>
+				<p
+					className={`rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)]/50 text-[var(--black)] shadow-[var(--shadow)] border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all ${isCorrect && 'bg-[var(--hero)]'}`}
+				>
+					{initialText}
+				</p>
+			</div>
+		</div>
+	)
+}
+
+const TestView = ({ isEdit }) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
 	const [data, setData] = useState({
@@ -247,6 +274,7 @@ const TestView = () => {
 		max_score: 1,
 		options: [],
 		type: '',
+		student_answer: '',
 	})
 	const isDataLoaded = useRef(false)
 
@@ -346,22 +374,28 @@ const TestView = () => {
 	return (
 		<div className='w-full flex flex-col gap-6 items-center'>
 			{/* Верхняя часть с вопросом и оценкой */}
-			<div className='grid gap-4 grid-cols-[1fr_auto] w-full max-w-2xl'>
-				<InputDefault
-					title='Введите вопрос'
-					name='question'
-					value={data.question}
-					onChange={handleChange}
-				/>
-				<div className='w-20'>
+			{isEdit ? (
+				<div className='grid gap-4 grid-cols-[1fr_auto] w-full max-w-2xl'>
 					<InputDefault
-						title='Оценка'
-						name='max_score'
-						value={data.max_score}
+						title='Введите вопрос'
+						name='question'
+						value={data.question}
 						onChange={handleChange}
 					/>
+					<div className='w-20'>
+						<InputDefault
+							title='Оценка'
+							name='max_score'
+							value={data.max_score}
+							onChange={handleChange}
+						/>
+					</div>
 				</div>
-			</div>
+			) : (
+				<p className='text-[var(--black)] font-medium text-xl'>
+					{data.question || 'Вопрос не задан'}
+				</p>
+			)}
 
 			{/* Блок управления типами */}
 			<div className='w-full max-w-2xl '>
@@ -372,47 +406,71 @@ const TestView = () => {
 								Варианты ответа
 							</p>
 							{/* Кнопка смены на открытый тип */}
-							<button
-								onClick={() => handleChangeTypeOnOption('open')}
-								className='text-xs text-red-500 opacity-75 hover:opacity-100 hover:underline self-end cursor-pointer transition-all'
-							>
-								Убрать варианты ответа (сделать открытым)
-							</button>
+							{isEdit && (
+								<button
+									onClick={() => handleChangeTypeOnOption('open')}
+									className='text-xs text-red-500 opacity-75 hover:opacity-100 hover:underline self-end cursor-pointer transition-all'
+								>
+									Убрать варианты ответа (сделать открытым)
+								</button>
+							)}
 						</div>
 
-						{data?.options?.map((q, i) => (
-							<motion.div
-								className='w-full'
-								key={q.id}
-								initial={{ scale: 0.8, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-								transition={{
-									duration: 0.3,
-									delay: i * 0.1,
-									ease: 'easeOut',
-								}}
-							>
-								<QuestionOptionInput
-									key={q.id}
-									id={q.id}
-									initialText={q.name}
-									initialIsCorrect={q.is_correct}
-									onOptionUpdate={getQuestionDetails}
-									disabled={data?.options?.length <= 2}
-								/>
-							</motion.div>
-						))}
-
-						<DefaultButton onClick={addOption} className='mt-2'>
-							<Plus strokeWidth={3} />
-							<p>Добавить вариант</p>
-						</DefaultButton>
+						<AnimatePresence mode='popLayout'>
+							{data?.options?.map((q, i) => {
+								console.log('isEdit: ', isEdit)
+								return (
+									<motion.div
+										key={q.id} // Уникальный ключ здесь
+										layout // Плавная перестановка при изменении порядка/удалении
+										initial={{ scale: 0.8, opacity: 0 }}
+										animate={{ scale: 1, opacity: 1 }}
+										exit={{ scale: 0.5, opacity: 0 }} // Анимация при удалении
+										transition={{
+											duration: 0.3,
+											delay: i * 0.05, // Немного уменьшил задержку для отзывчивости
+											ease: 'easeOut',
+										}}
+										className='w-full'
+									>
+										{isEdit ? (
+											<QuestionOptionInput
+												id={q.id}
+												initialText={q.name}
+												initialIsCorrect={q.is_correct}
+												onOptionUpdate={getQuestionDetails}
+												disabled={data?.options?.length <= 2}
+											/>
+										) : (
+											<QuestionOptionButton id={q.id} initialText={q.name} />
+										)}
+									</motion.div>
+								)
+							})}
+						</AnimatePresence>
+						{isEdit && (
+							<DefaultButton onClick={addOption} className='mt-2'>
+								<Plus strokeWidth={3} />
+								<p>Добавить вариант</p>
+							</DefaultButton>
+						)}
 					</div>
 				) : (
-					<div className='flex flex-col items-center gap-4'>
-						<DefaultButton onClick={() => handleChangeTypeOnOption('choice')}>
-							Добавить варианты ответа
-						</DefaultButton>
+					<div className='flex flex-col items-center gap-4 w-full'>
+						{isEdit ? (
+							<DefaultButton onClick={() => handleChangeTypeOnOption('choice')}>
+								Добавить варианты ответа
+							</DefaultButton>
+						) : (
+							<div className={`w-full`}>
+								<InputDefault
+									title='Введите ответ'
+									name='student_answer'
+									value={data.student_answer}
+									onChange={handleChange}
+								/>
+							</div>
+						)}
 					</div>
 				)}
 			</div>
@@ -423,11 +481,22 @@ const TestView = () => {
 const TestManager = () => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
+
+	const [role, setRole] = useState('student')
+	useEffect(() => {
+		const getUserInfo = async e => {
+			try {
+				const res = await Me()
+				setRole(res?.role)
+			} catch (err) {}
+		}
+		// getUserInfo()
+	}, [])
 	return (
 		<>
-			<TestHeader />
+			<TestHeader isEdit={role === 'teacher'} />
 			{activeQuestionId ? (
-				<TestView />
+				<TestView isEdit={role === 'teacher'} />
 			) : (
 				<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
 					Вопрос не выбран

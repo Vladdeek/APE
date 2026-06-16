@@ -56,6 +56,7 @@ import {
 	GetQuestions,
 } from '../../service/APIs/Test'
 import TestManager from '../components/TestManager/TestManager'
+import { formatTime } from '../../service/utils/formatTime'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -503,6 +504,23 @@ const Content = ({ type, title, isSelected, onClick }) => {
 		test: 'Тест',
 	}
 
+	const [score, setScore] = useState(5)
+
+	// Вычисляем статус прямо при рендере
+	const getStatus = s => {
+		if (s >= 4) return 'good'
+		if (s >= 2) return 'middle'
+		return 'bad'
+	}
+
+	const status = getStatus(score)
+
+	const colorClasses = {
+		bad: 'bg-[var(--red-base)] text-[var(--red-surface)]',
+		middle: 'bg-[var(--yellow-base)] text-[var(--yellow-surface)]',
+		good: 'bg-[var(--green-base)] text-[var(--green-surface)]',
+	}
+
 	return (
 		<div
 			onClick={onClick}
@@ -513,19 +531,115 @@ const Content = ({ type, title, isSelected, onClick }) => {
 										: 'border-transparent bg-[var(--white)] hover:bg-[var(--light-middle)] cursor-pointer'
 								}`}
 		>
-			<div className='flex items-center gap-2'>
-				<span
-					className={isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'}
-				>
-					{icons[type]}
-				</span>
-				<div className='flex flex-col'>
-					<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
-						{labels[type]}
+			<div className='flex items-center justify-between w-full'>
+				<div className='flex items-center gap-2'>
+					<span
+						className={
+							isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'
+						}
+					>
+						{icons[type]}
 					</span>
-					<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+					<div className='flex flex-col'>
+						<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
+							{labels[type]}
+						</span>
+						<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+					</div>
 				</div>
+				{type === 'test' && (
+					<div
+						className={`flex items-center justify-center h-7 w-7 rounded-md ${
+							colorClasses[status]
+						} text-lg`}
+					>
+						{score}
+					</div>
+				)}
 			</div>
+		</div>
+	)
+}
+
+const ContentHeader = ({ activeSection, totalTime = 90 }) => {
+	// Состояние для оставшегося времени
+	const [timeLeft, setTimeLeft] = useState(totalTime)
+
+	// Вычисляем процент для прогресс-бара
+	const progressWidth = (timeLeft / totalTime) * 100
+
+	useEffect(() => {
+		if (timeLeft <= 0) return
+
+		const timer = setInterval(() => {
+			setTimeLeft(prev => Math.max(prev - 1, 0))
+		}, 1000) // Таймер обновляется каждую секунду
+
+		return () => clearInterval(timer)
+	}, [timeLeft])
+
+	const icons = {
+		lecture: <BookMarked size={18} />,
+		practice: <NotebookPen size={18} />,
+		test: <LaptopMinimalCheck size={18} />,
+	}
+
+	const labels = {
+		lecture: 'Лекция',
+		practice: 'Практика',
+		test: 'Тест',
+	}
+
+	return (
+		<div className='relative flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2 overflow-hidden'>
+			<div className='flex items-center gap-3'>
+				{activeSection && (
+					<>
+						<span className={'text-[var(--middle)] h-full w-auto'}>
+							{icons[activeSection.type]}
+						</span>
+						<div className='flex flex-col'>
+							<p
+								className={'text-[var(--middle)] text-sm uppercase font-medium'}
+							>
+								{labels[activeSection.type]}
+							</p>
+							<p className={'text-[var(--black)] text-lg'}>
+								{activeSection.name}
+							</p>
+						</div>
+					</>
+				)}
+			</div>
+			<p className='w-25 text-center text-[var(--black)] font-semibold'>
+				<p className='w-25 text-center text-[var(--black)] font-semibold'>
+					{formatTime(timeLeft)}
+				</p>
+			</p>
+
+			<DefaultButton
+				onClick={() => console.log('Завершить тест')}
+				rounded={'rounded-lg'}
+				width='w-fit'
+				flexParams='justify-center'
+			>
+				Завершить тест
+			</DefaultButton>
+			{/* Прогресс-бар с динамической шириной */}
+			<div
+				style={{ width: `${progressWidth}%`, transition: 'width 1s linear' }}
+				className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
+			></div>
+			{/* {role === 'teacher' && (
+							<DefaultButton
+								onClick={() => setIsEdit(prev => !prev)}
+								rounded={'rounded-lg'}
+								width='w-38'
+								flexParams='justify-center'
+							>
+								{isEdit ? 'Сохранить' : 'Редактировать'}
+							</DefaultButton>
+						)} */}
 		</div>
 	)
 }
@@ -714,41 +828,7 @@ const CoursePage = () => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && (
-					<div className='flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2'>
-						<div className='flex items-center gap-3'>
-							{activeSection && (
-								<>
-									<span className={'text-[var(--middle)] h-full w-auto'}>
-										{icons[activeSection.type]}
-									</span>
-									<div className='flex flex-col'>
-										<p
-											className={
-												'text-[var(--middle)] text-sm uppercase font-medium'
-											}
-										>
-											{labels[activeSection.type]}
-										</p>
-										<p className={'text-[var(--black)] text-lg'}>
-											{activeSection.name}
-										</p>
-									</div>
-								</>
-							)}
-						</div>
-						{/* {role === 'teacher' && (
-							<DefaultButton
-								onClick={() => setIsEdit(prev => !prev)}
-								rounded={'rounded-lg'}
-								width='w-38'
-								flexParams='justify-center'
-							>
-								{isEdit ? 'Сохранить' : 'Редактировать'}
-							</DefaultButton>
-						)} */}
-					</div>
-				)}
+				{activeSection && <ContentHeader activeSection={activeSection} />}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
