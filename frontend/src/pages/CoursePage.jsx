@@ -17,8 +17,9 @@ import {
 	Loader,
 	FlaskConical,
 	FilePlus2,
+	Plus,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { TextEditor } from '../components/ConstructorViews/TextEditor'
@@ -29,7 +30,7 @@ import { FileManager } from '../components/ConstructorViews/FilesImport'
 import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
-import { DefaultButton } from '../components/Buttons'
+import { Checkbox, DefaultButton } from '../components/Buttons'
 import { InputDefault } from '../components/Inputs'
 import {
 	CreateCourse,
@@ -37,10 +38,29 @@ import {
 	CreateModule,
 	ReadCourseById,
 } from '../../service/APIs/Couses'
+import {
+	AppendLectureContent,
+	DeleteBlock,
+	DeleteFile,
+	ReadLectureContent,
+	UpdateLectureContent,
+} from '../../service/APIs/LectureContent'
+import { debounce } from 'lodash'
+import { Me } from '../../service/APIs/Authorization'
+import {
+	AddOptionOnQuestion,
+	AddQuestion,
+	DeleteOption,
+	EditQuestionType,
+	GetDetailQuestion,
+	GetQuestions,
+} from '../../service/APIs/Test'
+import TestManager from '../components/TestManager/TestManager'
+import { formatTime } from '../../service/utils/formatTime'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
-	image: PhotoBlock,
+	images: PhotoBlock,
 	video: VideoImport,
 	code: CodeUploader,
 	files: FileManager,
@@ -199,73 +219,139 @@ const ContentView = ({
 	isEdit,
 	clearSelection,
 }) => {
-	const [questions, setQuestions] = useState([])
 	const [activeIndex, setActiveIndex] = useState(0)
 	const [blocks, setBlocks] = useState([])
+	const [searchParams] = useSearchParams() // Достаем хук
+	const activeQuestionId = searchParams.get('questionId')
 	const { courseId } = useParams()
 
-	// Синхронизация данных
+	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
+	const firstRenderMap = useRef({})
+
+	// Сбрасываем карту первых рендеров, если пользователь переключился на другую лекцию
 	useEffect(() => {
-		if (!content) return
-		onSectionTypeChange?.(content.type)
+		firstRenderMap.current = {}
+	}, [sectionId])
 
-		if (content.type === 'test') {
-			setQuestions(content.content || [])
-			setBlocks([])
-		} else {
-			setBlocks(content.content || [])
-			setQuestions([])
-		}
-		setActiveIndex(0)
-	}, [content])
-
-	// Универсальный обработчик для всех типов блоков
-	const handleUpdate = (index, newData) => {
-		const updated = blocks.map((b, i) =>
-			i === index ? { ...b, content: newData } : b,
-		)
-		setBlocks(updated)
-		onBlocksChange?.(updated)
+	const handleRemove = async blockId => {
+		console.log('delete block - ', blockId)
+		try {
+			await DeleteBlock(sectionId, blockId)
+			readContent()
+		} catch (err) {}
 	}
 
-	const handleRemove = index => {
-		const block = blocks[index]
-		const updated = blocks.filter((_, i) => i !== index)
-
-		// Если в блоке были файлы — чистим сервер (твоя логика)
-		if (blockHadContent(block)) {
-			getBlockFilePaths(block).forEach(removeFile)
-			onBlocksChange?.(updated, { forceSave: true })
-		} else {
-			onBlocksChange?.(updated)
-		}
-		setBlocks(updated)
+	const handleRemoveFile = async (blockId, fileId) => {
+		try {
+			await DeleteFile(blockId, fileId)
+			readContent()
+		} catch (err) {}
 	}
 
-	console.log(blocks)
+	const addBlock = async (id, type) => {
+		try {
+			await AppendLectureContent(id, type)
+			readContent()
+		} catch (err) {}
+	}
 
-	if (SectionType && !content) return <Loader />
+	const readContent = async () => {
+		try {
+			const res = await ReadLectureContent(sectionId)
+			setBlocks(res?.items)
+		} catch (err) {}
+	}
+
+	// 1. Выносим список типов, которым нужен дебаунс, в константу
+	const DEBOUNCED_TYPES = ['text', 'callout', 'formula']
+
+	// 2. Создаем дебаунс-функцию.
+	// Важно обернуть в useMemo, чтобы debounce не пересоздавался на каждом рендере
+	const debouncedUpdate = useMemo(
+		() =>
+			debounce(async (sectionId, blockId, body, type) => {
+				try {
+					await UpdateLectureContent(sectionId, blockId, body, type)
+				} catch (err) {
+					console.error(err)
+				}
+			}, 500),
+		[], // пустой массив, чтобы ссылка была стабильной
+	)
+
+	// 3. Основная функция, которую ты вызываешь
+	const putContentInBlock = useCallback(
+		async (blockId, body, type) => {
+			// ЕСЛИ ТИП НЕ НУЖДАЕТСЯ В ДЕБАУНСЕ — отправляем мгновенно и выходим
+			if (!DEBOUNCED_TYPES.includes(type)) {
+				try {
+					await UpdateLectureContent(sectionId, blockId, body, type)
+				} catch (err) {
+					console.error(err)
+				}
+				return
+			}
+
+			// --- ДАЛЬШЕ ЛОГИКА ТОЛЬКО ДЛЯ text, callout, formula ---
+
+			// Проверка на первый (холостой) рендер
+			if (firstRenderMap.current[blockId] === undefined) {
+				firstRenderMap.current[blockId] = false
+				console.log(
+					`[Блокировка]: Пропущен первый рендер для ${type} (${blockId})`,
+				)
+				return
+			}
+
+			// Защита от "хуйни с пустым текстом" (дополнительный предохранитель)
+			// Если body пришел пустой (или null/undefined), не пускаем его в дебаунс
+			if (
+				body === undefined ||
+				body === null ||
+				(typeof body === 'string' && body.trim() === '')
+			) {
+				console.log(
+					`[Блокировка]: Попытка отправить пустой контент для ${type} (${blockId})`,
+				)
+				return
+			}
+
+			// Если все проверки пройдены — пускаем в дебаунс
+			debouncedUpdate(sectionId, blockId, body, type)
+		},
+		[sectionId, debouncedUpdate],
+	)
+
+	useEffect(() => {
+		if (sectionId) {
+			readContent() // Теперь это вызовется при смене sectionId
+		}
+	}, [sectionId])
 
 	return (
 		<div className='h-fit overflow-y-scroll hide-scrollbar'>
 			<div className='flex flex-col gap-3 p-2'>
 				{SectionType === 'test' ? (
-					<TestManager
-						questions={questions}
-						activeIndex={activeIndex}
-						isEdit={isEdit}
-						onUpdate={setQuestions}
-						onIndexChange={setActiveIndex}
-					/>
+					<TestManager />
 				) : (
 					<div className='flex flex-col gap-4'>
-						{blocks.map((block, i) => {
-							const Component = COMPONENT_MAP[block.type]
+						{blocks?.map((item, i) => {
+							const { type, block } = item
+							if (!block) return null
+
+							const Component = COMPONENT_MAP[type]
 							if (!Component) return null
+
+							const isSpecialBlock = [
+								'callout',
+								'formula',
+								'code',
+								'text',
+							].includes(type)
 
 							return (
 								<motion.div
-									key={i}
+									key={block.id}
 									initial={{ scale: 0.8, opacity: 0 }}
 									animate={{ scale: 1, opacity: 1 }}
 									transition={{
@@ -275,20 +361,20 @@ const ContentView = ({
 									}}
 								>
 									<Component
-										data={block.content}
+										data={isSpecialBlock ? block.content : block}
 										isEdit={isEdit}
-										onChange={data => handleUpdate(i, data)}
-										onDelete={() => handleRemove(i)}
-										courseId={courseId} // для загрузки файлов
+										onChange={data => putContentInBlock(block.id, data, type)}
+										onDelete={() => handleRemove(block.id)}
+										courseId={courseId}
+										sectionId={sectionId}
+										onDeleteFile={data => handleRemoveFile(block.id, data)}
 									/>
 								</motion.div>
 							)
 						})}
 
 						{isEdit && (
-							<ConstructorMenu
-								onAdd={type => setBlocks([...blocks, { type, content: null }])}
-							/>
+							<ConstructorMenu onAdd={type => addBlock(sectionId, type)} />
 						)}
 					</div>
 				)}
@@ -311,7 +397,7 @@ const ConstructorMenu = ({ onAdd }) => {
 		},
 		{
 			title: 'Фото',
-			type: 'image',
+			type: 'images',
 			icon: <Image size={32} />,
 		},
 		{
@@ -418,6 +504,23 @@ const Content = ({ type, title, isSelected, onClick }) => {
 		test: 'Тест',
 	}
 
+	const [score, setScore] = useState(5)
+
+	// Вычисляем статус прямо при рендере
+	const getStatus = s => {
+		if (s >= 4) return 'good'
+		if (s >= 2) return 'middle'
+		return 'bad'
+	}
+
+	const status = getStatus(score)
+
+	const colorClasses = {
+		bad: 'bg-[var(--red-base)] text-[var(--red-surface)]',
+		middle: 'bg-[var(--yellow-base)] text-[var(--yellow-surface)]',
+		good: 'bg-[var(--green-base)] text-[var(--green-surface)]',
+	}
+
 	return (
 		<div
 			onClick={onClick}
@@ -428,27 +531,137 @@ const Content = ({ type, title, isSelected, onClick }) => {
 										: 'border-transparent bg-[var(--white)] hover:bg-[var(--light-middle)] cursor-pointer'
 								}`}
 		>
-			<div className='flex items-center gap-2'>
-				<span
-					className={isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'}
-				>
-					{icons[type]}
-				</span>
-				<div className='flex flex-col'>
-					<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
-						{labels[type]}
+			<div className='flex items-center justify-between w-full'>
+				<div className='flex items-center gap-2'>
+					<span
+						className={
+							isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'
+						}
+					>
+						{icons[type]}
 					</span>
-					<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+					<div className='flex flex-col'>
+						<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
+							{labels[type]}
+						</span>
+						<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+					</div>
 				</div>
+				{type === 'test' && (
+					<div
+						className={`flex items-center justify-center h-7 w-7 rounded-md ${
+							colorClasses[status]
+						} text-lg`}
+					>
+						{score}
+					</div>
+				)}
 			</div>
 		</div>
 	)
 }
 
-const CoursePage = ({ role }) => {
+const ContentHeader = ({ activeSection, totalTime = 90 }) => {
+	// Состояние для оставшегося времени
+	const [timeLeft, setTimeLeft] = useState(totalTime)
+
+	// Вычисляем процент для прогресс-бара
+	const progressWidth = (timeLeft / totalTime) * 100
+
+	useEffect(() => {
+		if (timeLeft <= 0) return
+
+		const timer = setInterval(() => {
+			setTimeLeft(prev => Math.max(prev - 1, 0))
+		}, 1000) // Таймер обновляется каждую секунду
+
+		return () => clearInterval(timer)
+	}, [timeLeft])
+
+	const icons = {
+		lecture: <BookMarked size={18} />,
+		practice: <NotebookPen size={18} />,
+		test: <LaptopMinimalCheck size={18} />,
+	}
+
+	const labels = {
+		lecture: 'Лекция',
+		practice: 'Практика',
+		test: 'Тест',
+	}
+
+	return (
+		<div className='relative flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2 overflow-hidden'>
+			<div className='flex items-center gap-3'>
+				{activeSection && (
+					<>
+						<span className={'text-[var(--middle)] h-full w-auto'}>
+							{icons[activeSection.type]}
+						</span>
+						<div className='flex flex-col'>
+							<p
+								className={'text-[var(--middle)] text-sm uppercase font-medium'}
+							>
+								{labels[activeSection.type]}
+							</p>
+							<p className={'text-[var(--black)] text-lg'}>
+								{activeSection.name}
+							</p>
+						</div>
+					</>
+				)}
+			</div>
+			<p className='w-25 text-center text-[var(--black)] font-semibold'>
+				<p className='w-25 text-center text-[var(--black)] font-semibold'>
+					{formatTime(timeLeft)}
+				</p>
+			</p>
+
+			<DefaultButton
+				onClick={() => console.log('Завершить тест')}
+				rounded={'rounded-lg'}
+				width='w-fit'
+				flexParams='justify-center'
+			>
+				Завершить тест
+			</DefaultButton>
+			{/* Прогресс-бар с динамической шириной */}
+			<div
+				style={{ width: `${progressWidth}%`, transition: 'width 1s linear' }}
+				className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
+			></div>
+			{/* {role === 'teacher' && (
+							<DefaultButton
+								onClick={() => setIsEdit(prev => !prev)}
+								rounded={'rounded-lg'}
+								width='w-38'
+								flexParams='justify-center'
+							>
+								{isEdit ? 'Сохранить' : 'Редактировать'}
+							</DefaultButton>
+						)} */}
+		</div>
+	)
+}
+
+const CoursePage = () => {
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
-	const activeSectionId = searchParams.get('section') || ''
+	const [activeSectionId, setActiveSectionId] = useState(
+		searchParams.get('section') || '',
+	)
+	const [activeType, setActiveType] = useState('')
+
+	const [role, setRole] = useState()
+	useEffect(() => {
+		const getUserInfo = async e => {
+			try {
+				const res = await Me()
+				setRole(res?.role)
+			} catch (err) {}
+		}
+		getUserInfo()
+	}, [])
 
 	const [blocks, setBlocks] = useState([])
 	const [isEdit, setIsEdit] = useState(false)
@@ -533,13 +746,18 @@ const CoursePage = ({ role }) => {
 		test: 'Тест',
 	}
 
-	if (isLoading) {
-		return (
-			<div className='flex items-center justify-center h-screen'>
-				<p className='text-lg text-[var(--middle)]'>Загрузка курса...</p>
-			</div>
-		)
-	}
+	useEffect(() => {
+		const id = searchParams.get('section')
+		setActiveSectionId(id)
+
+		// Находим тип активной секции из массива модулей
+		if (id && modules.length > 0) {
+			const section = modules.flatMap(m => m.content).find(s => s.id === id)
+			if (section) {
+				setActiveType(section.type)
+			}
+		}
+	}, [searchParams, modules])
 
 	return (
 		<div className='grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 '>
@@ -571,7 +789,10 @@ const CoursePage = ({ role }) => {
 									title={section.name}
 									type={section.type}
 									isSelected={activeSectionId === section.id}
-									onClick={() => handleSectionClick(section.id)}
+									onClick={() => {
+										handleSectionClick(section.id)
+										setActiveType(section.type)
+									}}
 								/>
 							</motion.div>
 						))}
@@ -607,45 +828,15 @@ const CoursePage = ({ role }) => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && (
-					<div className='flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2'>
-						<div className='flex items-center gap-3'>
-							{activeSection && (
-								<>
-									<span className={'text-[var(--middle)] h-full w-auto'}>
-										{icons[activeSection.type]}
-									</span>
-									<div className='flex flex-col'>
-										<p
-											className={
-												'text-[var(--middle)] text-sm uppercase font-medium'
-											}
-										>
-											{labels[activeSection.type]}
-										</p>
-										<p className={'text-[var(--black)] text-lg'}>
-											{activeSection.name}
-										</p>
-									</div>
-								</>
-							)}
-						</div>
-						{role === 'teacher' && (
-							<DefaultButton
-								onClick={() => setIsEdit(prev => !prev)}
-								rounded={'rounded-lg'}
-								width='w-38'
-								flexParams='justify-center'
-							>
-								{isEdit ? 'Сохранить' : 'Редактировать'}
-							</DefaultButton>
-						)}
-					</div>
-				)}
+				{activeSection && <ContentHeader activeSection={activeSection} />}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-					<ContentView isEdit={isEdit} sectionId={activeSectionId} />
+					<ContentView
+						isEdit={role === 'teacher' && true}
+						sectionId={activeSectionId}
+						SectionType={activeType}
+					/>
 				</div>
 			</div>
 		</div>

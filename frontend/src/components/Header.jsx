@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import {
 	Sun,
 	Moon,
@@ -12,7 +12,7 @@ import {
 	ImageOff,
 } from 'lucide-react'
 import api, { API } from '../API'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { Logout } from '../../service/APIs/Authorization'
 import { LogOut } from 'lucide-react'
 
@@ -238,10 +238,14 @@ const HeaderLink = ({ title, icon: Icon, to, not_clickable = false }) => {
 }
 
 export const Header = ({ links = [], userInfo }) => {
+	const navigate = useNavigate()
 	const handleLogout = async e => {
 		try {
 			const res = await Logout()
-		} catch (err) {}
+		} catch (err) {
+		} finally {
+			navigate('/authorization')
+		}
 	}
 	return (
 		<div className='relative'>

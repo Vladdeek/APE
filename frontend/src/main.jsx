@@ -26,40 +26,27 @@ import { Me } from '../service/APIs/Authorization'
 import ModerateUsers from './pages/Moderator/ModerateUsers'
 import ModerateCourses from './pages/Moderator/ModerateCourses'
 import Profile from './pages/Profile'
+import AcceptanceOfApplications from './pages/Moderator/AcceptanceOfApplications'
 
 function MainApp() {
-	const [role, setRole] = useState('teacher')
-
-	useEffect(() => {
-		const getUserInfo = async e => {
-			try {
-				const res = await Me()
-				setRole(res.role)
-			} catch (err) {}
-		}
-		// getUserInfo()
-	}, [])
-
 	return (
 		<Suspense>
 			<Routes>
 				<Route path='/authorization' element={<Authorization />}></Route>
 				<Route path='/' element={<DashboardLayout />}>
-					<Route path='/catalog' element={<Catalog role={role} />}></Route>
-					<Route path='/form' element={<StudentCourseRequest />}></Route>
+					<Route path='/catalog/:type?' element={<Catalog />}></Route>
+					<Route path='/course/:courseId?' element={<CoursePage />} />
+					<Route path='/moderation-users' element={<ModerateUsers />} />
 					<Route
-						path='/course/:courseId?'
-						element={<CoursePage role={role} />}
-					/>
-					<Route
-						path='/moderation-users'
-						element={<ModerateUsers role={role} />}
+						path='/acceptance-of-applications'
+						element={<AcceptanceOfApplications />}
 					/>
 					<Route
 						path='/moderation-courses/:type'
 						element={<ModerateCourses />}
 					/>
 					<Route path='/profile' element={<Profile />} />
+					<Route path='/request/:courseId' element={<StudentCourseRequest />} />
 				</Route>
 			</Routes>
 		</Suspense>

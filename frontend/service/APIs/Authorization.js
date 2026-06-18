@@ -37,5 +37,4 @@ export const Me = async () => {
 export const Logout = async () => {
 	const response = await api.post(`${API}/auth/logout`)
 	return response.data
-	window.location.href = '/authorization'
 }

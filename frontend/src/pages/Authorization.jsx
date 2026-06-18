@@ -3,6 +3,7 @@ import { InputDefault } from '../components/Inputs'
 import { useEffect } from 'react'
 import { Login, Registration } from '../../service/APIs/Authorization'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { executeWithAuthCheck } from '../../service/utils/apiHelper'
 
 const AuthToggle = ({ select, setSelect }) => {
 	return (
@@ -89,30 +90,35 @@ const Authorization = () => {
 		e.preventDefault()
 
 		try {
-			const res = await Registration(
-				formData.email,
-				formData.password,
-				formData.repeat_password,
-				formData.username,
-				formData.first_name,
-				formData.last_name,
-				formData.patronymic,
+			await executeWithAuthCheck(() =>
+				Registration(
+					formData.email,
+					formData.password,
+					formData.repeat_password,
+					formData.username,
+					formData.first_name,
+					formData.last_name,
+					formData.patronymic,
+				),
 			)
 
 			navigate('/')
 		} catch (err) {
 			console.log('REG ERROR:', err)
+			// Здесь можно вывести ошибку пользователю в UI
 		}
 	}
+
 	const handleSubmitLogin = async e => {
 		e.preventDefault()
 
 		try {
-			const res = await Login(formData.email, formData.password)
+			await executeWithAuthCheck(() => Login(formData.email, formData.password))
 
 			navigate('/')
 		} catch (err) {
 			console.log('LOGIN ERROR:', err)
+			// Здесь можно вывести ошибку пользователю в UI
 		}
 	}
 

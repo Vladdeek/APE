@@ -1,6 +1,9 @@
 import { FileCode2, FileText, Film, Image, Upload, X } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
+import { languageMap } from '../../../service/data/lanaguagesMap'
+import { GetPresignedUrlToUploadMedia } from '../../../service/APIs/LectureContent'
+import { uploadFileToStorage } from '../../../service/APIs/uploadFileToS3'
 
 export const RemoveButton = ({ onDelete }) => {
 	return (
@@ -36,20 +39,10 @@ export const UPLOAD_TYPES = {
 		icon: FileCode2, // из lucide-react
 		title: 'код',
 		maxSize: Number(import.meta.env.VITE_MAX_CODE_SIZE), // или из констант
-		exts: [
-			'.js',
-			'.jsx',
-			'.ts',
-			'.tsx',
-			'.py',
-			'.java',
-			'.cpp',
-			'.c',
-			'.cs',
-			'.json',
-			'.html',
-			'.css',
-		],
+		// ВЫТАСКИВАЕМ ДИНАМИЧЕСКИ:
+		// Object.keys(languageMap) выдаст ['js', 'mjs', 'jsx', ...]
+		// .map(ext => `.${ext}`) превратит их в ['.js', '.mjs', '.jsx', ...]
+		exts: Object.keys(languageMap).map(ext => `.${ext}`),
 	},
 }
 
@@ -77,13 +70,17 @@ export const UploadProgressBar = ({ progress }) => {
 
 export const FileUploaderZone = ({
 	type = 'files',
-	onFilesSelected, // Теперь ожидает массив: (files) => void
-	isUploading,
-	uploadProgress,
-	currentFilesWeight = 0, // Опционально: вес уже загруженных файлов, если нужно учитывать
+	sectionId, // Принимаем id секции из пропсов
+	onChange, // Сюда передаем итоговый URL (или массив URL)
+	onFilesSelected, // Оставляем на случай, если локально нужно имя файла
+	currentFilesWeight = 0,
 }) => {
 	const [isDragActive, setIsDragActive] = useState(false)
 	const [isValid, setIsValid] = useState(true)
+
+	// Переносим управление загрузкой внутрь, так как логика теперь здесь
+	const [isUploading, setIsUploading] = useState(false)
+	const [uploadProgress, setUploadProgress] = useState(0)
 
 	const config = UPLOAD_TYPES[type] || UPLOAD_TYPES.files
 	const Icon = config.icon
@@ -91,6 +88,58 @@ export const FileUploaderZone = ({
 	const handleValidationFailed = () => {
 		setIsValid(false)
 		setTimeout(() => setIsValid(true), 1000)
+	}
+
+	// Логика отправки файлов на сервер
+	const handleMediaUpload = async validFiles => {
+		if (type === 'code') {
+			if (onChange) onChange(validFiles)
+			return
+		}
+
+		setIsUploading(true)
+		setUploadProgress(0)
+
+		try {
+			const uploadedUrls = []
+
+			for (const file of validFiles) {
+				// Вытаскиваем расширение (например, 'png', 'mp4')
+				const fileExt = file.name.split('.').pop().toLowerCase()
+
+				// Формируем body строго по спецификации бэка
+				const fileMetadata = {
+					original_name: file.name,
+					file_extension: fileExt,
+					mime_type: file.type,
+					file_size: file.size,
+					type: type === 'image' ? 'images' : type, // Сверяем маппинг ('image' -> 'images')
+				}
+
+				// 1. Получаем pre-signed URL, передавая metadata в body
+				const responseData = await GetPresignedUrlToUploadMedia(
+					sectionId,
+					fileMetadata,
+				)
+
+				// 2. Загружаем файл в S3 через наш хелпер
+				const fileUrl = await uploadFileToStorage(
+					responseData.upload_url.url,
+					responseData.upload_url.fields,
+					file,
+					progress => {
+						setUploadProgress(progress)
+					},
+				)
+
+				onChange(responseData.file_metadata_id)
+			}
+		} catch (error) {
+			console.error('Ошибка при загрузке медиа:', error)
+		} finally {
+			setIsUploading(false)
+			setUploadProgress(0)
+		}
 	}
 
 	const processFiles = newFiles => {
@@ -108,13 +157,11 @@ export const FileUploaderZone = ({
 				totalBatchWeight += file.size
 				validFiles.push(file)
 			} else {
-				// Если хоть один файл не того расширения — считаем ошибкой (на ваше усмотрение)
 				handleValidationFailed()
 				return
 			}
 		}
 
-		// Проверка: сумма новых файлов + то, что уже загружено < лимит
 		if (totalBatchWeight + currentFilesWeight > maxSizeBytes) {
 			alert(`Превышен общий лимит в ${config.maxSize} МБ`)
 			handleValidationFailed()
@@ -122,15 +169,18 @@ export const FileUploaderZone = ({
 		}
 
 		if (validFiles.length > 0) {
-			onFilesSelected(validFiles)
+			if (onFilesSelected) onFilesSelected(validFiles)
+			// Запускаем цепочку загрузки
+			handleMediaUpload(validFiles)
 		}
 	}
 
+	// --- Дальше идет твой JSX без изменений ---
 	const zoneClass = isDragActive
-		? 'bg-[var(--transparent-hero)] border-[var(--hero)]'
+		? 'bg-[var(--transparent-hero)] border-[var(--hero)] ring-[var(--transparent-hero)]'
 		: !isValid
-			? 'bg-[var(--hard-lvl-bg)] border-[var(--hard-lvl-text)]'
-			: 'bg-[var(--light-gray)] border-[var(--middle)]'
+			? 'bg-[var(--hard-lvl-bg)] border-[var(--hard-lvl-text)] ring-[var(--hard-lvl-bg)]'
+			: 'bg-[var(--light-gray)] border-[var(--middle)] ring-[var(--light-middle)]'
 
 	return (
 		<label
@@ -144,14 +194,14 @@ export const FileUploaderZone = ({
 				setIsDragActive(false)
 				processFiles(Array.from(e.dataTransfer.files))
 			}}
-			className={`p-6 w-full flex flex-col items-center justify-center rounded-2xl transition-all border-3 border-dashed ring-4 ring-[var(--light-middle)] ${
+			className={`p-6 w-full flex flex-col items-center justify-center rounded-2xl transition-all border-3 border-dashed ring-4  ${
 				isUploading ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
 			} ${zoneClass}`}
 		>
 			<input
 				type='file'
 				className='hidden'
-				multiple // РАЗРЕШАЕМ ВЫБОР НЕСКОЛЬКИХ ФАЙЛОВ
+				multiple={type !== 'video' && type !== 'image'} // Например, ограничим видео/фото по одному, если бэк не принимает массив
 				accept={config.exts.join(',')}
 				onChange={e => processFiles(Array.from(e.target.files))}
 				disabled={isUploading}

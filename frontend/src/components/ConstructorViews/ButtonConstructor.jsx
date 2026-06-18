@@ -26,10 +26,18 @@ export const ButtonConstructor = ({
 	values,
 	onChange,
 	onDelete,
+	data,
 }) => {
 	const [buttonTitle, setButtonTitle] = useState(values?.buttonTitle || '')
 	const [buttonUrl, setButtonUrl] = useState(values?.buttonUrl || '')
 	const [isValidUrl, setIsValidUrl] = useState(true)
+
+	useEffect(() => {
+		if (data) {
+			setButtonTitle(data.buttonTitle)
+			setButtonUrl(data.buttonUrl)
+		}
+	}, [data])
 
 	// Валидация URL
 	useEffect(() => {

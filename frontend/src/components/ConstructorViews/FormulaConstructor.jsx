@@ -27,8 +27,20 @@ const mathJaxConfig = {
 	},
 }
 
-export const Formula = ({ isEdit = false, values, onChange, onDelete }) => {
+export const Formula = ({
+	isEdit = false,
+	values,
+	onChange,
+	onDelete,
+	data,
+}) => {
 	const [formula, setFormula] = useState(values?.formula || 'E = mc^2')
+
+	useEffect(() => {
+		if (data) {
+			setFormula(data.formula)
+		}
+	}, [data])
 
 	// Синхронизация с пропсами
 	useEffect(() => {

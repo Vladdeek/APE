@@ -1,4 +1,4 @@
-import { EyeOff } from 'lucide-react'
+import { Check, EyeOff, Trash2 } from 'lucide-react'
 import { ChevronDown } from 'lucide-react'
 import { RussianRuble } from 'lucide-react'
 import { ChevronUp } from 'lucide-react'
@@ -7,6 +7,8 @@ import { CircleCheck, ImagePlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickOutside } from '../../service/Hooks/useClickOutside'
 import { useScrollListener } from '../../service/Hooks/useScrollListener'
+import { useDebounce } from '../../service/Hooks/useDebounce'
+import { DeleteOption, EditOptionName } from '../../service/APIs/Test'
 
 export const useInput = ({ value, validate, onChange, onStatusChange }) => {
 	const [internalValue, setInternalValue] = useState(value || '')
@@ -47,6 +49,7 @@ export const InputDefault = ({
 	description,
 	name,
 	readOnly,
+	width = 'w-full',
 }) => {
 	const {
 		value: val,
@@ -61,7 +64,7 @@ export const InputDefault = ({
 	})
 
 	return (
-		<div className={`w-full flex flex-col gap-2 ${disabled && 'opacity-50'}`}>
+		<div className={`{width} flex flex-col gap-2 ${disabled && 'opacity-50'}`}>
 			{title && (
 				<div className='flex items-center gap-2 ml-1'>
 					<p className={`text-[18px] text-[var(--middle)] pt-[2px]`}>{title}</p>
@@ -86,7 +89,7 @@ export const InputDefault = ({
 				onChange={handleChange}
 				readOnly={readOnly || disabled}
 				placeholder={placeholder}
-				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)] text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all'
+				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)]/50 text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all'
 			/>
 		</div>
 	)

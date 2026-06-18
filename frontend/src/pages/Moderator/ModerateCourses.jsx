@@ -312,28 +312,14 @@ const ModerateCourses = () => {
 		<>
 			<div className='grid grid-cols-[500px_1fr] h-screen gap-6 pt-30 pb-10 '>
 				<div className='flex flex-col gap-5'>
-					<div className='w-full'>
-						<ToggleButton
-							select={selected}
-							setSelect={handleSelectChange} // Используем наш обработчик
-							toggles={['Допуск', 'Релиз']}
-						/>
-					</div>
 					<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4 flex flex-col justify-between'>
 						<div className='flex items-center gap-3 mb-3'>
-							<h2 className='text-xl font-bold text-[var(--black)]'>
-								{selected === 0 ? 'Созданные курсы' : 'Допущенные курсы'}
-							</h2>
-							<Help size={18} width={'w-60'}>
-								{selected === 0
-									? 'Проверьте заявку и структуру курса...'
-									: 'Проверьте полноту и качество...'}
-							</Help>
+							<h2 className='text-xl font-bold text-[var(--black)]'>Курсы</h2>
 						</div>
 
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
 							{/* Пример списка курсов */}
-							{courses.map(course => (
+							{courses?.map(course => (
 								<motion.div
 									initial={{ scale: 0.9, opacity: 0 }}
 									animate={{ scale: 1, opacity: 1 }}

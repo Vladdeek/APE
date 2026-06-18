@@ -17,7 +17,7 @@ export default function DashboardLayout({ onChange }) {
 		{
 			student: [
 				{
-					title: 'Мои курсы',
+					title: 'Курсы',
 					icon: GraduationCap,
 					to: '/catalog',
 				},
@@ -38,7 +38,7 @@ export default function DashboardLayout({ onChange }) {
 				{
 					title: 'Курсы',
 					icon: BookText,
-					to: '/moderation-courses/admit',
+					to: '/moderation-courses/pending_review',
 				},
 				{
 					title: 'Заявки',

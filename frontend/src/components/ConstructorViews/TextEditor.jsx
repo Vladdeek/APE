@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
-// Вместо StarterKit берем только нужные модули по отдельности
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -24,27 +23,27 @@ import {
 	AlignLeft,
 	AlignCenter,
 	AlignRight,
-	X,
 } from 'lucide-react'
 import { RemoveButton } from './FileUploaderZone'
 
-export const TextEditor = ({
-	DelComponent,
-	onChange,
-	takeValue,
-	isEdit = false,
-}) => {
-	const initialContent = useMemo(() => {
-		if (!takeValue) return ''
+export const TextEditor = ({ data, onDelete, onChange, isEdit = false }) => {
+	// Храним строку последнего состояния, чтобы избежать бесконечного рендера при синхронизации
+	const lastExternalDataRef = useRef(data)
+
+	// Парсер стал тупым как пробка: если строка — парсим, если объект — отдаем как есть
+	const parseContent = incomingData => {
+		if (!incomingData) return { type: 'doc', content: [] }
 		try {
-			return JSON.parse(takeValue)
+			return typeof incomingData === 'string'
+				? JSON.parse(incomingData)
+				: incomingData
 		} catch (e) {
-			return takeValue
+			console.error('Ошибка парсинга данных в редакторе:', e)
+			return { type: 'doc', content: [] }
 		}
-	}, [takeValue])
+	}
 
 	const editor = useEditor({
-		// Явно перечисляем расширения. Теперь конфликту взяться просто неоткуда.
 		extensions: [
 			Document,
 			Paragraph,
@@ -61,19 +60,46 @@ export const TextEditor = ({
 				types: ['heading', 'paragraph'],
 			}),
 		],
-		content: initialContent,
+		// Инициализируем тем, что пришло в самом начале
+		content: parseContent(data),
 		editable: !!isEdit,
+
 		onUpdate: ({ editor }) => {
+			// Получаем чистый JSON самого Tiptap
+			const tiptapJson = editor.getJSON()
+			const stringifiedJson = JSON.stringify(tiptapJson)
+
+			// Запоминаем, что это мы сами только что ввели
+			lastExternalDataRef.current = stringifiedJson
+
+			// Отдаем наверх чистую строку JSON и plainText (если он нужен родителю для поиска/превью)
 			onChange?.({
-				content: JSON.stringify(editor.getJSON()),
+				content: stringifiedJson,
 				plainText: editor.getText(),
 			})
 		},
 	})
 
+	// Включение / выключение режима редактирования
 	useEffect(() => {
-		if (editor) editor.setEditable(!!isEdit)
+		if (editor) {
+			editor.setEditable(!!isEdit)
+		}
 	}, [isEdit, editor])
+
+	// Синхронизация с бэком: если данные СНАРУЖИ реально изменились и они не равны тому,
+	// что внутри редактора — жестко сетаем их (только когда пользователь не пишет)
+	useEffect(() => {
+		if (!editor || !data) return
+
+		if (data !== lastExternalDataRef.current) {
+			lastExternalDataRef.current = data
+
+			if (!editor.isFocused) {
+				editor.commands.setContent(parseContent(data), false)
+			}
+		}
+	}, [data, editor])
 
 	if (!editor) return null
 
@@ -96,7 +122,7 @@ export const TextEditor = ({
 
 	return (
 		<div className={`flex gap-4 ${!isEdit ? 'w-full' : ''}`}>
-			{isEdit && <RemoveButton onDelete={DelComponent} />}
+			{isEdit && <RemoveButton onDelete={onDelete} />}
 
 			<div className='w-full flex flex-col'>
 				{isEdit && (
@@ -156,7 +182,7 @@ export const TextEditor = ({
 				<div className='w-full'>
 					<style>
 						{`
-                            .ProseMirror { outline: none !important; min-height: 100px; }
+                            .ProseMirror { outline: none !important; min-height: 60px; }
                             .ProseMirror p { margin-bottom: 8px; }
                             .ProseMirror ul { list-style-type: disc; padding-left: 20px; }
                             .ProseMirror ol { list-style-type: decimal; padding-left: 20px; }

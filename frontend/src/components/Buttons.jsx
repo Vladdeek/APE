@@ -119,3 +119,46 @@ export const Checkbox = ({ children, text, title, onChange, flex = false }) => {
 		</div>
 	)
 }
+
+export const RadioButton = ({
+	name,
+	value,
+	checked,
+	onChange,
+	icon: Icon,
+	title,
+	fill = false,
+	wfull = false,
+	disabled = false,
+	className,
+}) => {
+	return (
+		<label
+			className={`${className} ${
+				disabled && 'opacity-50'
+			} flex items-center gap-2 px-4 py-2 ${
+				wfull && 'w-full justify-center'
+			} max-md:w-full max-md:justify-center rounded-xl border cursor-pointer transition-all ${
+				checked
+					? `${
+							fill ? 'bg-[var(--hero)]' : 'bg-[var(--white)]'
+						} border-[var(--hero)] ${
+							fill ? 'text-white' : 'text-[var(--hero)]'
+						} `
+					: 'bg-transparent border-[var(--middle)] text-[var(--middle)] hover:border-[var(--hero)] hover:text-[var(--hero)]'
+			}`}
+		>
+			<input
+				type='radio'
+				name={name}
+				value={value}
+				checked={checked}
+				onChange={onChange}
+				className='hidden'
+				disabled={disabled}
+			/>
+			{Icon && <Icon className='w-5 h-5' />}
+			<span className='text-sm font-medium'>{title}</span>
+		</label>
+	)
+}

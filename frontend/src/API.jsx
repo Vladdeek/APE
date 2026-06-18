@@ -31,9 +31,9 @@ const showError = status => {
 		500: 'Сервер временно умер',
 	}
 
-	toast.error(messages[status] || `Ошибка ${status}`, {
-		id: 'api-error',
-	})
+	// toast.error(messages[status] || `Ошибка ${status}`, {
+	// 	id: 'api-error',
+	// })
 }
 
 const getCookie = name => {
