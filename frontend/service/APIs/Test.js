@@ -106,3 +106,26 @@ export const EditTest = async (
 	})
 	return response.data
 }
+
+// ---> GetSession - Отправляет данные сессии теста <---
+export const GetSession = async test_id => {
+	const response = await api.get(
+		`${API}/test-content/student-session/active/${test_id}`,
+	)
+	return response.data
+}
+// ---> StartSession - начинает сессию тестирования <---
+export const StartSession = async test_id => {
+	const response = await api.post(
+		`${API}/test-content/student-session/start/${test_id}`,
+		{},
+	)
+	return response.data
+}
+// ---> GetStudentAnswers - отдает ответы студента <---
+export const GetStudentAnswers = async test_id => {
+	const response = await api.get(
+		`${API}/test-content/student-session/active/${test_id}/question-answers`,
+	)
+	return response.data
+}

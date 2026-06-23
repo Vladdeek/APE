@@ -11,6 +11,8 @@ import {
 	EditQuestionType,
 	GetDetailQuestion,
 	GetQuestions,
+	GetSession,
+	StartSession,
 	SubmitAnswer,
 } from '../../../service/APIs/Test'
 import { InputDefault } from '../Inputs'
@@ -19,6 +21,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCheck, Plus, Trash2, X } from 'lucide-react'
 import { DefaultButton } from '../Buttons'
 import { Me } from '../../../service/APIs/Authorization'
+
+import React from 'react'
+
+const StartTestingButton = ({ title, onClick }) => {
+	return (
+		<button
+			onClick={onClick}
+			className='relative inline-flex h-14 active:scale-98 overflow-hidden rounded-2xl p-0 focus:outline-none hover:p-[2px] hover:shadow-[var(--hero-glow)] transition-all duration-300'
+		>
+			<span className='absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--darkness-hero)_0%,var(--hero)_50%,var(--light-hero)_100%)]'></span>
+			<span className='inline-flex h-full w-full cursor-pointer items-center justify-center rounded-[14px] bg-[var(--black)] px-7 text-lg font-normal text-[var(--white)] backdrop-blur-3xl gap-2 undefined transition-all '>
+				{title}
+			</span>
+		</button>
+	)
+}
 
 const TestHeaderBlock = ({
 	num,
@@ -60,6 +78,17 @@ const TestHeader = ({ isEdit }) => {
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSection = searchParams.get('section')
 
+	const handleBlockClick = id => {
+		// Создаем копию текущих параметров, чтобы НЕ СТЕРЕТЬ существующий параметр ?section=...
+		const newParams = new URLSearchParams(searchParams)
+
+		// Добавляем или обновляем только questionId
+		newParams.set('questionId', id)
+
+		// Обновляем URL строки браузера
+		setSearchParams(newParams)
+	}
+
 	const [questionsData, setQuestionsData] = useState([])
 
 	const getQuestions = async () => {
@@ -73,7 +102,10 @@ const TestHeader = ({ isEdit }) => {
 
 	const addQuestion = async () => {
 		try {
-			await AddQuestion(activeSection)
+			const res = await AddQuestion(activeSection)
+			if (res) {
+				handleBlockClick(res.question_id)
+			}
 		} catch (err) {
 			console.log(err)
 		} finally {
@@ -84,17 +116,6 @@ const TestHeader = ({ isEdit }) => {
 	useEffect(() => {
 		activeSection && getQuestions()
 	}, [activeSection])
-
-	const handleBlockClick = id => {
-		// Создаем копию текущих параметров, чтобы НЕ СТЕРЕТЬ существующий параметр ?section=...
-		const newParams = new URLSearchParams(searchParams)
-
-		// Добавляем или обновляем только questionId
-		newParams.set('questionId', id)
-
-		// Обновляем URL строки браузера
-		setSearchParams(newParams)
-	}
 
 	const deleteQuestion = async e => {
 		// Передаем ID конкретного вопроса
@@ -536,8 +557,12 @@ const TestView = ({ isEdit, role }) => {
 const TestManager = () => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
+	const activeSection = searchParams.get('section')
+
+	const [sessionIsActive, setSessionIsActive] = useState(false)
 
 	const [role, setRole] = useState()
+
 	useEffect(() => {
 		const getUserInfo = async e => {
 			try {
@@ -547,16 +572,53 @@ const TestManager = () => {
 		}
 		getUserInfo()
 	}, [])
+
+	const startSession = async () => {
+		try {
+			await StartSession(activeSection)
+		} catch (err) {
+			console.log(err)
+		}
+	}
+
+	useEffect(() => {
+		const getSession = async () => {
+			try {
+				const res = await GetSession(activeSection)
+				setSessionIsActive(true)
+			} catch (err) {
+				if (err.response.data.unique_code === 'NO_ACTIVE_TEST_SESSION_FOUND') {
+					setSessionIsActive(false)
+				} else {
+					console.log(err)
+				}
+			}
+		}
+		if (role === 'student') {
+			getSession()
+		}
+	}, [activeSection])
 	return (
 		<>
-			<TestHeader isEdit={role === 'teacher'} />
-			{activeQuestionId ? (
+			{sessionIsActive ? (
 				<>
-					<TestView role={role} isEdit={role === 'teacher'} />
+					<TestHeader isEdit={role === 'teacher'} />
+					{activeQuestionId ? (
+						<>
+							<TestView role={role} isEdit={role === 'teacher'} />
+						</>
+					) : (
+						<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
+							Вопрос не выбран
+						</div>
+					)}
 				</>
 			) : (
-				<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
-					Вопрос не выбран
+				<div className={`w-full h-150 flex justify-center items-center`}>
+					<StartTestingButton
+						title={'Начать тестирование'}
+						onClick={startSession}
+					/>
 				</div>
 			)}
 		</>

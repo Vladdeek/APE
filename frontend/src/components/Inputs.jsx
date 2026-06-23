@@ -107,7 +107,11 @@ export const TimeLimitInput = ({ COUNT_QUESTION = 0, onChange, value }) => {
 		if (!value) {
 			if (COUNT_QUESTION > 0) setTime(MIN_TIME_LIMIT)
 		} else if (value) {
-			setTime(value)
+			if (value < MIN_TIME_LIMIT) {
+				setTime(MIN_TIME_LIMIT)
+			} else {
+				setTime(value)
+			}
 		}
 	}, [COUNT_QUESTION])
 

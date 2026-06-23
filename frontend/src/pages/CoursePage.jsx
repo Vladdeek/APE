@@ -55,6 +55,7 @@ import {
 	EditTest,
 	GetDetailQuestion,
 	GetQuestions,
+	GetSession,
 } from '../../service/APIs/Test'
 import TestManager from '../components/TestManager/TestManager'
 import { formatTime } from '../../service/utils/formatTime'
@@ -563,14 +564,22 @@ const Content = ({ type, title, isSelected, onClick, role }) => {
 	)
 }
 
-const ContentHeader = ({ activeSection, totalTime = 90, role }) => {
+const ContentHeader = ({ role }) => {
+	const [searchParams, setSearchParams] = useSearchParams()
+
+	// Достаем текущий questionId из URL (строка, содержащая UUID)
+	const activeQuestionId = searchParams.get('questionId')
+	const activeSection = searchParams.get('section')
+
 	const [questionsData, setQuestionsData] = useState([])
 
-	// Состояние для оставшегося времени
+	const [totalTime, setTotalTime] = useState(0)
+
 	const [timeLeft, setTimeLeft] = useState(totalTime)
 
-	// Вычисляем процент для прогресс-бара
 	const progressWidth = (timeLeft / totalTime) * 100
+
+	
 
 	useEffect(() => {
 		if (timeLeft <= 0) return
@@ -582,15 +591,22 @@ const ContentHeader = ({ activeSection, totalTime = 90, role }) => {
 		return () => clearInterval(timer)
 	}, [timeLeft])
 
+	
+
 	useEffect(() => {
 		const getQuestions = async () => {
 			try {
-				const res = await GetQuestions(activeSection.id)
-				setQuestionsData(res)
+				const res = await GetQuestions(activeSection)
+				if (res) {
+					setQuestionsData(res)
+					setTotalTime(res.time_limit)
+					setTimeLeft(res.time_limit)
+				}
 			} catch (err) {
 				console.log(err)
 			}
 		}
+		
 		getQuestions()
 	}, [activeSection])
 
@@ -617,24 +633,22 @@ const ContentHeader = ({ activeSection, totalTime = 90, role }) => {
 		test: 'Тест',
 	}
 
-	console.log(questionsData)
-
 	return (
 		<div className='relative flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2 overflow-hidden'>
 			<div className='flex items-center gap-3'>
-				{activeSection && (
+				{questionsData && (
 					<>
 						<span className={'text-[var(--middle)] h-full w-auto'}>
-							{icons[activeSection.type]}
+							{icons[questionsData.type]}
 						</span>
 						<div className='flex flex-col'>
 							<p
 								className={'text-[var(--middle)] text-sm uppercase font-medium'}
 							>
-								{labels[activeSection.type]}
+								{labels[questionsData.type]}
 							</p>
 							<p className={'text-[var(--black)] text-lg'}>
-								{activeSection.name}
+								{questionsData.name}
 							</p>
 						</div>
 					</>
