@@ -11,12 +11,14 @@ import {
 	EditQuestionType,
 	GetDetailQuestion,
 	GetQuestions,
+	SubmitAnswer,
 } from '../../../service/APIs/Test'
 import { InputDefault } from '../Inputs'
 import { useDebounce } from '../../../service/Hooks/useDebounce'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Plus, Trash2, X } from 'lucide-react'
+import { Check, CheckCheck, Plus, Trash2, X } from 'lucide-react'
 import { DefaultButton } from '../Buttons'
+import { Me } from '../../../service/APIs/Authorization'
 
 const TestHeaderBlock = ({
 	num,
@@ -63,7 +65,7 @@ const TestHeader = ({ isEdit }) => {
 	const getQuestions = async () => {
 		try {
 			const res = await GetQuestions(activeSection)
-			setQuestionsData(res)
+			setQuestionsData(res.question_ids)
 		} catch (err) {
 			console.log(err)
 		}
@@ -247,28 +249,42 @@ const QuestionOptionInput = ({
 	)
 }
 
-const QuestionOptionButton = ({ id, initialText, initialIsCorrect }) => {
+const QuestionOptionButton = ({
+	id,
+	initialText,
+	initialIsSelected,
+	onHandleAnswer,
+}) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const [textValue, setTextValue] = useState(initialText || '')
-	const [isCorrect, setIsCorrect] = useState(initialIsCorrect || false)
+	const [isSelected, setIsSelected] = useState(initialIsSelected || false)
+
+	const handleAnswer = () => {
+		setIsSelected(prev => !prev)
+		onHandleAnswer?.()
+	}
 
 	return (
-		<div className='flex gap-2 w-full'>
+		<div onClick={handleAnswer} className='flex gap-2 w-full'>
 			{/* Инпут с дебаунсом */}
 			<div className='flex-1'>
 				<p
-					className={`rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)]/50 text-[var(--black)] shadow-[var(--shadow)] border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all ${isCorrect && 'bg-[var(--hero)]'}`}
+					className={`flex justify-between rounded-2xl p-3 shadow-[var(--shadow)] outline-0 transition-all cursor-pointer  hover:ring-3 ${isSelected ? 'bg-[var(--hero)] text-white ring-[var(--transparent-hero)]' : 'text-[var(--black)] bg-[var(--white)] ring-[var(--hero)]'}`}
 				>
 					{initialText}
+					<Check
+						className={`transition-all ${isSelected ? 'opacity-100' : 'opacity-0'}`}
+					/>
 				</p>
 			</div>
 		</div>
 	)
 }
 
-const TestView = ({ isEdit }) => {
+const TestView = ({ isEdit, role }) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
+	const activeSectionId = searchParams.get('section')
 	const [data, setData] = useState({
 		question: '',
 		max_score: 1,
@@ -371,6 +387,33 @@ const TestView = ({ isEdit }) => {
 		debouncedEditQuestion(data.question, data.max_score)
 	}, [data.question, data.max_score]) // activeQuestionId здесь больше не нужен для запуска
 
+	const [selectedOptions, setSelectedOptions] = useState(new Set())
+
+	const toggleOption = optionCode => {
+		setSelectedOptions(prev => {
+			const next = new Set(prev)
+			if (next.has(optionCode)) {
+				next.delete(optionCode)
+			} else {
+				next.add(optionCode)
+			}
+			return next
+		})
+	}
+
+	const submitAnswer = async () => {
+		try {
+			await SubmitAnswer(
+				activeQuestionId,
+				data.type,
+				Array.from(selectedOptions),
+				activeSectionId,
+			)
+		} catch (err) {
+			console.log(err)
+		}
+	}
+
 	return (
 		<div className='w-full flex flex-col gap-6 items-center'>
 			{/* Верхняя часть с вопросом и оценкой */}
@@ -398,9 +441,9 @@ const TestView = ({ isEdit }) => {
 			)}
 
 			{/* Блок управления типами */}
-			<div className='w-full max-w-2xl '>
+			<div className='w-full max-w-2xl flex flex-col items-center gap-4 '>
 				{data?.type === 'choice' ? (
-					<div className='flex flex-col items-center gap-3'>
+					<div className='flex flex-col items-center gap-3 w-full'>
 						<div className='flex flex-col w-full items-center'>
 							<p className='text-[var(--middle)] font-medium'>
 								Варианты ответа
@@ -442,7 +485,12 @@ const TestView = ({ isEdit }) => {
 												disabled={data?.options?.length <= 2}
 											/>
 										) : (
-											<QuestionOptionButton id={q.id} initialText={q.name} />
+											<QuestionOptionButton
+												id={q.id}
+												initialText={q.name}
+												onHandleAnswer={() => toggleOption(q.option_code)}
+												initialIsSelected={selectedOptions.has(q.option_code)}
+											/>
 										)}
 									</motion.div>
 								)
@@ -473,6 +521,13 @@ const TestView = ({ isEdit }) => {
 						)}
 					</div>
 				)}
+				{role === 'student' && (
+					<>
+						<DefaultButton onClick={submitAnswer} className='mt-2'>
+							<p>Ответить на вопрос</p>
+						</DefaultButton>
+					</>
+				)}
 			</div>
 		</div>
 	)
@@ -482,7 +537,7 @@ const TestManager = () => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
 
-	const [role, setRole] = useState('student')
+	const [role, setRole] = useState()
 	useEffect(() => {
 		const getUserInfo = async e => {
 			try {
@@ -490,13 +545,15 @@ const TestManager = () => {
 				setRole(res?.role)
 			} catch (err) {}
 		}
-		// getUserInfo()
+		getUserInfo()
 	}, [])
 	return (
 		<>
 			<TestHeader isEdit={role === 'teacher'} />
 			{activeQuestionId ? (
-				<TestView isEdit={role === 'teacher'} />
+				<>
+					<TestView role={role} isEdit={role === 'teacher'} />
+				</>
 			) : (
 				<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
 					Вопрос не выбран

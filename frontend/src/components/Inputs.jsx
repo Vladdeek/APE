@@ -1,4 +1,4 @@
-import { Check, EyeOff, Trash2 } from 'lucide-react'
+import { Check, EyeOff, Minus, Plus, Trash2 } from 'lucide-react'
 import { ChevronDown } from 'lucide-react'
 import { RussianRuble } from 'lucide-react'
 import { ChevronUp } from 'lucide-react'
@@ -9,6 +9,7 @@ import { useClickOutside } from '../../service/Hooks/useClickOutside'
 import { useScrollListener } from '../../service/Hooks/useScrollListener'
 import { useDebounce } from '../../service/Hooks/useDebounce'
 import { DeleteOption, EditOptionName } from '../../service/APIs/Test'
+import { formatTime } from '../../service/utils/formatTime'
 
 export const useInput = ({ value, validate, onChange, onStatusChange }) => {
 	const [internalValue, setInternalValue] = useState(value || '')
@@ -91,6 +92,59 @@ export const InputDefault = ({
 				placeholder={placeholder}
 				className='rounded-2xl p-3 bg-[var(--white)] placeholder:text-[var(--middle)]/50 text-[var(--black)] shadow-inner border-1 ring-[var(--hero)] focus:ring-2 outline-0 border-[var(--black)]/2.5 transition-all'
 			/>
+		</div>
+	)
+}
+
+export const TimeLimitInput = ({ COUNT_QUESTION = 0, onChange, value }) => {
+	const [time, setTime] = useState(0)
+
+	const TIME_FOR_ONE_QUESTION = 90
+	const TIME_STEP = 30
+	const MIN_TIME_LIMIT = COUNT_QUESTION * TIME_FOR_ONE_QUESTION
+
+	useEffect(() => {
+		if (!value) {
+			if (COUNT_QUESTION > 0) setTime(MIN_TIME_LIMIT)
+		} else if (value) {
+			setTime(value)
+		}
+	}, [COUNT_QUESTION])
+
+	useEffect(() => {
+		onChange?.(time)
+	}, [time])
+
+	return (
+		<div className='flex flex-col gap-1'>
+			<label className='text-xs text-end font-medium text-[var(--black)]/60'>
+				Лимит времени на тест
+			</label>
+
+			<div className='flex items-center w-fit px-2 py-1 border border-[var(--light-middle)]/25 bg-[var(--white)] rounded-md shadow-inner'>
+				<span className='text-sm font-medium tabular-nums w-30 text-center'>
+					{formatTime(time)}
+				</span>
+
+				{/* Контейнер кнопок с подсказкой */}
+				<div
+					className='flex flex-col border-l border-[var(--light-middle)]/20 ml-1 pl-1'
+					title={`Шаг изменения: ${formatTime(TIME_STEP)} \nМин. время на вопрос: ${formatTime(TIME_FOR_ONE_QUESTION)}`}
+				>
+					<Plus
+						onClick={() => setTime(prev => prev + TIME_STEP)}
+						size={14}
+						className='cursor-pointer hover:text-[var(--primary)] transition-colors'
+					/>
+					<Minus
+						onClick={() =>
+							time > MIN_TIME_LIMIT && setTime(prev => prev - TIME_STEP)
+						}
+						size={14}
+						className={`cursor-pointer transition-colors ${time <= MIN_TIME_LIMIT ? 'opacity-20 cursor-default' : 'hover:text-[var(--primary)]'}`}
+					/>
+				</div>
+			</div>
 		</div>
 	)
 }
