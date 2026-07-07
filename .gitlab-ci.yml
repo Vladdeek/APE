@@ -1,5 +1,6 @@
 stages:
   - deploy
+  - trigger-infra
 
 deploy_to_vps:
   stage: deploy
@@ -31,7 +32,7 @@ trigger_infra:
     strategy: depend
 
   variables:
-    SERVICE_NAME: api
+    SERVICE_NAME: main-client
 
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main"'
