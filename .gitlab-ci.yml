@@ -1,6 +1,6 @@
 stages:
   - deploy
-  - trigger-infra
+  - trigger
 
 deploy_to_vps:
   stage: deploy
