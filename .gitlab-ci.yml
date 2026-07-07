@@ -16,11 +16,22 @@ deploy_to_vps:
     - ssh-add <(cat ~/.ssh/id_rsa)
     - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude=".env" --delete ./frontend $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
     - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude="frontend/" ./ $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
-    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose stop"
-    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose build frontend"
-    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose up -d"
   tags:
     - deploy-runner
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+
+trigger_infra:
+  stage: trigger
+
+  trigger:
+    project: dpo-lms/dpo-lms-infra
+    branch: main
+    strategy: depend
+
+  variables:
+    SERVICE_NAME: api
 
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main"'
