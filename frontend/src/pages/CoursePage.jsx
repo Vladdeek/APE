@@ -31,7 +31,7 @@ import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
 import { Checkbox, DefaultButton } from '../components/Buttons'
-import { InputDefault } from '../components/Inputs'
+import { InputDefault, TimeLimitInput } from '../components/Inputs'
 import {
 	CreateCourse,
 	CreateLesson,
@@ -52,8 +52,10 @@ import {
 	AddQuestion,
 	DeleteOption,
 	EditQuestionType,
+	EditTest,
 	GetDetailQuestion,
 	GetQuestions,
+	GetSession,
 } from '../../service/APIs/Test'
 import TestManager from '../components/TestManager/TestManager'
 import { formatTime } from '../../service/utils/formatTime'
@@ -491,7 +493,7 @@ const Module = ({ title, index, isExpanded, onToggle, children }) => {
 }
 
 // Компонент Контента (Лекция/Практика/Тест)
-const Content = ({ type, title, isSelected, onClick }) => {
+const Content = ({ type, title, isSelected, onClick, role }) => {
 	const icons = {
 		lecture: <BookMarked size={18} />,
 		practice: <NotebookPen size={18} />,
@@ -504,12 +506,12 @@ const Content = ({ type, title, isSelected, onClick }) => {
 		test: 'Тест',
 	}
 
-	const [score, setScore] = useState(5)
+	const [score, setScore] = useState(3)
 
 	// Вычисляем статус прямо при рендере
 	const getStatus = s => {
 		if (s >= 4) return 'good'
-		if (s >= 2) return 'middle'
+		if (s >= 3) return 'middle'
 		return 'bad'
 	}
 
@@ -547,26 +549,37 @@ const Content = ({ type, title, isSelected, onClick }) => {
 						<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
 					</div>
 				</div>
-				{type === 'test' && (
-					<div
-						className={`flex items-center justify-center h-7 w-7 rounded-md ${
-							colorClasses[status]
-						} text-lg`}
-					>
-						{score}
-					</div>
-				)}
+				{type === 'test' ||
+					(role === 'student' && (
+						<div
+							className={`flex items-center justify-center h-7 w-7 rounded-md ${
+								colorClasses[status]
+							} text-lg`}
+						>
+							{score}
+						</div>
+					))}
 			</div>
 		</div>
 	)
 }
 
-const ContentHeader = ({ activeSection, totalTime = 90 }) => {
-	// Состояние для оставшегося времени
+const ContentHeader = ({ role }) => {
+	const [searchParams, setSearchParams] = useSearchParams()
+
+	// Достаем текущий questionId из URL (строка, содержащая UUID)
+	const activeQuestionId = searchParams.get('questionId')
+	const activeSection = searchParams.get('section')
+
+	const [questionsData, setQuestionsData] = useState([])
+
+	const [totalTime, setTotalTime] = useState(0)
+
 	const [timeLeft, setTimeLeft] = useState(totalTime)
 
-	// Вычисляем процент для прогресс-бара
 	const progressWidth = (timeLeft / totalTime) * 100
+
+	
 
 	useEffect(() => {
 		if (timeLeft <= 0) return
@@ -577,6 +590,36 @@ const ContentHeader = ({ activeSection, totalTime = 90 }) => {
 
 		return () => clearInterval(timer)
 	}, [timeLeft])
+
+	
+
+	useEffect(() => {
+		const getQuestions = async () => {
+			try {
+				const res = await GetQuestions(activeSection)
+				if (res) {
+					setQuestionsData(res)
+					setTotalTime(res.time_limit)
+					setTimeLeft(res.time_limit)
+				}
+			} catch (err) {
+				console.log(err)
+			}
+		}
+		
+		getQuestions()
+	}, [activeSection])
+
+	const changeTimeLimit = async time => {
+		if (time > 0) {
+			try {
+				await EditTest(activeSection.id, null, null, time, null)
+				setQuestionsData(res)
+			} catch (err) {
+				console.log(err)
+			}
+		}
+	}
 
 	const icons = {
 		lecture: <BookMarked size={18} />,
@@ -593,53 +636,58 @@ const ContentHeader = ({ activeSection, totalTime = 90 }) => {
 	return (
 		<div className='relative flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2 overflow-hidden'>
 			<div className='flex items-center gap-3'>
-				{activeSection && (
+				{questionsData && (
 					<>
 						<span className={'text-[var(--middle)] h-full w-auto'}>
-							{icons[activeSection.type]}
+							{icons[questionsData.type]}
 						</span>
 						<div className='flex flex-col'>
 							<p
 								className={'text-[var(--middle)] text-sm uppercase font-medium'}
 							>
-								{labels[activeSection.type]}
+								{labels[questionsData.type]}
 							</p>
 							<p className={'text-[var(--black)] text-lg'}>
-								{activeSection.name}
+								{questionsData.name}
 							</p>
 						</div>
 					</>
 				)}
 			</div>
-			<p className='w-25 text-center text-[var(--black)] font-semibold'>
-				<p className='w-25 text-center text-[var(--black)] font-semibold'>
-					{formatTime(timeLeft)}
-				</p>
-			</p>
 
-			<DefaultButton
-				onClick={() => console.log('Завершить тест')}
-				rounded={'rounded-lg'}
-				width='w-fit'
-				flexParams='justify-center'
-			>
-				Завершить тест
-			</DefaultButton>
-			{/* Прогресс-бар с динамической шириной */}
-			<div
-				style={{ width: `${progressWidth}%`, transition: 'width 1s linear' }}
-				className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
-			></div>
-			{/* {role === 'teacher' && (
-							<DefaultButton
-								onClick={() => setIsEdit(prev => !prev)}
-								rounded={'rounded-lg'}
-								width='w-38'
-								flexParams='justify-center'
-							>
-								{isEdit ? 'Сохранить' : 'Редактировать'}
-							</DefaultButton>
-						)} */}
+			{role === 'student' && (
+				<>
+					<p className='w-25 text-center text-[var(--black)] font-semibold'>
+						<p className='w-25 text-center text-[var(--black)] font-semibold'>
+							{formatTime(timeLeft)}
+						</p>
+					</p>
+					<DefaultButton
+						onClick={() => console.log('Завершить тест')}
+						rounded={'rounded-lg'}
+						width='w-fit'
+						flexParams='justify-center'
+					>
+						Завершить тест
+					</DefaultButton>
+					{/* Прогресс-бар с динамической шириной */}
+					<div
+						style={{
+							width: `${progressWidth}%`,
+							transition: 'width 1s linear',
+						}}
+						className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
+					></div>
+				</>
+			)}
+
+			{role === 'teacher' && (
+				<TimeLimitInput
+					COUNT_QUESTION={questionsData?.question_ids?.length}
+					value={questionsData?.time_limit}
+					onChange={data => changeTimeLimit(data)}
+				/>
+			)}
 		</div>
 	)
 }
@@ -786,6 +834,7 @@ const CoursePage = () => {
 								}}
 							>
 								<Content
+									role={role}
 									title={section.name}
 									type={section.type}
 									isSelected={activeSectionId === section.id}
@@ -828,7 +877,9 @@ const CoursePage = () => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && <ContentHeader activeSection={activeSection} />}
+				{activeSection && (
+					<ContentHeader role={role} activeSection={activeSection} />
+				)}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
