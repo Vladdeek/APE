@@ -1,0 +1,26 @@
+stages:
+  - deploy
+
+deploy_to_vps:
+  stage: deploy
+  image:
+    name: debian:latest
+  before_script:
+    - apt update && apt install -y openssh-client rsync
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  script:
+    - ssh-add <(cat ~/.ssh/id_rsa)
+    - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude=".env" --delete ./frontend $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
+    - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude="frontend/" ./ $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
+    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose stop"
+    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose build frontend"
+    - ssh -p $VPS_PORT $VPS_USER@$VPS_IP "cd $VPS_PROJECT_DIR && cd ../../ && docker compose up -d"
+  tags:
+    - deploy-runner
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
