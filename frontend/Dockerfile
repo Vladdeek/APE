@@ -13,16 +13,7 @@ COPY . .
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginx:alpina
 
-CMD ["npm", "run", "preview"]
-
-# COPY cert.pem /etc/nginx/cert.pem
-# COPY key.pem /etc/nginx/key.pem
-
-# COPY --from=builder /home/app/dist /usr/share/nginx/html
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# EXPOSE 80
-
-# CMD ["nginx", "-g", "daemon off;"]
+COPY --from=builder /home/app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default/conf
