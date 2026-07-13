@@ -1,0 +1,38 @@
+stages:
+  - deploy
+  - trigger
+
+deploy_to_vps:
+  stage: deploy
+  image:
+    name: debian:latest
+  before_script:
+    - apt update && apt install -y openssh-client rsync
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  script:
+    - ssh-add <(cat ~/.ssh/id_rsa)
+    - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude=".env" --delete ./frontend $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
+    - rsync -avzhe "ssh -p $VPS_PORT -i ~/.ssh/id_rsa" --exclude="frontend/" ./ $VPS_USER@$VPS_IP:$VPS_PROJECT_DIR
+  tags:
+    - deploy-runner
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+
+trigger_infra:
+  stage: trigger
+
+  trigger:
+    project: dpo-lms/dpo-lms-infra
+    branch: main
+    strategy: depend
+
+  variables:
+    SERVICE_NAME: main-client
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
