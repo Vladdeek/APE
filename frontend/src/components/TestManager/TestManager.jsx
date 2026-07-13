@@ -19,10 +19,16 @@ import { InputDefault } from '../Inputs'
 import { useDebounce } from '../../../service/Hooks/useDebounce'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCheck, Plus, Trash2, X } from 'lucide-react'
-import { DefaultButton } from '../Buttons'
+import {
+	ColoredButton,
+	DefaultButton,
+	LinkButton,
+	OutlineButton,
+} from '../Buttons'
 import { Me } from '../../../service/APIs/Authorization'
 
 import React from 'react'
+import Modal from '../Modal'
 
 const StartTestingButton = ({ title, onClick }) => {
 	return (
@@ -295,14 +301,7 @@ const TestingScore = ({ score = 4.1, min = 1, max = 5 }) => {
 	)
 }
 
-const TestHeaderBlock = ({
-	num,
-	questionId,
-	isActive,
-	onClick,
-	delQuestion,
-	isEdit,
-}) => {
+const TestHeaderBlock = ({ num, questionId, isActive, onClick, isEdit }) => {
 	const STYLES = {
 		// По умолчанию все блоки в дефолтном стиле
 		default: 'bg-[var(--white)] text-[var(--middle)] hover:text-[var(--hero)] ',
@@ -318,12 +317,6 @@ const TestHeaderBlock = ({
             `}
 		>
 			<p>{num}</p> {/* Порядковый номер для красоты отображения */}
-			{isEdit && (
-				<X
-					onClick={e => delQuestion(e)}
-					className='w-[16px] h-[16px] absolute -top-1 -right-1 bg-[var(--red-base)] rounded-full p-[3px] text-[var(--red-surface)] opacity-0 group-hover:opacity-100 hover:contrast-150 hover:scale-105 active:scale-95 transition-all z-10'
-				/>
-			)}
 		</div>
 	)
 }
@@ -374,22 +367,6 @@ const TestHeader = ({ isEdit }) => {
 		activeSection && getQuestions()
 	}, [activeSection])
 
-	const deleteQuestion = async e => {
-		// Передаем ID конкретного вопроса
-		e.stopPropagation()
-		try {
-			await DeleteQuestion(activeQuestionId)
-
-			// После успешного удаления сбрасываем параметры URL
-			setSearchParams({})
-
-			// Если нужно обновить список вопросов
-			await getQuestions()
-		} catch (err) {
-			console.log(err)
-		}
-	}
-
 	return (
 		<div className='flex gap-4 w-full mb-15 items-center'>
 			{questionsData && (
@@ -413,7 +390,6 @@ const TestHeader = ({ isEdit }) => {
 								// Сверяем UUID из URL с UUID текущего вопроса в цикле
 								isActive={q === activeQuestionId}
 								onClick={handleBlockClick}
-								delQuestion={e => deleteQuestion(e)}
 							/>
 						</motion.div>
 					))}
@@ -560,9 +536,10 @@ const QuestionOptionButton = ({
 }
 
 const TestView = ({ isEdit, role }) => {
-	const [searchParams] = useSearchParams() // Достаем хук
+	const [searchParams, setSearchParams] = useSearchParams()
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSectionId = searchParams.get('section')
+	const [isModalOpen, setIsModalOpen] = useState(false)
 	const [data, setData] = useState({
 		question: '',
 		max_score: 1,
@@ -692,126 +669,201 @@ const TestView = ({ isEdit, role }) => {
 		}
 	}
 
+	const deleteQuestion = async e => {
+		e.stopPropagation()
+		try {
+			await DeleteQuestion(activeQuestionId)
+
+			setSearchParams(prevParams => {
+				const newParams = new URLSearchParams(prevParams)
+				newParams.delete('questionId')
+				return newParams
+			})
+
+			// Если нужно обновить список вопросов
+			await getQuestions()
+		} catch (err) {
+			console.log(err)
+		}
+	}
+
 	return (
-		<div className='w-full flex flex-col gap-6 items-center'>
-			{/* Верхняя часть с вопросом и оценкой */}
-			{isEdit ? (
-				<div className='grid gap-4 grid-cols-[1fr_auto] w-full max-w-2xl'>
-					<InputDefault
-						title='Введите вопрос'
-						name='question'
-						value={data.question}
-						onChange={handleChange}
-					/>
-					<div className='w-20'>
-						<InputDefault
-							title='Оценка'
-							name='max_score'
-							value={data.max_score}
-							onChange={handleChange}
-						/>
+		<>
+			<Modal
+				width={'w-100'}
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+			>
+				<div className='flex flex-col gap-6 w-full p-2 mt-4'>
+					{/* Текст вопроса */}
+					<p className='text-lg font-medium text-center leading-5 text-[var(--black)]'>
+						Вы точно хотите удалить этот вопрос?{' '}
+						<span className='text-sm font-light text-[var(--black)]/50'>
+							Это действие нельзя будет отменить.
+						</span>
+					</p>
+
+					{/* Контейнер для кнопок */}
+					<div className='flex gap-3 items-center justify-end w-full'>
+						{/* Кнопка Отменить (Outline / Инвертированная) */}
+						<OutlineButton
+							invert
+							width='w-full sm:w-fit'
+							onClick={() => setIsModalOpen(false)}
+						>
+							Отменить
+						</OutlineButton>
+
+						{/* Кнопка Удалить (Красная) */}
+						<ColoredButton
+							color={{ bg: 'var(--red-base)', text: 'var(--red-surface)' }} // Можно использовать 'var(--red)' если есть в переменных
+							width='w-full sm:w-fit'
+							onClick={e => {
+								// Ваша логика удаления здесь
+								deleteQuestion(e)
+								setIsModalOpen(false)
+							}}
+						>
+							Удалить
+						</ColoredButton>
 					</div>
 				</div>
-			) : (
-				<p className='text-[var(--black)] font-medium text-xl'>
-					{data.question || 'Вопрос не задан'}
-				</p>
-			)}
+			</Modal>
+			<div className='w-full flex flex-col gap-3 items-center'>
+				<div className='w-full max-w-2xl flex justify-end'>
+					<LinkButton
+						title={'Удалить вопрос'}
+						color={'var(--red-base)'}
+						textsize='text-xs'
+						onClick={() => setIsModalOpen(prev => !prev)}
+					/>
+				</div>
 
-			{/* Блок управления типами */}
-			<div className='w-full max-w-2xl flex flex-col items-center gap-4 '>
-				{data?.type === 'choice' ? (
-					<div className='flex flex-col items-center gap-3 w-full'>
-						<div className='flex flex-col w-full items-center'>
-							<p className='text-[var(--middle)] font-medium'>
-								Варианты ответа
-							</p>
-							{/* Кнопка смены на открытый тип */}
-							{isEdit && (
-								<button
-									onClick={() => handleChangeTypeOnOption('open')}
-									className='text-xs text-red-500 opacity-75 hover:opacity-100 hover:underline self-end cursor-pointer transition-all'
-								>
-									Убрать варианты ответа (сделать открытым)
-								</button>
-							)}
+				{/* Верхняя часть с вопросом и оценкой */}
+				{isEdit ? (
+					<div className='grid gap-4 grid-cols-[1fr_auto] w-full max-w-2xl'>
+						<InputDefault
+							title='Введите вопрос'
+							name='question'
+							value={data.question}
+							onChange={handleChange}
+						/>
+						<div className='w-20'>
+							<InputDefault
+								title='Оценка'
+								name='max_score'
+								value={data.max_score}
+								onChange={handleChange}
+							/>
 						</div>
-
-						<AnimatePresence mode='popLayout'>
-							{data?.options?.map((q, i) => {
-								console.log('isEdit: ', isEdit)
-								const abcdefg = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-								return (
-									<motion.div
-										key={q.id} // Уникальный ключ здесь
-										layout // Плавная перестановка при изменении порядка/удалении
-										initial={{ scale: 0.8, opacity: 0 }}
-										animate={{ scale: 1, opacity: 1 }}
-										exit={{ scale: 0.5, opacity: 0 }} // Анимация при удалении
-										transition={{
-											duration: 0.3,
-											delay: i * 0.05, // Немного уменьшил задержку для отзывчивости
-											ease: 'easeOut',
-										}}
-										className='w-full flex items-center gap-3'
-									>
-										{isEdit ? (
-											<QuestionOptionInput
-												id={q.id}
-												initialText={q.name}
-												initialIsCorrect={q.is_correct}
-												onOptionUpdate={getQuestionDetails}
-												disabled={data?.options?.length <= 2}
-											/>
-										) : (
-											<>
-												<p className='uppercase text-xl'>{abcdefg[i] + ').'}</p>
-												<QuestionOptionButton
-													id={q.id}
-													initialText={q.name}
-													onHandleAnswer={() => toggleOption(q.option_code)}
-													initialIsSelected={selectedOptions.has(q.option_code)}
-												/>
-											</>
-										)}
-									</motion.div>
-								)
-							})}
-						</AnimatePresence>
-						{isEdit && (
-							<DefaultButton onClick={addOption} className='mt-2'>
-								<Plus strokeWidth={3} />
-								<p>Добавить вариант</p>
-							</DefaultButton>
-						)}
 					</div>
 				) : (
-					<div className='flex flex-col items-center gap-4 w-full'>
-						{isEdit ? (
-							<DefaultButton onClick={() => handleChangeTypeOnOption('choice')}>
-								Добавить варианты ответа
-							</DefaultButton>
-						) : (
-							<div className={`w-full`}>
-								<InputDefault
-									title='Введите ответ'
-									name='student_answer'
-									value={data.student_answer}
-									onChange={handleChange}
-								/>
+					<p className='text-[var(--black)] font-medium text-xl'>
+						{data.question || 'Вопрос не задан'}
+					</p>
+				)}
+
+				{/* Блок управления типами */}
+				<div className='w-full max-w-2xl flex flex-col items-center gap-4 '>
+					{data?.type === 'choice' ? (
+						<div className='flex flex-col items-center gap-3 w-full'>
+							<div className='flex flex-col w-full items-center'>
+								<p className='text-[var(--middle)] font-medium'>
+									Варианты ответа
+								</p>
+								{/* Кнопка смены на открытый тип */}
+								{isEdit && (
+									<button
+										onClick={() => handleChangeTypeOnOption('open')}
+										className='text-xs text-red-500 opacity-75 hover:opacity-100 hover:underline self-end cursor-pointer transition-all'
+									>
+										Убрать варианты ответа (сделать открытым)
+									</button>
+								)}
 							</div>
-						)}
-					</div>
-				)}
-				{role === 'student' && (
-					<>
-						<DefaultButton onClick={submitAnswer} className='mt-2'>
-							<p>Ответить на вопрос</p>
-						</DefaultButton>
-					</>
-				)}
+
+							<AnimatePresence mode='popLayout'>
+								{data?.options?.map((q, i) => {
+									console.log('isEdit: ', isEdit)
+									const abcdefg = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+									return (
+										<motion.div
+											key={q.id} // Уникальный ключ здесь
+											layout // Плавная перестановка при изменении порядка/удалении
+											initial={{ scale: 0.8, opacity: 0 }}
+											animate={{ scale: 1, opacity: 1 }}
+											exit={{ scale: 0.5, opacity: 0 }} // Анимация при удалении
+											transition={{
+												duration: 0.3,
+												delay: i * 0.05, // Немного уменьшил задержку для отзывчивости
+												ease: 'easeOut',
+											}}
+											className='w-full flex items-center gap-3'
+										>
+											{isEdit ? (
+												<QuestionOptionInput
+													id={q.id}
+													initialText={q.name}
+													initialIsCorrect={q.is_correct}
+													onOptionUpdate={getQuestionDetails}
+													disabled={data?.options?.length <= 2}
+												/>
+											) : (
+												<>
+													<p className='uppercase text-xl'>
+														{abcdefg[i] + ').'}
+													</p>
+													<QuestionOptionButton
+														id={q.id}
+														initialText={q.name}
+														onHandleAnswer={() => toggleOption(q.option_code)}
+														initialIsSelected={selectedOptions.has(
+															q.option_code,
+														)}
+													/>
+												</>
+											)}
+										</motion.div>
+									)
+								})}
+							</AnimatePresence>
+							{isEdit && (
+								<DefaultButton onClick={addOption} className='mt-2'>
+									<Plus strokeWidth={3} />
+									<p>Добавить вариант</p>
+								</DefaultButton>
+							)}
+						</div>
+					) : (
+						<div className='flex flex-col items-center gap-4 w-full'>
+							{isEdit ? (
+								<DefaultButton
+									onClick={() => handleChangeTypeOnOption('choice')}
+								>
+									Добавить варианты ответа
+								</DefaultButton>
+							) : (
+								<div className={`w-full`}>
+									<InputDefault
+										title='Введите ответ'
+										name='student_answer'
+										value={data.student_answer}
+										onChange={handleChange}
+									/>
+								</div>
+							)}
+						</div>
+					)}
+					{role === 'student' && (
+						<>
+							<DefaultButton onClick={submitAnswer} className='mt-2'>
+								<p>Ответить на вопрос</p>
+							</DefaultButton>
+						</>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 

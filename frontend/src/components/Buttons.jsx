@@ -63,6 +63,88 @@ export const DefaultButton = ({
 	)
 }
 
+export const ColoredButton = ({
+	children,
+	onClick,
+	disabled,
+	paddings = 'px-4 py-2',
+	rounded = 'rounded-xl',
+	width = 'w-fit',
+	height = '',
+	flexParams = 'gap-3 items-center justify-center', // добавил центрирование для удобства
+	textSize = 'text-base', // проп для размера текста
+	color, // { bg: '...', text: '...' }
+}) => {
+	// Если кнопка заблокирована — красим в дефолтный серый, иначе берем кастом из style
+	const buttonStyle =
+		!disabled && color ? { backgroundColor: color.bg, color: color.text } : {}
+
+	const getBaseClasses = () => {
+		if (disabled) {
+			return 'bg-[var(--middle)] text-[var(--light-middle)] cursor-not-allowed'
+		}
+		return 'cursor-pointer'
+	}
+
+	return (
+		<button
+			disabled={disabled}
+			onClick={onClick}
+			style={buttonStyle}
+			className={`
+				${getBaseClasses()} 
+				${paddings} 
+				${rounded} 
+				${width} 
+				${height} 
+				${flexParams} 
+				${textSize} 
+				hover:scale-102 active:shadow-inner active:scale-98 shadow-[var(--shadow)] flex font-bold transition-all
+			`}
+		>
+			{children}
+		</button>
+	)
+}
+
+export const OutlineButton = ({
+	children,
+	onClick,
+	disabled,
+	paddings = 'px-4 py-2',
+	rounded = 'rounded-xl',
+	width = 'w-fit',
+	height = '',
+	flexParams = 'gap-3 items-center justify-center',
+}) => {
+	const getOutlineClasses = () => {
+		if (disabled) {
+			return 'border-2 border-[var(--middle)] text-[var(--light-middle)] cursor-not-allowed bg-transparent'
+		}
+		// В обычном состоянии прозрачный фон, рамка и текст цвета var(--black)
+		// При ховере красится в var(--hero), а текст становится белым
+		return 'ring-1 ring-[var(--black)]/50 text-[var(--black)] bg-transparent hover:ring-[var(--hero)] hover:text-[var(--hero)] cursor-pointer'
+	}
+
+	return (
+		<button
+			disabled={disabled}
+			onClick={onClick}
+			className={`
+				${getOutlineClasses()} 
+				${paddings} 
+				${rounded} 
+				${width} 
+				${height} 
+				${flexParams} 
+				flex font-medium transition-all text-center
+			`}
+		>
+			{children}
+		</button>
+	)
+}
+
 export const SubmitButton = ({
 	onClick,
 	icon: Icon,
@@ -160,5 +242,30 @@ export const RadioButton = ({
 			{Icon && <Icon className='w-5 h-5' />}
 			<span className='text-sm font-medium'>{title}</span>
 		</label>
+	)
+}
+
+export const LinkButton = ({
+	onClick,
+	title,
+	textsize = 'text-md',
+	underline = false,
+	color = 'var(--black)',
+}) => {
+	return (
+		<>
+			<div
+				onClick={onClick}
+				style={{ color: color }}
+				className={`flex flex-col items-center cursor-pointer group w-fit ${textsize} p-1`}
+			>
+				<p className='group-hover:brightness-90'>{title}</p>
+
+				<div
+					style={{ backgroundColor: color }}
+					className={` h-[1px] w-0 group-hover:w-full transition-all`}
+				></div>
+			</div>
+		</>
 	)
 }

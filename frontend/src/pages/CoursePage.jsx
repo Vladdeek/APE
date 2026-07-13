@@ -36,6 +36,7 @@ import {
 	CreateCourse,
 	CreateLesson,
 	CreateModule,
+	GetSectionInfo,
 	ReadCourseById,
 } from '../../service/APIs/Couses'
 import {
@@ -59,6 +60,7 @@ import {
 } from '../../service/APIs/Test'
 import TestManager from '../components/TestManager/TestManager'
 import { formatTime } from '../../service/utils/formatTime'
+import { useUser } from '../../service/context/UserContext'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -225,6 +227,7 @@ const ContentView = ({
 	const [blocks, setBlocks] = useState([])
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
+	const activeSectionId = searchParams.get('section')
 	const { courseId } = useParams()
 
 	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
@@ -375,7 +378,7 @@ const ContentView = ({
 							)
 						})}
 
-						{isEdit && (
+						{activeSectionId && isEdit && (
 							<ConstructorMenu onAdd={type => addBlock(sectionId, type)} />
 						)}
 					</div>
@@ -564,13 +567,15 @@ const Content = ({ type, title, isSelected, onClick, role }) => {
 	)
 }
 
-const ContentHeader = ({ role }) => {
+const ContentHeader = () => {
+	const { role } = useUser()
 	const [searchParams, setSearchParams] = useSearchParams()
 
 	// Достаем текущий questionId из URL (строка, содержащая UUID)
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSection = searchParams.get('section')
 
+	const [sectionInfo, setSectionInfo] = useState([])
 	const [questionsData, setQuestionsData] = useState([])
 
 	const [totalTime, setTotalTime] = useState(0)
@@ -579,8 +584,6 @@ const ContentHeader = ({ role }) => {
 	const [accessToTheTest, setAccessToTheTest] = useState(false)
 
 	const progressWidth = (timeLeft / totalTime) * 100
-
-	console.log(timeLeft)
 
 	useEffect(() => {
 		if (timeLeft <= 0) return
@@ -591,6 +594,23 @@ const ContentHeader = ({ role }) => {
 
 		return () => clearInterval(timer)
 	}, [timeLeft])
+
+	useEffect(() => {
+		const getSectionInfo = async () => {
+			try {
+				const res = await GetSectionInfo(activeSection)
+				if (res) {
+					setSectionInfo(res)
+				}
+
+				console.log(res)
+			} catch (err) {
+				console.log(err)
+			}
+		}
+
+		getSectionInfo()
+	}, [activeSection])
 
 	useEffect(() => {
 		const getQuestions = async () => {
@@ -605,8 +625,8 @@ const ContentHeader = ({ role }) => {
 			}
 		}
 
-		getQuestions()
-	}, [activeSection])
+		sectionInfo.type === 'test' && getQuestions()
+	}, [sectionInfo])
 
 	useEffect(() => {
 		setSessionIsActive(false)
@@ -663,57 +683,60 @@ const ContentHeader = ({ role }) => {
 	return (
 		<div className='relative flex items-center justify-between w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-xl pr-3 pl-4 py-2 overflow-hidden'>
 			<div className='flex items-center gap-3'>
-				{questionsData && (
+				{sectionInfo && (
 					<>
 						<span className={'text-[var(--middle)] h-full w-auto'}>
-							{icons[questionsData.type]}
+							{icons[sectionInfo.type]}
 						</span>
 						<div className='flex flex-col'>
 							<p
 								className={'text-[var(--middle)] text-sm uppercase font-medium'}
 							>
-								{labels[questionsData.type]}
+								{labels[sectionInfo.type]}
 							</p>
 							<p className={'text-[var(--black)] text-lg'}>
-								{questionsData.name}
+								{sectionInfo.name}
 							</p>
 						</div>
 					</>
 				)}
 			</div>
-
-			{accessToTheTest && (
+			{sectionInfo.type === 'test' && (
 				<>
-					<p className='w-25 text-center text-[var(--black)] font-semibold'>
-						<p className='w-25 text-center text-[var(--black)] font-semibold'>
-							{formatTime(timeLeft >= 0 ? timeLeft : 0)}
-						</p>
-					</p>
-					<DefaultButton
-						onClick={() => console.log('Завершить тест')}
-						rounded={'rounded-lg'}
-						width='w-fit'
-						flexParams='justify-center'
-					>
-						Завершить тест
-					</DefaultButton>
-					{/* Прогресс-бар с динамической шириной */}
-					<div
-						style={{
-							width: `${progressWidth}%`,
-							transition: 'width 1s linear',
-						}}
-						className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
-					></div>
-				</>
-			)}
+					{accessToTheTest && (
+						<>
+							<p className='w-25 text-center text-[var(--black)] font-semibold'>
+								<p className='w-25 text-center text-[var(--black)] font-semibold'>
+									{formatTime(timeLeft >= 0 ? timeLeft : 0)}
+								</p>
+							</p>
+							<DefaultButton
+								onClick={() => console.log('Завершить тест')}
+								rounded={'rounded-lg'}
+								width='w-fit'
+								flexParams='justify-center'
+							>
+								Завершить тест
+							</DefaultButton>
+							{/* Прогресс-бар с динамической шириной */}
+							<div
+								style={{
+									width: `${progressWidth}%`,
+									transition: 'width 1s linear',
+								}}
+								className='absolute bg-[var(--hero)] bottom-0 left-0 h-1 rounded-full'
+							></div>
+						</>
+					)}
 
-			{role === 'teacher' && (
-				<TimeLimitInput
-					COUNT_QUESTION={questionsData?.question_ids?.length}
-					value={questionsData?.time_limit}
-					onChange={data => changeTimeLimit(data)}
-				/>
+					{role === 'teacher' && (
+						<TimeLimitInput
+							COUNT_QUESTION={questionsData?.question_ids?.length}
+							value={questionsData?.time_limit}
+							onChange={data => changeTimeLimit(data)}
+						/>
+					)}
+				</>
 			)}
 		</div>
 	)
@@ -727,27 +750,16 @@ const CoursePage = () => {
 	)
 	const [activeType, setActiveType] = useState('')
 
-	const [role, setRole] = useState()
-	useEffect(() => {
-		const getUserInfo = async e => {
-			try {
-				const res = await Me()
-				setRole(res?.role)
-			} catch (err) {}
-		}
-		getUserInfo()
-	}, [])
+	const { role } = useUser()
 
 	const [blocks, setBlocks] = useState([])
 	const [isEdit, setIsEdit] = useState(false)
 	const [modules, setModules] = useState([])
-	const [isLoading, setIsLoading] = useState(true) // Состояние загрузки
+	const [isLoading, setIsLoading] = useState(true)
 
-	// Переносим чтение курса в useCallback, чтобы функцию можно было вызывать из других методов
 	const fetchCourseData = useCallback(async () => {
 		if (!courseId) return
 		try {
-			// Убираем setIsLoading(true) отсюда, чтобы интерфейс не «моргал» при создании уроков
 			const res = await ReadCourseById(courseId)
 			if (res && res.modules) {
 				setModules(res.modules)
@@ -906,7 +918,7 @@ const CoursePage = () => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && <ContentHeader role={role} />}
+				{activeSection && <ContentHeader />}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}

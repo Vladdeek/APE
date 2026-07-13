@@ -47,6 +47,11 @@ export const ReadCourseById = async course_id => {
 	return response.data
 }
 
+export const GetSectionInfo = async section_id => {
+	const response = await api.get(`${API}/course/module/section/${section_id}`)
+	return response.data
+}
+
 export const GetCertificates = async () => {
 	const response = await api.get(`${API}/course/certificate-types`)
 	return response.data
