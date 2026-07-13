@@ -11,17 +11,29 @@
 	--green-surface: #ecfdf5;
 	--green-text: #065f46;
 
-	/* Red - Danger */
-	--red-base: #f87171;
-	--red-hover: #ef4444;
-	--red-surface: #fef2f2;
-	--red-text: #991b1b;
+	/* Lime/Yellow-Green Transition */
+	--lime-base: #98c961;
+	--lime-hover: #83ac46;
+	--lime-surface: #f6fcd0;
+	--lime-text: #4d502c;
 
 	/* Yellow - Warning */
 	--yellow-base: #fbbf24;
 	--yellow-hover: #f59e0b;
 	--yellow-surface: #fffbeb;
 	--yellow-text: #92400e;
+
+	/* Orange/Red-Yellow Transition */
+	--orange-base: #f9984b;
+	--orange-hover: #d77128;
+	--orange-surface: #ffeeeb;
+	--orange-text: #982b13;
+
+	/* Red - Danger */
+	--red-base: #f87171;
+	--red-hover: #ef4444;
+	--red-surface: #fef2f2;
+	--red-text: #991b1b;
 }
 
 :root[data-theme='light'] {
@@ -30,7 +42,7 @@
 	--black: #111111;
 	--hero-epta: var(--hero);
 
-	--hero-pale: #faf1f4;
+	--hero-pale: #e8f8ff;
 	--middle: #989898;
 	--light-middle: #ededed;
 	--light-gray: #f8f8f8;

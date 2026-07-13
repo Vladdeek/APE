@@ -38,6 +38,263 @@ const StartTestingButton = ({ title, onClick }) => {
 	)
 }
 
+const QuestionResultCard = ({
+	id,
+	question,
+	correctAnswers,
+	studentAnswers,
+	status,
+}) => {
+	// Выносим цвет для градиента в зависимости от статуса
+	const statusColors = {
+		correct: {
+			color: 'var(--green-base)',
+			icon: <Check strokeWidth={3.5} size={256} />,
+		},
+		uncorrect: {
+			color: 'var(--red-base)',
+			icon: <X strokeWidth={3.5} size={256} />,
+		},
+		middle: {
+			color: 'var(--yellow-base)',
+			icon: <Check strokeWidth={3.5} size={256} />,
+		},
+		default: {
+			color: 'var(--light-middle)',
+			icon: <X strokeWidth={3.5} size={256} />,
+		},
+	}
+
+	const primaryScoreColor = statusColors[status].color || statusColors.default
+	const primaryScoreIcon =
+		statusColors[status].icon || statusColors.default.icon
+
+	const formatAnswers = arr =>
+		Array.isArray(arr) && arr.length > 0 ? arr.join(', ') : 'Нет ответа'
+
+	return (
+		<div
+			className={`w-full relative overflow-hidden bg-[var(--white)] shadow-[var(--shadow)] rounded-2xl p-4 flex gap-3 items-center transition-all border-l-8`}
+			style={{ borderColor: primaryScoreColor }}
+		>
+			<p
+				className='text-center text-8xl pr-2 font-black tracking-tighter'
+				style={{
+					color: `${primaryScoreColor}`,
+				}}
+			>
+				{id}
+			</p>
+
+			{/* Контент */}
+			<div className='flex flex-col gap-3 flex-grow '>
+				<p className='text-md font-semibold text-[var(--black)]'>
+					{question || 'Вопрос без текста'}
+				</p>
+
+				<div className='flex flex-col gap-1 bg-[var(--light-middle)]/25 p-3 z-10 backdrop-blur-sm rounded-xl'>
+					<p className='text-sm text-[var(--middle)]'>
+						{correctAnswers?.length > 1
+							? 'Правильные ответы:'
+							: 'Правильный ответ:'}
+						<span className='font-semibold ml-1 text-[var(--black)]'>
+							{formatAnswers(correctAnswers)}
+						</span>
+					</p>
+					<p className='text-sm text-[var(--middle)]'>
+						{studentAnswers?.length > 1 ? 'Ваши ответы:' : 'Ваш ответ:'}
+						<span
+							className='font-semibold ml-1'
+							style={{ color: primaryScoreColor }}
+						>
+							{formatAnswers(studentAnswers)}
+						</span>
+					</p>
+				</div>
+			</div>
+			{primaryScoreIcon && (
+				<div
+					className='absolute -bottom-20 right-2 opacity-75 z-1'
+					style={{ color: primaryScoreColor }}
+				>
+					{primaryScoreIcon}
+				</div>
+			)}
+		</div>
+	)
+}
+
+const TestingScore = ({ score = 4.1, min = 1, max = 5 }) => {
+	const scoreConfigs = {
+		1: {
+			val: 1,
+			title: 'Неудовлетворительно',
+			color: 'bg-[var(--red-base)] text-[var(--red-surface)]',
+		},
+		2: {
+			val: 2,
+			title: 'Неудовлетворительно',
+			color: 'bg-[var(--orange-base)] text-[var(--orange-surface)]',
+		},
+		3: {
+			val: 3,
+			title: 'Удовлетворительно',
+			color: 'bg-[var(--yellow-base)] text-[var(--yellow-surface)]',
+		},
+		4: {
+			val: 4,
+			title: 'Хорошо',
+			color: 'bg-[var(--lime-base)] text-[var(--lime-surface)]',
+		},
+		5: {
+			val: 5,
+			title: 'Отлично',
+			color: 'bg-[var(--green-base)] text-[var(--green-surface)]',
+		},
+	}
+
+	const roundedScore = Math.round(score)
+	const floorScore = Math.floor(score)
+	const scoreTitle = scoreConfigs[roundedScore]
+		? scoreConfigs[roundedScore].title
+		: 'Неизвестно'
+	const exactScore = score.toFixed(2)
+
+	const getScoreColor = scoreValue => {
+		const config = scoreConfigs[scoreValue]
+		if (config) {
+			// Here we extract only the color, for example 'bg-[var(--red-base)]' -> 'red'
+			const colorName = config.color.match(/--(.*?)-base/)[1]
+			return `var(--${colorName}-base)`
+		}
+		return 'var(--middle)' // Default color
+	}
+
+	// Логика расчета процента
+	const getColorPercentage = totalScore => {
+		const remainder = totalScore - Math.floor(totalScore)
+		return (1 - remainder) * 100
+	}
+	const getGrayPercentage = (index, totalScore) => {
+		// 1. Карточки до текущей (полностью цветные)
+		if (index < Math.floor(totalScore)) return 0
+
+		// 2. Карточка, на которой находится "срез"
+		if (index === Math.floor(totalScore)) {
+			return getColorPercentage(totalScore)
+		}
+
+		// 3. Карточки после среза (полностью серые)
+		return 100
+	}
+
+	const primaryScoreColor = getScoreColor(roundedScore)
+
+	const testResults = [
+		{
+			id: 1,
+			question: 'Какой цвет получается при смешивании синего и желтого?',
+			correctAnswers: ['Зеленый'],
+			studentAnswers: ['Зеленый'],
+			status: 'correct',
+		},
+		{
+			id: 2,
+			question: 'Выберите все языки программирования высокого уровня:',
+			correctAnswers: ['Python', 'JavaScript', 'C++'],
+			studentAnswers: ['Python', 'PHP'],
+			status: 'middle',
+		},
+		{
+			id: 3,
+			question: 'Столица Франции — это...',
+			correctAnswers: ['Париж'],
+			studentAnswers: ['Берлин'],
+			status: 'uncorrect',
+		},
+	]
+
+	return (
+		<div className='w-full p-8 grid grid-cols-3 gap-10'>
+			<div className='col-span-3 flex items-center justify-center text-4xl font-semibold text-[var(--black)]'>
+				<p>Результаты тестирования</p>
+			</div>
+
+			<div className='w-full flex flex-col col-span-1 items-center justify-start gap-10'>
+				<div className='flex flex-col items-center gap-2 p-6 bg-[var(--light-middle)]/25 rounded-3xl w-full'>
+					<p
+						className='text-center text-9xl font-extrabold leading-none tracking-tight'
+						style={{
+							color: primaryScoreColor,
+							backgroundImage: `linear-gradient(135deg, ${primaryScoreColor} 25%, var(--light-middle) 100%)`,
+							WebkitBackgroundClip: 'text',
+							WebkitTextFillColor: 'transparent',
+						}}
+					>
+						{roundedScore}
+					</p>
+					<p className='text-center text-md font-light text-[var(--middle)]/75'>
+						Подробная оценка: {exactScore}
+					</p>
+					<p className='text-center text-4xl font-semibold text-[var(--middle)]'>
+						{scoreTitle}
+					</p>
+				</div>
+
+				<div className='flex flex-col gap-6 w-full max-w-lg'>
+					<div className='grid grid-cols-5 gap-3'>
+						{Object.values(scoreConfigs).map((item, i) => {
+							const grayPercent = getGrayPercentage(i, score)
+
+							return (
+								<div
+									key={item.val}
+									className='relative flex flex-col gap-1 items-center'
+								>
+									<div
+										className={`relative flex items-center justify-center w-full h-12 rounded-2xl ${item.color} `}
+									>
+										<span className={`text-2xl font-bold `}>{item.val}</span>
+
+										<div
+											className='absolute h-full right-0 backdrop-grayscale-90'
+											style={{
+												width: `${grayPercent}%`,
+											}}
+										/>
+									</div>
+								</div>
+							)
+						})}
+					</div>
+				</div>
+			</div>
+
+			<div
+				className={`col-span-2 bg-[var(--light-middle)]/25 rounded-3xl p-4 pb-0 flex flex-col  gap-4 max-h-[calc(90vh-20rem)]`}
+			>
+				<p className='text-center text-2xl font-semibold text-[var(--black)]'>
+					Ваши ответы на вопросы
+				</p>
+				<div className='w-full bg-[var(--light-middle)]/25 rounded-3xl h-fit flex flex-col gap-3 overflow-y-auto p-2 pr-4'>
+					<div className='flex flex-col gap-4'>
+						{testResults.map((item, idx) => (
+							<QuestionResultCard
+								key={idx}
+								id={idx + 1}
+								question={item.question}
+								correctAnswers={item.correctAnswers}
+								studentAnswers={item.studentAnswers}
+								status={item.status}
+							/>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 const TestHeaderBlock = ({
 	num,
 	questionId,
@@ -483,6 +740,7 @@ const TestView = ({ isEdit, role }) => {
 						<AnimatePresence mode='popLayout'>
 							{data?.options?.map((q, i) => {
 								console.log('isEdit: ', isEdit)
+								const abcdefg = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 								return (
 									<motion.div
 										key={q.id} // Уникальный ключ здесь
@@ -495,7 +753,7 @@ const TestView = ({ isEdit, role }) => {
 											delay: i * 0.05, // Немного уменьшил задержку для отзывчивости
 											ease: 'easeOut',
 										}}
-										className='w-full'
+										className='w-full flex items-center gap-3'
 									>
 										{isEdit ? (
 											<QuestionOptionInput
@@ -506,12 +764,15 @@ const TestView = ({ isEdit, role }) => {
 												disabled={data?.options?.length <= 2}
 											/>
 										) : (
-											<QuestionOptionButton
-												id={q.id}
-												initialText={q.name}
-												onHandleAnswer={() => toggleOption(q.option_code)}
-												initialIsSelected={selectedOptions.has(q.option_code)}
-											/>
+											<>
+												<p className='uppercase text-xl'>{abcdefg[i] + ').'}</p>
+												<QuestionOptionButton
+													id={q.id}
+													initialText={q.name}
+													onHandleAnswer={() => toggleOption(q.option_code)}
+													initialIsSelected={selectedOptions.has(q.option_code)}
+												/>
+											</>
 										)}
 									</motion.div>
 								)
@@ -554,12 +815,15 @@ const TestView = ({ isEdit, role }) => {
 	)
 }
 
-const TestManager = () => {
+const TestManager = ({}) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSection = searchParams.get('section')
 
-	const [sessionIsActive, setSessionIsActive] = useState(false)
+	const [sessionIsStart, setSessionIsStart] = useState(false)
+	const [accessToTheTest, setAccessToTheTest] = useState(false)
+
+	const [timeLeft, setTimeLeft] = useState(0)
 
 	const [role, setRole] = useState()
 
@@ -582,27 +846,77 @@ const TestManager = () => {
 	}
 
 	useEffect(() => {
+		const getQuestions = async () => {
+			try {
+				const res = await GetQuestions(activeSection)
+				return res.time_limit
+			} catch (err) {
+				console.log(err)
+			}
+		}
 		const getSession = async () => {
 			try {
 				const res = await GetSession(activeSection)
-				setSessionIsActive(true)
+				const currentTime = Date.now() / 1000 // Текущее время в секундах
+				const tl = Math.floor(currentTime - res.expire_at)
+				setSessionIsStart(true)
+				setTimeLeft(getQuestions() - tl)
 			} catch (err) {
-				if (err.response.data.unique_code === 'NO_ACTIVE_TEST_SESSION_FOUND') {
-					setSessionIsActive(false)
-				} else {
-					console.log(err)
-				}
+				// Обработка ошибки
+				setSessionIsStart(false)
 			}
 		}
-		if (role === 'student') {
+
+		if (role === 'student' && activeSection) {
 			getSession()
 		}
-	}, [activeSection])
+	}, [activeSection, role])
+
+	useEffect(() => {
+		if (sessionIsStart === true && timeLeft > 0 && role === 'student') {
+			setAccessToTheTest(true)
+		} else {
+			setAccessToTheTest(false)
+		}
+	}, [sessionIsStart, timeLeft, role])
+
+	console.log(accessToTheTest)
+
+	console.log(activeQuestionId)
+
 	return (
 		<>
-			{sessionIsActive ? (
+			{role === 'student' ? (
 				<>
-					<TestHeader isEdit={role === 'teacher'} />
+					{sessionIsStart ? (
+						accessToTheTest ? (
+							<>
+								<TestHeader timeLeft={timeLeft} isEdit={role === 'teacher'} />
+								{activeQuestionId ? (
+									<>
+										<TestView role={role} isEdit={role === 'teacher'} />
+									</>
+								) : (
+									<div className='flex justify-center items-center w-full h-full text-center text-[var(--middle)] font-medium'>
+										Вопрос не выбран
+									</div>
+								)}
+							</>
+						) : (
+							<TestingScore />
+						)
+					) : (
+						<div className={`w-full h-150 flex justify-center items-center`}>
+							<StartTestingButton
+								title={'Начать тестирование'}
+								onClick={startSession}
+							/>
+						</div>
+					)}
+				</>
+			) : (
+				<>
+					<TestHeader timeLeft={timeLeft} isEdit={role === 'teacher'} />
 					{activeQuestionId ? (
 						<>
 							<TestView role={role} isEdit={role === 'teacher'} />
@@ -613,13 +927,6 @@ const TestManager = () => {
 						</div>
 					)}
 				</>
-			) : (
-				<div className={`w-full h-150 flex justify-center items-center`}>
-					<StartTestingButton
-						title={'Начать тестирование'}
-						onClick={startSession}
-					/>
-				</div>
 			)}
 		</>
 	)

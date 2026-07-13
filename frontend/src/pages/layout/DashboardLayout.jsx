@@ -4,6 +4,7 @@ import { use, useContext, useEffect, useState } from 'react'
 import {
 	BookText,
 	BookUser,
+	CopyCheck,
 	FileUser,
 	GraduationCap,
 	ShieldAlert,
@@ -27,6 +28,11 @@ export default function DashboardLayout({ onChange }) {
 					title: 'Мои курсы',
 					icon: GraduationCap,
 					to: '/catalog',
+				},
+				{
+					title: 'Проверка заданий',
+					icon: CopyCheck,
+					to: '/checking',
 				},
 			],
 			moderator: [

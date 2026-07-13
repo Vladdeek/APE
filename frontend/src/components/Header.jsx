@@ -12,9 +12,10 @@ import {
 	ImageOff,
 } from 'lucide-react'
 import api, { API } from '../API'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Logout } from '../../service/APIs/Authorization'
 import { LogOut } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const GradientIcon = ({ Icon, id, palette, size = '125%' }) => (
 	<svg width={size} height={size} className='rotate-y-180' viewBox='0 0 24 24'>
@@ -237,8 +238,109 @@ const HeaderLink = ({ title, icon: Icon, to, not_clickable = false }) => {
 	)
 }
 
+const MobileHeaderMenu = ({ onClick, active }) => {
+	return (
+		<div className='relative min-lg:hidden'>
+			{/* Кнопка Бургер */}
+			<div onClick={onClick} className='h-8 w-8 relative cursor-pointer z-50'>
+				<div
+					className={`absolute transition-all w-full h-1 rounded-full bg-[var(--black)] ${
+						active ? 'rotate-45 top-1/2 -translate-y-1/2' : 'top-[6px]'
+					}`}
+				/>
+				<div
+					className={`absolute transition-all h-1 rounded-full bg-[var(--black)] top-1/2 -translate-y-1/2 ${
+						active ? 'w-0 opacity-0' : 'w-full opacity-100'
+					}`}
+				/>
+				<div
+					className={`absolute transition-all w-full h-1 rounded-full bg-[var(--black)] ${
+						active ? '-rotate-45 top-1/2 -translate-y-1/2' : 'bottom-[6px]'
+					}`}
+				/>
+			</div>
+		</div>
+	)
+}
+
+const MobileHeaderModal = ({ links, active }) => {
+	const location = useLocation()
+	const navigate = useNavigate()
+
+	// Настройки анимации для плавного выпадения (сверху вниз)
+	const menuVariants = {
+		hidden: {
+			opacity: 0,
+			y: '-20px',
+			transition: {
+				when: 'afterChildren',
+				staggerChildren: 0.05, // Пункты исчезают по очереди
+			},
+		},
+		visible: {
+			opacity: 1,
+			y: 0,
+			transition: {
+				when: 'beforeChildren',
+				staggerChildren: 0.07, // Эффект «водопада» при появлении
+			},
+		},
+	}
+
+	// Анимация для каждого отдельного пункта
+	const itemVariants = {
+		hidden: { opacity: 0, y: -10 },
+		visible: { opacity: 1, y: 0 },
+	}
+
+	console.log(links)
+
+	return (
+		<AnimatePresence>
+			{active && (
+				<motion.div
+					variants={menuVariants}
+					initial='hidden'
+					animate='visible'
+					exit='hidden'
+					className='absolute top-0 left-0 pt-24 w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-2xl p-4 flex flex-col gap-3 z-40 min-lg:hidden'
+				>
+					{links.map(link => {
+						const Icon = link.icon
+						// Проверяем активность ссылки через роутер
+						const isActiveLink = location.pathname === link.to
+
+						return (
+							<motion.div key={link.to} variants={itemVariants}>
+								<div
+									onClick={() => {
+										navigate(link.to)
+										setActive(prev => !prev)
+									}} // Закрываем меню при переходе
+									className={`flex items-center gap-5 px-4 py-5 rounded-xl text-2xl transition-all ${
+										isActiveLink
+											? 'bg-[var(--hero-pale)] text-[var(--hero)] font-medium'
+											: 'text-[var(--black)] hover:bg-[var(--light-middle)]/25'
+									}`}
+								>
+									<Icon
+										className={`h-8 w-8 ${isActiveLink ? 'text-[var(--hero)]' : 'text-[var(--black)]'}`}
+									/>
+									<span>{link.title}</span>
+								</div>
+							</motion.div>
+						)
+					})}
+				</motion.div>
+			)}
+		</AnimatePresence>
+	)
+}
+
 export const Header = ({ links = [], userInfo }) => {
 	const navigate = useNavigate()
+	const location = useLocation()
+	const [isMenuOpen, setIsMenuOpen] = useState(false)
 	const handleLogout = async e => {
 		try {
 			const res = await Logout()
@@ -250,7 +352,7 @@ export const Header = ({ links = [], userInfo }) => {
 	return (
 		<div className='relative'>
 			<div className='flex justify-between items-center fixed w-full py-2 px-6 bg-[var(--white)] shadow-lg z-100 left-0'>
-				<div className='flex items-center gap-5'>
+				<div className='flex items-center gap-5 max-lg:hidden'>
 					{links?.map((item, index) => (
 						<HeaderLink
 							key={index}
@@ -261,6 +363,10 @@ export const Header = ({ links = [], userInfo }) => {
 						/>
 					))}
 				</div>
+				<MobileHeaderMenu
+					active={isMenuOpen}
+					onClick={() => setIsMenuOpen(prev => !prev)}
+				/>
 
 				<div className='flex items-center gap-3'>
 					<ToggleTheme />
@@ -299,6 +405,7 @@ export const Header = ({ links = [], userInfo }) => {
 					</div>
 				</div>
 			</div>
+			<MobileHeaderModal links={links} active={isMenuOpen} />
 		</div>
 	)
 }

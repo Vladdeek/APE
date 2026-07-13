@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Login, Registration } from '../../service/APIs/Authorization'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { executeWithAuthCheck } from '../../service/utils/apiHelper'
+import { toast } from 'sonner'
 
 const AuthToggle = ({ select, setSelect }) => {
 	return (
@@ -59,14 +60,21 @@ const Authorization = () => {
 		setFormData(prev => ({ ...prev, [name]: value }))
 	}
 
+	const isValidEmailStructure = email => {
+		const trimmed = email.trim()
+		return trimmed.length > 5 && trimmed.includes('@') && trimmed.includes('.')
+	}
+
 	const validateAuthForm = formData => {
 		return (
-			formData.email.trim().length > 5 && formData.password.trim().length >= 6
+			isValidEmailStructure(formData.email) &&
+			formData.password.trim().length >= 6
 		)
 	}
+
 	const validateRegForm = formData => {
 		return (
-			formData.email.trim().length > 5 &&
+			isValidEmailStructure(formData.email) &&
 			formData.first_name.trim().length > 1 &&
 			formData.last_name.trim().length > 1 &&
 			formData.password.trim().length >= 6 &&
@@ -89,36 +97,46 @@ const Authorization = () => {
 	const handleSubmitRegistration = async e => {
 		e.preventDefault()
 
-		try {
-			await executeWithAuthCheck(() =>
-				Registration(
-					formData.email,
-					formData.password,
-					formData.repeat_password,
-					formData.username,
-					formData.first_name,
-					formData.last_name,
-					formData.patronymic,
-				),
-			)
+		if (formData.email.trim().endsWith('.ru')) {
+			try {
+				await executeWithAuthCheck(() =>
+					Registration(
+						formData.email,
+						formData.password,
+						formData.repeat_password,
+						formData.username,
+						formData.first_name,
+						formData.last_name,
+						formData.patronymic,
+					),
+				)
 
-			navigate('/')
-		} catch (err) {
-			console.log('REG ERROR:', err)
-			// Здесь можно вывести ошибку пользователю в UI
+				navigate('/')
+			} catch (err) {
+				console.log('REG ERROR:', err)
+				// Здесь можно вывести ошибку пользователю в UI
+			}
+		} else {
+			toast.error('Пожалуйста, используйте почту, заканчивающуюся на .ru')
 		}
 	}
 
 	const handleSubmitLogin = async e => {
 		e.preventDefault()
 
-		try {
-			await executeWithAuthCheck(() => Login(formData.email, formData.password))
+		if (formData.email.trim().endsWith('.ru')) {
+			try {
+				await executeWithAuthCheck(() =>
+					Login(formData.email, formData.password),
+				)
 
-			navigate('/')
-		} catch (err) {
-			console.log('LOGIN ERROR:', err)
-			// Здесь можно вывести ошибку пользователю в UI
+				navigate('/')
+			} catch (err) {
+				console.log('LOGIN ERROR:', err)
+				// Здесь можно вывести ошибку пользователю в UI
+			}
+		} else {
+			toast.error('Пожалуйста, используйте почту, заканчивающуюся на .ru')
 		}
 	}
 

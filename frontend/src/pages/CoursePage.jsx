@@ -574,12 +574,13 @@ const ContentHeader = ({ role }) => {
 	const [questionsData, setQuestionsData] = useState([])
 
 	const [totalTime, setTotalTime] = useState(0)
-
-	const [timeLeft, setTimeLeft] = useState(totalTime)
+	const [timeLeft, setTimeLeft] = useState()
+	const [sessionIsActive, setSessionIsActive] = useState(false)
+	const [accessToTheTest, setAccessToTheTest] = useState(false)
 
 	const progressWidth = (timeLeft / totalTime) * 100
 
-	
+	console.log(timeLeft)
 
 	useEffect(() => {
 		if (timeLeft <= 0) return
@@ -591,8 +592,6 @@ const ContentHeader = ({ role }) => {
 		return () => clearInterval(timer)
 	}, [timeLeft])
 
-	
-
 	useEffect(() => {
 		const getQuestions = async () => {
 			try {
@@ -600,15 +599,43 @@ const ContentHeader = ({ role }) => {
 				if (res) {
 					setQuestionsData(res)
 					setTotalTime(res.time_limit)
-					setTimeLeft(res.time_limit)
 				}
 			} catch (err) {
 				console.log(err)
 			}
 		}
-		
+
 		getQuestions()
 	}, [activeSection])
+
+	useEffect(() => {
+		setSessionIsActive(false)
+
+		const getSession = async () => {
+			try {
+				const res = await GetSession(activeSection)
+				const currentTime = Date.now() / 1000 // Текущее время в секундах
+				const tl = Math.floor(currentTime - res.expire_at)
+				setSessionIsActive(true)
+				setTimeLeft(totalTime - tl)
+			} catch (err) {
+				// Обработка ошибки
+				setSessionIsActive(false)
+			}
+		}
+
+		if (role === 'student' && activeSection) {
+			getSession()
+		}
+	}, [activeSection, role])
+
+	useEffect(() => {
+		if (sessionIsActive === true && timeLeft > 0 && role === 'student') {
+			setAccessToTheTest(true)
+		} else {
+			setAccessToTheTest(false)
+		}
+	}, [sessionIsActive, timeLeft, role])
 
 	const changeTimeLimit = async time => {
 		if (time > 0) {
@@ -655,11 +682,11 @@ const ContentHeader = ({ role }) => {
 				)}
 			</div>
 
-			{role === 'student' && (
+			{accessToTheTest && (
 				<>
 					<p className='w-25 text-center text-[var(--black)] font-semibold'>
 						<p className='w-25 text-center text-[var(--black)] font-semibold'>
-							{formatTime(timeLeft)}
+							{formatTime(timeLeft >= 0 ? timeLeft : 0)}
 						</p>
 					</p>
 					<DefaultButton
@@ -807,6 +834,8 @@ const CoursePage = () => {
 		}
 	}, [searchParams, modules])
 
+	const [timeLeft, setTimeLeft] = useState()
+
 	return (
 		<div className='grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 '>
 			{/* Боковая панель (Sidebar) */}
@@ -877,9 +906,7 @@ const CoursePage = () => {
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && (
-					<ContentHeader role={role} activeSection={activeSection} />
-				)}
+				{activeSection && <ContentHeader role={role} />}
 
 				<div className='w-full h-full overflow-y-auto px-2 py-4'>
 					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}

@@ -18,22 +18,28 @@ export const { API, FILE_API } = config[env]
 //====================== Axios API Error Context ===========================//
 
 import axios from 'axios'
+import { toast } from 'sonner'
+import { BACKEND_ERRORS, STATUS_ERRORS } from '../service/data/errors'
 
 const api = axios.create({
 	withCredentials: true,
 })
 
-const showError = status => {
-	const messages = {
-		401: 'Ошибка авторизации',
-		403: 'Доступ запрещён',
-		404: 'Ничего не найдено',
-		500: 'Сервер временно умер',
-	}
+const showError = err => {
+	const uniqueCode = err.data?.unique_code
+	const status = err?.status
 
-	// toast.error(messages[status] || `Ошибка ${status}`, {
-	// 	id: 'api-error',
-	// })
+	const env = import.meta.env.VITE_ENV || 'prod'
+
+	const errorObject = BACKEND_ERRORS[uniqueCode]
+
+	let uniqueCode_message = errorObject[env] || errorObject.prod
+	let httpStatus_message = STATUS_ERRORS[status]
+
+	toast.error(`${status}: ${httpStatus_message}`, {
+		description: `${uniqueCode_message}`,
+		id: 'api-error',
+	})
 }
 
 const getCookie = name => {
@@ -65,11 +71,11 @@ api.interceptors.response.use(
 		}
 
 		if (error.response?.status === 401) {
-			window.location.href = '/authorization'
-			return Promise.reject(error)
+			//window.location.href = '/authorization'
+			//return Promise.reject(error)
 		}
 
-		const status = error.response?.status || 500
+		const status = error.response
 		showError(status)
 
 		return Promise.reject(error)

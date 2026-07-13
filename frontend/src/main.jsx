@@ -27,6 +27,9 @@ import ModerateUsers from './pages/Moderator/ModerateUsers'
 import ModerateCourses from './pages/Moderator/ModerateCourses'
 import Profile from './pages/Profile'
 import AcceptanceOfApplications from './pages/Moderator/AcceptanceOfApplications'
+import TaskChecking from './pages/TaskCheking'
+import { UserProvider } from '../service/context/UserContext'
+import { Toaster } from 'sonner'
 
 function MainApp() {
 	return (
@@ -46,6 +49,7 @@ function MainApp() {
 						element={<ModerateCourses />}
 					/>
 					<Route path='/profile' element={<Profile />} />
+					<Route path='/checking' element={<TaskChecking />} />
 					<Route path='/request/:courseId' element={<StudentCourseRequest />} />
 				</Route>
 			</Routes>
@@ -55,6 +59,15 @@ function MainApp() {
 
 createRoot(document.getElementById('root')).render(
 	<BrowserRouter>
-		<MainApp />
+		<UserProvider>
+			<MainApp />
+			<Toaster
+				theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
+				position='top-right'
+				richColors
+				closeButton
+				expand={true}
+			/>
+		</UserProvider>
 	</BrowserRouter>,
 )
