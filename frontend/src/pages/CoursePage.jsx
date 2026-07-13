@@ -18,6 +18,10 @@ import {
 	FlaskConical,
 	FilePlus2,
 	Plus,
+	Menu,
+	ChevronRight,
+	LibraryBig,
+	PanelLeftClose,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -742,6 +746,130 @@ const ContentHeader = () => {
 	)
 }
 
+const CourseSidebar = ({
+	role,
+	modules,
+	toggleModule,
+	activeSectionId,
+	handleSectionClick,
+	setActiveType,
+	createLesson,
+	createModule,
+}) => {
+	const [isOpen, setIsOpen] = useState(false)
+
+	const sidebarContent = (
+		<>
+			{modules?.map((module, idx) => (
+				<Module
+					key={module.id}
+					title={module.name}
+					index={idx + 1}
+					isExpanded={module.isExpanded}
+					onToggle={() => toggleModule(module.id)}
+				>
+					{module?.content?.map((section, index) => (
+						<motion.div
+							key={section.id}
+							initial={{ scale: 0.8, opacity: 0 }}
+							animate={{ scale: 1, opacity: 1 }}
+							transition={{
+								duration: 0.3,
+								delay: index * 0.1,
+								ease: 'easeOut',
+							}}
+						>
+							<Content
+								role={role}
+								title={section.name}
+								type={section.type}
+								isSelected={activeSectionId === section.id}
+								onClick={() => {
+									handleSectionClick(section.id)
+									setActiveType(section.type)
+									setIsOpen(false)
+								}}
+							/>
+						</motion.div>
+					))}
+
+					{role === 'teacher' && (
+						<CreateItemButton
+							type='lesson'
+							onAdd={lessonData => {
+								createLesson(
+									lessonData.name,
+									lessonData.module_content_type,
+									module.id,
+								)
+							}}
+						/>
+					)}
+				</Module>
+			))}
+
+			{role === 'teacher' && (
+				<CreateItemButton
+					type='module'
+					onAdd={moduleData => {
+						createModule(moduleData.name)
+					}}
+				/>
+			)}
+		</>
+	)
+
+	return (
+		<>
+			{/* ДЕСТКТОПНЫЙ ВАРИАНТ */}
+			<div className='hidden lg:block w-full h-full overflow-y-auto bg-[var(--white)] shadow-lg rounded-3xl p-4'>
+				<h2 className='text-xl font-bold mb-3 px-2 text-[var(--black)] flex justify-between items-center'>
+					Содержание курса
+					<button
+						onClick={() => setIsOpen(false)}
+						className='lg:hidden p-1 hover:bg-gray-100 rounded-full'
+					>
+						<ChevronRight className='rotate-180 w-5 h-5' />
+					</button>
+				</h2>
+				<div className=' w-full h-full'>{sidebarContent}</div>
+			</div>
+
+			{/* МОБИЛЬНЫЙ ВАРИАНТ */}
+			<div
+				className='visible lg:hidden fixed left-0 top-20 bottom-10 z-40 flex items-start'
+				onMouseLeave={() => setIsOpen(false)}
+			>
+				<div
+					onMouseEnter={() => setIsOpen(true)}
+					className='flex flex-col px-6 py-6 gap-3 shadow-[var(--shadow)] h-screen bg-[var(--white)] z-10'
+				>
+					<LibraryBig className='w-6 h-6 text-[var(--black)]' />
+					<span className='[writing-mode:vertical-lr] rotate-180 text-base font-semibold tracking-wider text-[var(--black)] uppercase whitespace-nowrap'>
+						Содержимое
+					</span>
+				</div>
+				{/* Вся плашка целиком: и кнопка, и выезжающий контент */}
+				<motion.div
+					animate={{ x: isOpen ? 0 : '-100%' }}
+					transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+					className='relative flex items-start h-screen bg-[var(--white)] shadow-[var(--shadow)]' // Высота совпадает с сайдбаром
+				>
+					{/* Сам сайдбар (прячется за экраном слева благодаря -100% у родителя) */}
+					<div className='w-[75vw] md:w-[60vw] flex flex-col py-6 h-full px-4 transition-all delay-0 duration-75'>
+						<PanelLeftClose
+							onClick={() => setIsOpen(false)}
+							title={'Cкрыть боковую панель'}
+							className='text-[var(--black)] h-10 w-10 mb-3 hover:bg-[var(--light-middle)]/50 p-2 rounded-lg cursor-pointer self-end'
+						/>
+						{sidebarContent}
+					</div>
+				</motion.div>
+			</div>
+		</>
+	)
+}
+
 const CoursePage = () => {
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
@@ -849,72 +977,18 @@ const CoursePage = () => {
 	const [timeLeft, setTimeLeft] = useState()
 
 	return (
-		<div className='grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 '>
+		<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 lg:pl-0 pl-18 '>
 			{/* Боковая панель (Sidebar) */}
-			<div className='w-full h-full overflow-y-auto bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				<h2 className='text-xl font-bold mb-3 px-2 text-[var(--black)]'>
-					Содержание курса
-				</h2>
-				{modules?.map((module, idx) => (
-					<Module
-						key={module.id}
-						title={module.name}
-						index={idx + 1}
-						isExpanded={module.isExpanded}
-						onToggle={() => toggleModule(module.id)}
-					>
-						{module?.content?.map((section, index) => (
-							<motion.div
-								key={section.id}
-								initial={{ scale: 0.8, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-								transition={{
-									duration: 0.3,
-									delay: index * 0.1,
-									ease: 'easeOut',
-								}}
-							>
-								<Content
-									role={role}
-									title={section.name}
-									type={section.type}
-									isSelected={activeSectionId === section.id}
-									onClick={() => {
-										handleSectionClick(section.id)
-										setActiveType(section.type)
-									}}
-								/>
-							</motion.div>
-						))}
-
-						{/* Кнопка создания УРОКА внутри модуля */}
-						{role === 'teacher' && (
-							<CreateItemButton
-								type='lesson'
-								onAdd={lessonData => {
-									// lessonData содержит { name, module_content_type }
-									createLesson(
-										lessonData.name,
-										lessonData.module_content_type,
-										module.id,
-									)
-								}}
-							/>
-						)}
-					</Module>
-				))}
-
-				{/* Кнопка создания МОДУЛЯ в самом низу списка */}
-				{role === 'teacher' && (
-					<CreateItemButton
-						type='module'
-						onAdd={moduleData => {
-							// moduleData содержит { name }
-							createModule(moduleData.name)
-						}}
-					/>
-				)}
-			</div>
+			<CourseSidebar
+				role={role}
+				modules={modules}
+				toggleModule={toggleModule}
+				activeSectionId={activeSectionId}
+				handleSectionClick={handleSectionClick}
+				setActiveType={setActiveType}
+				createLesson={createLesson}
+				createModule={createModule}
+			/>
 
 			{/* Основной контент */}
 			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>

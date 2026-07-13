@@ -263,7 +263,7 @@ const MobileHeaderMenu = ({ onClick, active }) => {
 	)
 }
 
-const MobileHeaderModal = ({ links, active }) => {
+const MobileHeaderModal = ({ links, active, onClick }) => {
 	const location = useLocation()
 	const navigate = useNavigate()
 
@@ -303,7 +303,7 @@ const MobileHeaderModal = ({ links, active }) => {
 					initial='hidden'
 					animate='visible'
 					exit='hidden'
-					className='absolute top-0 left-0 pt-24 w-full bg-[var(--white)] shadow-[var(--shadow)] rounded-2xl p-4 flex flex-col gap-3 z-40 min-lg:hidden'
+					className='absolute top-0 left-0 pt-24 w-screen min-md:-ml-10 -ml-2 bg-[var(--white)] shadow-[var(--shadow)]  p-4 flex flex-col gap-3 z-50 min-lg:hidden'
 				>
 					{links.map(link => {
 						const Icon = link.icon
@@ -315,7 +315,7 @@ const MobileHeaderModal = ({ links, active }) => {
 								<div
 									onClick={() => {
 										navigate(link.to)
-										setActive(prev => !prev)
+										onClick
 									}} // Закрываем меню при переходе
 									className={`flex items-center gap-5 px-4 py-5 rounded-xl text-2xl transition-all ${
 										isActiveLink
@@ -349,6 +349,9 @@ export const Header = ({ links = [], userInfo }) => {
 			navigate('/authorization')
 		}
 	}
+	useEffect(() => {
+		setIsMenuOpen(false)
+	}, [location.pathname])
 	return (
 		<div className='relative'>
 			<div className='flex justify-between items-center fixed w-full py-2 px-6 bg-[var(--white)] shadow-lg z-100 left-0'>
