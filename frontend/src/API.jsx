@@ -56,7 +56,7 @@ api.interceptors.request.use(config => {
 	const csrf = getCookie('csrftoken')
 
 	if (csrf) {
-		config.headers['X-CSRF-TOKEN'] = csrf
+		config.headers['X-CSRFToken'] = csrf
 	}
 
 	config.headers['X-API-KEY'] = import.meta.env.VITE_API_KEY
