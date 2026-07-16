@@ -495,7 +495,7 @@ export const TextArea = ({
 				readOnly={readOnly}
 				placeholder={placeholder}
 				maxLength={300}
-				className=' rounded-2xl p-3 shadow-inner border-1 border-[var(--black)]/2.5 transition-all resize-none min-h-25'
+				className=' rounded-2xl p-3 shadow-inner border-1 border-[var(--black)]/2.5 transition-all resize-none min-h-25 outline-none ring-[var(--hero)] focus:ring-2'
 			/>
 		</div>
 	)
