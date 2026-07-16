@@ -16,6 +16,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Logout } from '../../service/APIs/Authorization'
 import { LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Avatar } from './Avatar'
 
 const GradientIcon = ({ Icon, id, palette, size = '125%' }) => (
 	<svg width={size} height={size} className='rotate-y-180' viewBox='0 0 24 24'>
@@ -396,15 +397,7 @@ export const Header = ({ links = [], userInfo }) => {
 								<LogOut strokeWidth={2} size={20} />
 							</div>
 						</div>
-						{userInfo?.avatar_url ? (
-							<img
-								className='h-12 rounded-md object-cover aspect-square'
-								src={userInfo?.avatar_url}
-								alt=''
-							/>
-						) : (
-							<ImageOff className='h-12 rounded-md object-cover aspect-square w-auto p-3 text-[var(--middle)] bg-[var(--light-middle)]' />
-						)}
+						<Avatar />
 					</div>
 				</div>
 			</div>
