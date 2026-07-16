@@ -300,7 +300,7 @@ export const DateInput = ({
 				type='date'
 				value={value || ''}
 				onChange={e => onChange && onChange(e.target.value)}
-				className={`w-full  ${value ? 'text-[var(--black)]' : 'text-[var(--middle)]'} rounded-2xl p-3 bg-[var(--white)] shadow-inner border-1 border-[var(--black)]/2.5`}
+				className={`w-full  ${value ? 'text-[var(--black)]' : 'text-[var(--middle)]'} rounded-2xl p-3 bg-[var(--white)] outline-0 ring-[var(--hero)] focus:ring-2 shadow-inner border-1 border-[var(--black)]/2.5 transition-all`}
 			/>
 		</div>
 	)
