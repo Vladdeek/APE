@@ -201,10 +201,6 @@ const ToggleTheme = () => {
 }
 
 const HeaderLink = ({ title, icon: Icon, to, not_clickable = false }) => {
-	const clearError = () => {
-		setGlobalError(null)
-	}
-
 	return (
 		<NavLink
 			to={!not_clickable && to}
