@@ -386,6 +386,7 @@ const CreateModal = ({ onChange }) => {
 					validate={val => val.length >= 3}
 					onStatusChange={setIsTitleValid}
 					required
+					width='w-full'
 				/>
 				<TextArea
 					title='Описание курса'

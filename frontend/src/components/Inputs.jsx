@@ -65,7 +65,7 @@ export const InputDefault = ({
 	})
 
 	return (
-		<div className={`{width} flex flex-col gap-2 ${disabled && 'opacity-50'}`}>
+		<div className={`${width} flex flex-col gap-2 ${disabled && 'opacity-50'}`}>
 			{title && (
 				<div className='flex items-center gap-2 ml-1'>
 					<p className={`text-[18px] text-[var(--middle)] pt-[2px]`}>{title}</p>
