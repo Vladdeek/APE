@@ -38,11 +38,19 @@ const CourseCard = ({ data, onClick, status }) => {
 			onClick={onClick}
 			className='flex flex-col bg-[var(--white)] h-full w-full p-3 rounded-4xl shadow-lg cursor-pointer transition-all hover:scale-[101.5%] hover:shadow-md'
 		>
-			<img
-				className='rounded-3xl aspect-[16/9] object-cover w-full'
-				src={data?.preview_url}
-				alt={''}
-			/>
+			<div className='relative shrink-0'>
+				<img
+					className='rounded-3xl aspect-[16/9] object-cover w-full'
+					src={data?.preview_url}
+					alt={''}
+				/>
+				{data.is_creator && (
+					<span className='absolute -top-2 -right-2 bg-[var(--hero)] text-white text-xs px-2 py-0.5 rounded-full shadow-md'>
+						{data.is_creator ? 'Вы создатель' : 'Вы соавтор'}
+					</span>
+				)}
+			</div>
+
 			<div className='flex flex-col h-full p-3 mt-3 gap-3'>
 				{/* Секция Тега и Заголовка */}
 				<div className='flex flex-col gap-3'>
@@ -162,6 +170,7 @@ export const CourseMiniCard = ({ data, onClick }) => {
 					src={data.preview_url}
 					alt={data.name}
 				/>
+
 				{data.student_request_count
 					? data.student_request_count && (
 							<span className='absolute -top-2 -left-2 bg-[var(--hero)] text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm'>

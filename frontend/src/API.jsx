@@ -71,8 +71,8 @@ api.interceptors.response.use(
 		}
 
 		if (error.response?.status === 401) {
-			//window.location.href = '/authorization'
-			//return Promise.reject(error)
+			window.location.href = '/authorization'
+			return Promise.reject(error)
 		}
 
 		const status = error.response

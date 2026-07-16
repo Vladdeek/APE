@@ -34,7 +34,7 @@ import { FileManager } from '../components/ConstructorViews/FilesImport'
 import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
-import { Checkbox, DefaultButton } from '../components/Buttons'
+import { Checkbox, DefaultButton, RadioButton } from '../components/Buttons'
 import { InputDefault, TimeLimitInput } from '../components/Inputs'
 import {
 	CreateCourse,
@@ -65,6 +65,7 @@ import {
 import TestManager from '../components/TestManager/TestManager'
 import { formatTime } from '../../service/utils/formatTime'
 import { useUser } from '../../service/context/UserContext'
+import AccessManagement from './AccessSection'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -885,6 +886,12 @@ const CoursePage = () => {
 	const [modules, setModules] = useState([])
 	const [isLoading, setIsLoading] = useState(true)
 
+	const [activeChapter, setActiveChapter] = useState('constructor')
+	const options = [
+		{ value: 'constructor', title: 'Конструктор' },
+		{ value: 'access', title: 'Управление доступом' },
+	]
+
 	const fetchCourseData = useCallback(async () => {
 		if (!courseId) return
 		try {
@@ -977,32 +984,55 @@ const CoursePage = () => {
 	const [timeLeft, setTimeLeft] = useState()
 
 	return (
-		<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 pt-30 pb-10 lg:pl-0 pl-18 '>
-			{/* Боковая панель (Sidebar) */}
-			<CourseSidebar
-				role={role}
-				modules={modules}
-				toggleModule={toggleModule}
-				activeSectionId={activeSectionId}
-				handleSectionClick={handleSectionClick}
-				setActiveType={setActiveType}
-				createLesson={createLesson}
-				createModule={createModule}
-			/>
-
-			{/* Основной контент */}
-			<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-				{activeSection && <ContentHeader />}
-
-				<div className='w-full h-full overflow-y-auto px-2 py-4'>
-					{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-					<ContentView
-						isEdit={role === 'teacher' && true}
-						sectionId={activeSectionId}
-						SectionType={activeType}
-					/>
+		<div className='flex flex-col gap-3 pt-25 pb-10'>
+			<div className='flex justify-between'>
+				<div className='flex items-center gap-3'>
+					{options?.map(option => (
+						<RadioButton
+							key={option.value}
+							name='chapter'
+							value={option.value}
+							title={option.title}
+							icon={option.icon}
+							checked={activeChapter === option.value}
+							onChange={() => setActiveChapter(option.value)}
+							style='solid'
+						/>
+					))}
 				</div>
+				<p></p>
 			</div>
+			{activeChapter === 'constructor' ? (
+				<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 lg:pl-0 pl-18 '>
+					{/* Боковая панель (Sidebar) */}
+					<CourseSidebar
+						role={role}
+						modules={modules}
+						toggleModule={toggleModule}
+						activeSectionId={activeSectionId}
+						handleSectionClick={handleSectionClick}
+						setActiveType={setActiveType}
+						createLesson={createLesson}
+						createModule={createModule}
+					/>
+
+					{/* Основной контент */}
+					<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
+						{activeSection && <ContentHeader />}
+
+						<div className='w-full h-full overflow-y-auto px-2 py-4'>
+							{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
+							<ContentView
+								isEdit={role === 'teacher' && true}
+								sectionId={activeSectionId}
+								SectionType={activeType}
+							/>
+						</div>
+					</div>
+				</div>
+			) : (
+				activeChapter === 'access' && <AccessManagement />
+			)}
 		</div>
 	)
 }
