@@ -26,18 +26,19 @@ const api = axios.create({
 })
 
 const showError = err => {
-	const uniqueCode = err.data?.unique_code
+	const uniqueCode = err?.data?.unique_code
 	const status = err?.status
 
-	const env = import.meta.env.VITE_ENV || 'prod'
+	const httpStatus_message =
+		STATUS_ERRORS[status] || 'Произошла непредвиденная ошибка'
+	const uniqueCode_message = BACKEND_ERRORS[uniqueCode] || ''
 
-	const errorObject = BACKEND_ERRORS[uniqueCode]
+	const title = status
+		? `${status}: ${httpStatus_message}`
+		: 'Ошибка соединения с сервером'
 
-	let uniqueCode_message = errorObject[env] || errorObject.prod
-	let httpStatus_message = STATUS_ERRORS[status]
-
-	toast.error(`${status}: ${httpStatus_message}`, {
-		description: `${uniqueCode_message}`,
+	toast.error(title, {
+		description: uniqueCode_message,
 		id: 'api-error',
 	})
 }
