@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react'
 import {
 	AccessCourse,
+	GetAllAcceptedStudent,
 	GetAllCoursesWithRequest,
 	GetAllStudentRequests,
+	GetAllStudentWithoutRequests,
 	GetCourseInfoById,
 	GetModerationCourses,
+	RegisterStudentOnCourse,
 } from '../../../service/APIs/Moderation'
 import BasicPagination from '../../components/Pagination'
-import { DefaultButton, ToggleButton } from '../../components/Buttons'
+import {
+	ColoredButton,
+	DefaultButton,
+	ToggleButton,
+} from '../../components/Buttons'
 import Help from '../../components/Help'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -30,6 +37,8 @@ import {
 	ImageOff,
 	Mail,
 	ShieldCheck,
+	FileUser,
+	Plus,
 } from 'lucide-react'
 import Modal from '../../components/Modal'
 import { InputDefault } from '../../components/Inputs'
@@ -37,6 +46,9 @@ import {
 	GetCourseRequestById,
 	UpdateRequestStatus,
 } from '../../../service/APIs/Request'
+import ResponsiveSidebar from '../../components/ResponsiveSidebar'
+import Loader from '../../components/Loader'
+import { FILE_API } from '../../API'
 
 // Компонент текстовой строки просмотра
 const TextStroke = ({ title, value, textarea }) => {
@@ -332,7 +344,16 @@ const StudentCourseRequestView = ({ requestId, onClose }) => {
 const UsersTable = ({ courseId, onUserClick }) => {
 	const [courseInfo, setCourseInfo] = useState({})
 	// Фейк стейт пользователей — добавлены реальные ID для прокидывания query
-	const [users, setUsers] = useState([])
+	const [usersRequests, setUsersRequests] = useState([])
+	const [usersWithoutRequests, setUsersWithoutRequests] = useState([])
+	const [acceptedUsers, setAcceptedUsers] = useState([])
+
+	const [isModalOpen, setIsModalOpen] = useState(false)
+	const [isWarningModalOpen, setIsWarningModalOpen] = useState(false)
+
+	const [selectedUser, setSelectedUser] = useState(null)
+
+	console.log(selectedUser)
 
 	useEffect(() => {
 		const getCourse = async () => {
@@ -349,92 +370,291 @@ const UsersTable = ({ courseId, onUserClick }) => {
 	useEffect(() => {
 		const getAllStudentRequests = async () => {
 			try {
-				const res = await GetAllStudentRequests(courseId)
-				setUsers(res)
+				const res = await GetAllStudentRequests(courseId, 'pending')
+				setUsersRequests(res)
 			} catch (err) {
 				console.error('Ошибка при загрузке курса:', err)
 			}
 		}
 		if (courseId) getAllStudentRequests()
 	}, [courseId])
+	const getAllAcceptedStudent = async () => {
+		try {
+			const res = await GetAllAcceptedStudent(courseId)
+			setAcceptedUsers(res)
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
+		}
+	}
+	useEffect(() => {
+		if (courseId) getAllAcceptedStudent()
+	}, [courseId])
+
+	const getAllStudentWithoutRequests = async () => {
+		try {
+			const res = await GetAllStudentWithoutRequests(courseId)
+			setUsersWithoutRequests(res)
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
+		}
+	}
+
+	const registerUserOnCourse = async () => {
+		try {
+			const res = await RegisterStudentOnCourse(courseId, selectedUser.id)
+			getAllAcceptedStudent()
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
+		} finally {
+			setSelectedUser(null)
+		}
+	}
 
 	return (
-		<div className='w-full h-full flex flex-col gap-6 overflow-y-auto p-2'>
-			{/* ВЕРХНИЙ БЛОК: Краткая выжимка о курсе */}
-			<div className='flex flex-col lg:flex-row gap-4 p-4 bg-[var(--white)] rounded-xl border border-[var(--light-middle)]/10 shadow-[var(--shadow)] items-start lg:items-center justify-between shrink-0'>
-				<div className='flex gap-4 items-center min-w-0'>
-					<div className='w-16 h-16 rounded-md overflow-hidden bg-[var(--light-gray)]/50 shrink-0 border border-[var(--light-middle)]/10'>
-						{courseInfo.preview_url ? (
-							<img
-								src={courseInfo.preview_url}
-								alt='Course Preview'
-								className='w-full h-full object-cover'
-							/>
-						) : (
-							<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
-								<BookOpen size={22} />
-							</div>
-						)}
+		<>
+			<Modal
+				width={'w-150'}
+				onClose={() => setIsWarningModalOpen(false)}
+				isOpen={isWarningModalOpen}
+			>
+				<div className='flex flex-col gap-5'>
+					{/* 1. Заголовок и Текст подтверждения */}
+
+					<div>
+						<h2 className='text-xl text-[var(--black)] font-semibold mb-2'>
+							Прямое зачисление студента
+						</h2>
+						<p className='text-[var(--middle)] text-sm leading-relaxed'>
+							Внимание! Вы проводите зачисление студента{' '}
+							<span className='font-semibold text-[var(--black)]'>
+								вручную и напрямую
+							</span>
+							. Это действие полностью обходит стандартный процесс модерации:
+							система автоматически одобрит пользователя,{' '}
+							<span className='font-semibold text-[var(--black)]'>
+								минуя предварительную проверку огромной формы анкеты
+							</span>{' '}
+							и документов. Вы уверены, что хотите зачислить данного
+							пользователя без проверок?
+						</p>
 					</div>
 
-					<div className='space-y-1 min-w-0'>
-						<div className='flex items-center gap-2 text-[10px]'>
-							<span className='font-bold text-[var(--hero)] bg-[var(--transparent-hero)] px-1.5 py-0.5 rounded'>
-								ID: {courseInfo.id?.slice(0, 8)}
-							</span>
-							{courseInfo.tag && (
-								<span className='flex items-center gap-1 font-medium text-[var(--middle)]'>
-									<Tag size={10} /> {courseInfo.tag}
+					{/* 2. Блок с данными пользователя */}
+					{selectedUser && (
+						<div className='flex items-center gap-4 p-3 rounded-2xl bg-[var(--light-middle)] bg-opacity-20 border border-[var(--light-middle)] border-opacity-30'>
+							<img
+								src={selectedUser.avatar_url}
+								alt={`${selectedUser.full_name?.first_name} ${selectedUser.full_name?.last_name}`}
+								className='w-12 h-12 rounded-full object-cover bg-[var(--light-middle)]'
+								onError={e => {
+									// Фоллбек на случай, если S3 ссылка протухнет (у неё limited lifetime)
+									e.target.src = 'https://placehold.co/48x48?text=U'
+								}}
+							/>
+							<div className='flex flex-col text-left'>
+								<span className='font-medium text-[var(--black)] text-base leading-tight'>
+									{`${selectedUser.full_name?.last_name?.trim()} ${selectedUser.full_name?.first_name} ${selectedUser.full_name?.patronymic || ''}`}
 								</span>
+								<span className='text-xs text-[var(--middle)] mt-0.5'>
+									{selectedUser.email}
+								</span>
+							</div>
+						</div>
+					)}
+
+					{/* 3. Кнопки действий */}
+					<div className='flex justify-end gap-3 mt-2'>
+						<button
+							onClick={() => {
+								setSelectedUser(null)
+								setIsWarningModalOpen(false)
+							}}
+							className='px-4 py-2 text-[var(--middle)] hover:bg-[var(--light-middle)] cursor-pointer rounded-xl transition-all'
+						>
+							Отмена
+						</button>
+
+						<button
+							onClick={() => {
+								registerUserOnCourse()
+								setIsWarningModalOpen(false)
+								setIsModalOpen(false)
+							}}
+							className='px-4 py-2 text-white rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer bg-[var(--green-base)] hover:bg-[var(--green-hover)] font-medium'
+						>
+							Зачислить
+						</button>
+					</div>
+				</div>
+			</Modal>
+			<Modal
+				width={'w-100'}
+				onClose={() => setIsModalOpen(false)}
+				isOpen={isModalOpen}
+			>
+				<div className='flex flex-col gap-4 h-[50vh]'>
+					<p className='text-center text-xl font-semibold'>Студенты</p>
+					{usersWithoutRequests ? (
+						<div className='flex flex-col overflow-y-scroll p-4 gap-3'>
+							{usersWithoutRequests.map((user, idx) => (
+								<motion.div
+									key={user.id || idx}
+									initial={{ opacity: 0, y: 15 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{
+										duration: 0.4,
+										delay: idx * 0.08, // Каждая карточка появляется с задержкой относительно своего индекса
+										ease: [0.25, 0.8, 0.25, 1], // Плавный ease-out
+									}}
+								>
+									<UserCard
+										key={user.id || idx}
+										FullName={user.full_name}
+										avatar_url={user.avatar_url}
+										email={user.email}
+										onClick={() => {
+											setSelectedUser(user)
+											setIsWarningModalOpen(true)
+										}}
+										hover
+									/>
+								</motion.div>
+							))}
+						</div>
+					) : (
+						<Loader />
+					)}
+				</div>
+			</Modal>
+			<div className='w-full h-full flex flex-col gap-6 overflow-y-auto p-2'>
+				{/* ВЕРХНИЙ БЛОК: Краткая выжимка о курсе */}
+				<div className='flex flex-col lg:flex-row gap-4 p-4 bg-[var(--white)] rounded-xl border border-[var(--light-middle)]/10 shadow-[var(--shadow)] items-start lg:items-center justify-between shrink-0'>
+					<div className='flex gap-4 items-center min-w-0'>
+						<div className='w-16 h-16 rounded-md overflow-hidden bg-[var(--light-gray)]/50 shrink-0 border border-[var(--light-middle)]/10'>
+							{courseInfo.preview_url ? (
+								<img
+									src={courseInfo.preview_url}
+									alt='Course Preview'
+									className='w-full h-full object-cover'
+								/>
+							) : (
+								<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
+									<BookOpen size={22} />
+								</div>
 							)}
 						</div>
-						<h2 className='text-base font-bold text-[var(--black)] truncate max-w-sm'>
-							{courseInfo.name || 'Загрузка курса...'}
-						</h2>
+
+						<div className='space-y-1 min-w-0'>
+							<div className='flex items-center gap-2 text-[10px]'>
+								<span className='font-bold text-[var(--hero)] bg-[var(--transparent-hero)] px-1.5 py-0.5 rounded'>
+									ID: {courseInfo.id}
+								</span>
+								{courseInfo.tag && (
+									<span className='flex items-center gap-1 font-medium text-[var(--middle)]'>
+										<Tag size={10} /> {courseInfo.tag}
+									</span>
+								)}
+							</div>
+							<h2 className='text-base font-bold text-[var(--black)] truncate max-w-sm'>
+								{courseInfo.name || 'Загрузка курса...'}
+							</h2>
+						</div>
+					</div>
+
+					<div className='flex gap-4 text-xs text-[var(--middle)] shrink-0 border-t lg:border-t-0 border-[var(--light-middle)]/10 pt-3 lg:pt-0 w-full lg:w-auto justify-between lg:justify-end'>
+						<div>
+							<p className='text-[var(--middle)] font-medium text-[9px] uppercase tracking-wider'>
+								Старт
+							</p>
+							<p className='font-semibold text-[var(--black)]'>
+								{courseInfo.start_date?.split('T')[0] || '—'}
+							</p>
+						</div>
+						<div>
+							<p className='text-[var(--middle)] font-medium text-[9px] uppercase tracking-wider'>
+								Цена
+							</p>
+							<p className='font-semibold text-[var(--hero)]'>
+								{courseInfo.is_free
+									? 'Бесплатно'
+									: `${courseInfo.price || 0} ₽`}
+							</p>
+						</div>
 					</div>
 				</div>
-
-				<div className='flex gap-4 text-xs text-[var(--middle)] shrink-0 border-t lg:border-t-0 border-[var(--light-middle)]/10 pt-3 lg:pt-0 w-full lg:w-auto justify-between lg:justify-end'>
-					<div>
-						<p className='text-[var(--middle)] font-medium text-[9px] uppercase tracking-wider'>
-							Старт
-						</p>
-						<p className='font-semibold text-[var(--black)]'>
-							{courseInfo.start_date?.split('T')[0] || '—'}
-						</p>
+				<div className='space-y-3 flex-1'>
+					<div className='flex justify-between items-center'>
+						<h3 className='text-base font-bold text-[var(--black)] px-1'>
+							Зачисленные ({acceptedUsers.length})
+						</h3>
+						<button
+							onClick={() => {
+								getAllStudentWithoutRequests()
+								setIsModalOpen(true)
+							}}
+							className='flex items-center gap-1 text-[var(--black)] hover:bg-[var(--hero-pale)] hover:text-[var(--hero)] px-3 py-1 text-sm rounded-lg transition-all cursor-pointer'
+						>
+							<Plus size={16} />
+							<p>Зачислить вручную</p>
+						</button>
 					</div>
-					<div>
-						<p className='text-[var(--middle)] font-medium text-[9px] uppercase tracking-wider'>
-							Цена
-						</p>
-						<p className='font-semibold text-[var(--hero)]'>
-							{courseInfo.is_free ? 'Бесплатно' : `${courseInfo.price || 0} ₽`}
-						</p>
+
+					<div className='grid grid-cols-2 xl:grid-cols-3 gap-4'>
+						{acceptedUsers.map((user, idx) => (
+							<motion.div
+								key={user.id || idx}
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{
+									duration: 0.4,
+									delay: idx * 0.08, // Каждая карточка появляется с задержкой относительно своего индекса
+									ease: [0.25, 0.8, 0.25, 1], // Плавный ease-out
+								}}
+							>
+								<UserCard
+									key={user.id || idx}
+									FullName={user.full_name}
+									avatar_url={`${user.avatar_url}`}
+									email={user.email}
+									onClick={() => console.log('')} // Передаем ID наружу
+								/>
+							</motion.div>
+						))}
+					</div>
+				</div>
+				<div className='space-y-3 flex-1'>
+					<h3 className='text-base font-bold text-[var(--black)] px-1'>
+						Заявки на курс ({usersRequests.length})
+					</h3>
+
+					<div className='grid grid-cols-2 xl:grid-cols-3 gap-4'>
+						{usersRequests.map((user, idx) => (
+							<motion.div
+								key={user.id || idx}
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{
+									duration: 0.4,
+									delay: idx * 0.08, // Каждая карточка появляется с задержкой относительно своего индекса
+									ease: [0.25, 0.8, 0.25, 1], // Плавный ease-out
+								}}
+							>
+								<UserCard
+									key={user.student_request_id || idx}
+									FullName={user.student}
+									avatar_url={user.student.avatar_url}
+									email={user.student.email}
+									status={user.request_status}
+									appliedAt={user.submitted_at}
+									onClick={() => onUserClick(user.student_request_id)} // Передаем ID наружу
+									hover
+								/>
+							</motion.div>
+						))}
 					</div>
 				</div>
 			</div>
-
-			{/* НИЖНИЙ БЛОК: Сетка карточек */}
-			<div className='space-y-3 flex-1'>
-				<h3 className='text-base font-bold text-[var(--black)] px-1'>
-					Заявки на курс ({users.length})
-				</h3>
-
-				<div className='grid grid-cols-2 xl:grid-cols-3 gap-4'>
-					{users.map((user, idx) => (
-						<UserCard
-							key={user.student_request_id || idx}
-							FullName={user.student}
-							avatar_url={user.student.avatar_url}
-							email={user.student.email}
-							status={user.request_status}
-							appliedAt={user.submitted_at}
-							onClick={() => onUserClick(user.student_request_id)} // Передаем ID наружу
-						/>
-					))}
-				</div>
-			</div>
-		</div>
+		</>
 	)
 }
 
@@ -447,6 +667,7 @@ const UserCard = ({
 	appliedAt,
 	onClick,
 	status,
+	hover,
 }) => {
 	const statuses = {
 		accepted: {
@@ -466,9 +687,9 @@ const UserCard = ({
 	return (
 		<div
 			onClick={onClick}
-			className={`w-full h-fit flex gap-4 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] p-3  transition-all duration-200 border border-[var(--light-middle)]/10  ${status === 'pending' && 'cursor-pointer hover:translate-y-[-2px] hover:border-[var(--light-middle)]/30'}  items-center `}
+			className={`w-full h-fit flex gap-4 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] p-3  transition-all duration-200 border border-[var(--light-middle)]/10 ${hover && 'hover:scale-102 hover:ring-3 ring-[var(--hero)] cursor-pointer'}  ${status === 'pending' && 'cursor-pointer hover:translate-y-[-2px] hover:border-[var(--light-middle)]/30'}  items-center `}
 		>
-			<div className='w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-inner bg-[var(--light-gray)]'>
+			<div className='w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-inner bg-[var(--light-gray)]'>
 				{avatar_url ? (
 					<img
 						className='w-full h-full object-cover'
@@ -516,6 +737,8 @@ const UserCard = ({
 
 // ОСНОВНОЙ КОМПОНЕНТ ДАШБОРДА МОДЕРАЦИИ
 const AcceptanceOfApplications = () => {
+	const [isOpen, setIsOpen] = useState(false)
+
 	const navigate = useNavigate()
 	const [searchParams, setSearchParams] = useSearchParams()
 
@@ -556,18 +779,18 @@ const AcceptanceOfApplications = () => {
 	}, [])
 
 	return (
-		<div className='grid grid-cols-[420px_1fr] h-screen gap-6 pt-24 pb-6 px-6 bg-[var(--light-gray)]/30'>
+		<div className='lg:grid grid-cols-[500px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
 			{/* Левый сайдбар: Список курсов */}
-			<div className='flex flex-col gap-5 h-full min-h-0'>
-				<div className='w-full h-full bg-[var(--white)] shadow-[var(--shadow)] rounded-3xl p-4 flex flex-col justify-between overflow-hidden'>
-					<div className='flex items-center gap-3 mb-2 shrink-0'>
-						<h2 className='text-lg font-bold text-[var(--black)]'>
-							Курсы на модерации
-						</h2>
-					</div>
-
-					<div className='flex flex-col gap-2 flex-1 overflow-y-auto my-2 pr-1'>
-						{courses.map(course => (
+			<ResponsiveSidebar
+				title='Курсы'
+				triggerTitle='Курсы'
+				triggerIcon={FileUser}
+				isOpen={isOpen}
+				setIsOpen={setIsOpen}
+			>
+				<div className='flex flex-col justify-between h-full overflow-hidden'>
+					<div className='flex flex-col gap-2 h-full overflow-y-auto p-2'>
+						{courses?.map(course => (
 							<motion.div
 								key={course.id}
 								initial={{ scale: 0.95, opacity: 0 }}
@@ -576,14 +799,16 @@ const AcceptanceOfApplications = () => {
 							>
 								<CourseMiniCard
 									data={course}
-									isActive={course.id === activeCourseId} // Подсвечиваем выбранный
-									onClick={() => handleCourseClick(course.id)}
+									isActive={course.id === activeCourseId}
+									onClick={() => {
+										handleCourseClick(course.id)
+										setIsOpen(false)
+									}}
 								/>
 							</motion.div>
 						))}
 					</div>
-
-					<div className='shrink-0 pt-2 border-t border-[var(--light-middle)]/10'>
+					<div className='pt-2 mt-auto border-t border-[var(--light-middle)]/10 shrink-0'>
 						<BasicPagination
 							count={1}
 							page={page}
@@ -592,7 +817,7 @@ const AcceptanceOfApplications = () => {
 						/>
 					</div>
 				</div>
-			</div>
+			</ResponsiveSidebar>
 
 			{/* Основной правый блок */}
 			<div className='w-full h-full bg-[var(--white)] shadow-[var(--shadow)] rounded-3xl p-5 overflow-hidden'>

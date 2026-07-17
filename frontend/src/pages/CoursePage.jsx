@@ -86,12 +86,12 @@ const DEFAULT_LESSON_TYPES = [
 		icon: <BookMarked size={18} />,
 		description: 'Теоретический материал с блоками текста и медиа.',
 	},
-	{
-		label: 'Практика',
-		apiType: 'practice',
-		icon: <NotebookPen size={18} />,
-		description: 'Практическое задание для закрепления материала.',
-	},
+	// {
+	// 	label: 'Практика',
+	// 	apiType: 'practice',
+	// 	icon: <NotebookPen size={18} />,
+	// 	description: 'Практическое задание для закрепления материала.',
+	// },
 	{
 		label: 'Тест',
 		apiType: 'test',
@@ -296,6 +296,7 @@ const ContentView = ({
 			if (!DEBOUNCED_TYPES.includes(type)) {
 				try {
 					await UpdateLectureContent(sectionId, blockId, body, type)
+					readContent()
 				} catch (err) {
 					console.error(err)
 				}

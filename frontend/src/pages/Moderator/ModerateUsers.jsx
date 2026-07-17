@@ -4,18 +4,27 @@ import { useEffect, useState } from 'react'
 import {
 	ArrowLeft,
 	Camera,
+	Check,
+	Copy,
+	Icon,
 	ImageOff,
 	Key,
+	KeyRound,
+	LibraryBig,
 	Mail,
+	PanelLeftClose,
 	Plus,
+	RefreshCcw,
 	RefreshCw,
 	Send,
+	ShieldAlert,
 	ShieldCheck,
 	Trash,
 	Trash2,
 	User,
+	Users,
 } from 'lucide-react'
-import { DefaultButton } from '../../components/Buttons'
+import { DefaultButton, RadioButton } from '../../components/Buttons'
 import {
 	AddNewUser,
 	DeleteUsersById,
@@ -30,6 +39,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'react-router-dom'
 import CourseCard from '../../components/Cards'
 import Modal from '../../components/Modal'
+import ResponsiveSidebar from '../../components/ResponsiveSidebar'
 
 const UserCard = ({ FullName, avatar_url, email, role, onClick }) => {
 	const roles = {
@@ -68,17 +78,55 @@ const UserCard = ({ FullName, avatar_url, email, role, onClick }) => {
 	)
 }
 
+const Devider = ({ icon: Icon, title }) => {
+	return (
+		<div className='flex items-center gap-3 mb-2 shrink-0'>
+			{Icon && (
+				<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)] flex items-center justify-center'>
+					<Icon size={20} />
+				</div>
+			)}
+			<h3 className='text-lg font-medium text-[var(--black)]'>{title}</h3>
+		</div>
+	)
+}
+
 const UserForm = ({ mode, userId, onChange }) => {
 	const [isModalOpen, setIsModalOpen] = useState(null)
+	const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false)
 	const [formData, setFormData] = useState({
 		first_name: '',
 		last_name: '',
 		patronymic: '',
 		email: '',
+		password: '',
 	})
 	const [avatarUrl, setAvatarUrl] = useState('')
+	const [resData, setResData] = useState('')
+	const [role, setRole] = useState()
 
 	const [logined, setLogined] = useState(null)
+
+	const [copied, setCopied] = useState(false)
+
+	const handleCopy = async () => {
+		// Формируем шаблон строки для копирования
+		const textToCopy = `Почта: ${resData.email}\nПароль: ${resData.password}`
+
+		console.log(textToCopy)
+
+		navigator.clipboard
+			.writeText(textToCopy)
+			.then(() => {
+				setCopied(true)
+
+				// Сбрасываем статус "Скопировано" через 2 секунды
+				setTimeout(() => setCopied(false), 2000)
+			})
+			.catch(err => {
+				console.error('Не удалось скопировать текст: ', err)
+			})
+	}
 
 	const handleChange = e => {
 		const { name, value } = e.target
@@ -97,6 +145,7 @@ const UserForm = ({ mode, userId, onChange }) => {
 					patronymic: res.full_name.patronymic,
 					email: res.email,
 				}))
+				setRole(res.role)
 
 				setAvatarUrl(res.avatar_url)
 				setLogined(res.last_login_at)
@@ -114,8 +163,13 @@ const UserForm = ({ mode, userId, onChange }) => {
 				formData.last_name,
 				formData.patronymic,
 				formData.email,
+				role,
 			)
 			onChange?.(res.id)
+			if (res) {
+				setResData(res)
+				setIsCreatedModalOpen(true)
+			}
 		} catch (err) {}
 	}
 
@@ -175,8 +229,121 @@ const UserForm = ({ mode, userId, onChange }) => {
 		},
 	}
 
+	const options = [
+		{ value: 'teacher', title: 'Преподаватель' },
+		{ value: 'student', title: 'Студент' },
+	]
+
+	const ROLES = {
+		teacher: 'Преподаватель',
+		student: 'Студент',
+	}
+
 	return (
 		<>
+			<Modal width={'w-130'} isOpen={isCreatedModalOpen}>
+				<div className='flex flex-col gap-6 p-1'>
+					{' '}
+					{/* Немного увеличили gap для воздуха */}
+					{/* Блок профиля */}
+					<div className='flex items-start gap-5'>
+						{/* Аватар с мягкой двойной тенью */}
+						<div className='relative w-20 h-20 rounded-2xl overflow-hidden bg-[var(--light-middle)] flex items-center justify-center border-2 border-[var(--white)] shadow-md shrink-0'>
+							{resData.avatar_url ? (
+								<img
+									src={resData.avatar_url}
+									alt='Avatar'
+									className='w-full h-full object-cover transition-transform duration-500 hover:scale-105'
+								/>
+							) : (
+								<User
+									size={48}
+									strokeWidth={1.5}
+									className='text-[var(--middle)]'
+								/>
+							)}
+						</div>
+
+						{/* Информация о пользователе */}
+						<div className='flex flex-col gap-1.5 pt-1'>
+							<p className='text-lg font-bold text-[var(--black)] leading-snug flex flex-wrap gap-x-1.5'>
+								<span>{resData.last_name}</span>
+								<span>{resData.first_name}</span>
+								<span>{resData.patronymic}</span>
+							</p>
+
+							<div className='flex items-center gap-2 flex-wrap'>
+								<span className='px-2.5 py-0.5 text-[var(--hero)] bg-[var(--hero-pale)] rounded-full text-xs font-semibold tracking-wide uppercase'>
+									{ROLES[resData.role]}
+								</span>
+								<span className='text-[var(--middle)] text-sm font-normal'>
+									• {resData.email}
+								</span>
+							</div>
+						</div>
+					</div>
+					{/* Карточка с данными для входа */}
+					<div className='w-full bg-[var(--bg)]/50 border border-[var(--black)]/5 rounded-2xl p-4 flex flex-col gap-4 shadow-inner'>
+						{/* Шапка карточки */}
+						<div className='flex justify-between items-center pb-2 border-b border-[var(--black)]/5'>
+							<h3 className='text-[var(--black)] text-sm font-bold uppercase tracking-wider opacity-80'>
+								Данные для входа
+							</h3>
+							<button
+								onClick={handleCopy}
+								className={`text-[var(--hero)] ${copied ? 'bg-[var(--green-status-bg)] hover:bg-[var(--green-status-middle-text)]' : 'hover:bg-[var(--hero-pale)]'}  flex gap-1.5 items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95`}
+							>
+								{copied ? (
+									<>
+										<Check
+											size={14}
+											className='text-[var(--green-status-text)]'
+										/>
+										<span>Скопировано!</span>
+									</>
+								) : (
+									<>
+										<Copy size={14} />
+										<span>Скопировать всё</span>
+									</>
+								)}
+							</button>
+						</div>
+
+						{/* Контентная часть */}
+						<div className='grid grid-cols-2 gap-4'>
+							<div className='flex flex-col gap-1.5'>
+								<span className='text-[var(--middle)] text-[11px] font-bold uppercase tracking-wider'>
+									Электронная почта
+								</span>
+								<span className='text-[var(--black)] text-sm font-medium break-all select-all bg-[var(--white)] py-1.5 px-2.5 rounded-lg border border-[var(--black)]/5 shadow-sm'>
+									{resData.email}
+								</span>
+							</div>
+
+							<div className='flex flex-col gap-1.5'>
+								<span className='text-[var(--middle)] text-[11px] font-bold uppercase tracking-wider'>
+									Пароль
+								</span>
+								<span className='text-[var(--black)] text-sm font-mono font-bold break-all select-all bg-[var(--white)] py-1.5 px-2.5 rounded-lg border border-[var(--black)]/5 shadow-sm text-center tracking-wide'>
+									{resData.password}
+								</span>
+							</div>
+						</div>
+					</div>
+					{/* Кнопка действия (Завершение) */}
+					<div className='flex flex-col gap-2 pt-2 border-t border-[var(--black)]/5'>
+						<button
+							onClick={() => {
+								setIsCreatedModalOpen(false)
+							}}
+							className='w-full bg-[var(--hero)] hover:bg-[var(--hero)]/90 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg hover:shadow-[var(--hero)]/15 transition-all duration-200 active:scale-[0.99] cursor-pointer text-center text-sm'
+						>
+							Готово, данные отправлены
+						</button>
+					</div>
+				</div>
+			</Modal>
 			<Modal width={'w-100'} isOpen={isModalOpen !== null}>
 				{isModalOpen && (
 					<div className='flex flex-col gap-4'>
@@ -249,24 +416,24 @@ const UserForm = ({ mode, userId, onChange }) => {
 						{/* Управление доступом */}
 						<div className='w-full pt-6 space-y-2 border-t border-gray-100/50'>
 							{/* 1. Повторная отправка письма (если не пришло) */}
-							<button
+							{/* <button
 								onClick={() => setIsModalOpen(states[0])}
 								disabled={logined !== null || mode === 'create'}
 								className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all text-[var(--black)] ${logined !== null || mode === 'create' ? 'opacity-40 cursor-not-allowed' : ' hover:bg-[var(--light-middle)] hover:shadow-[var(--shadow)] active:scale-[0.98] cursor-pointer'}`}
 							>
 								<Mail size={16} className='text-[var(--hero)]' />
 								Повторить отправку письма
-							</button>
+							</button> */}
 
 							{/* 2. Генерация нового пароля (если забыл) */}
-							<button
+							{/* <button
 								onClick={() => setIsModalOpen(states[1])}
 								disabled={logined === null || mode === 'create'}
 								className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all text-[var(--black)] ${logined === null || mode === 'create' ? 'opacity-40 cursor-not-allowed' : ' hover:bg-[var(--light-middle)] hover:shadow-[var(--shadow)] active:scale-[0.98] cursor-pointer'}`}
 							>
 								<Key size={16} className='text-[var(--middle-correct-lvl)]' />
 								Сгенерировать новый пароль
-							</button>
+							</button> */}
 
 							{/* 3. Удаление аккаунта */}
 							<button
@@ -286,38 +453,41 @@ const UserForm = ({ mode, userId, onChange }) => {
 					{/* ПРАВАЯ КОЛОНКА: Основные поля */}
 					<div className='col-span-12 lg:col-span-8 flex flex-col justify-between space-y-8'>
 						<div className='space-y-6'>
-							<div className='flex items-center gap-3 mb-2'>
-								<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
-									<ShieldCheck size={20} />
-								</div>
-								<h3 className='text-lg font-medium text-[var(--black)]'>
-									Личные данные
-								</h3>
-							</div>
-
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
 								<div className='md:col-span-2'>
-									<InputDefault
-										title='Электронная почта'
-										name='email'
-										placeholder='mail@example.com'
-										value={formData.email}
-										onChange={handleChange}
-									/>
+									<Devider icon={User} title={'Личные данные'} />
 								</div>
+								<div className='md:col-span-2 flex items-center gap-3 w-full'>
+									{options?.map(option => (
+										<RadioButton
+											key={option.value}
+											name='catalog-type'
+											value={option.value}
+											title={option.title}
+											icon={option.icon}
+											checked={role === option.value}
+											onChange={() => setRole(option.value)}
+											wfull
+											fill
+										/>
+									))}
+								</div>
+
 								<InputDefault
 									title='Фамилия'
-									name='last_name' // Исправлено
+									name='last_name'
 									placeholder='Иванов'
 									value={formData.last_name}
 									onChange={handleChange}
+									required
 								/>
 								<InputDefault
 									title='Имя'
-									name='first_name' // Исправлено
+									name='first_name'
 									placeholder='Иван'
 									value={formData.first_name}
 									onChange={handleChange}
+									required
 								/>
 								<div className='md:col-span-2'>
 									<InputDefault
@@ -326,13 +496,44 @@ const UserForm = ({ mode, userId, onChange }) => {
 										placeholder='Иванович'
 										value={formData.patronymic}
 										onChange={handleChange}
+										required
 									/>
+								</div>
+
+								{/* РАЗДЕЛ 3: ДАННЫЕ ДЛЯ ВХОДА (Иконка: Ключ / Доступ) */}
+								{/* Цвет иконки/текста: рекомендуется предупреждающий или строгий (например, оранжевый или янтарный) */}
+								<div className='md:col-span-2'>
+									<Devider icon={KeyRound} title={'Данные для авторизации'} />
+								</div>
+
+								{/* Адаптивный блок авторизации: на мобилках в колонку, на md+ в одну линию */}
+								<div className='md:col-span-2 flex flex-col gap-5 '>
+									{/* Блок Email + кнопка генерации */}
+									<div className='flex gap-3 items-end w-full'>
+										<div className='flex-grow'>
+											<InputDefault
+												title='Электронная почта'
+												name='email'
+												placeholder='mail@example.com'
+												value={formData.email}
+												onChange={handleChange}
+											/>
+											{/* Информационный текст-предупреждение */}
+											<p className='mt-2 text-xs text-[var(--middle)] leading-relaxed'>
+												Если оставить поле пустым, система создаст случайную
+												почту для входа, но пользователь{' '}
+												<strong>не получит пароль</strong>, так как этого ящика
+												физически не существует. Пароль генерируется{' '}
+												<strong>автоматически</strong>.
+											</p>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
 
 						{/* Главная кнопка внизу */}
-						<div className='flex justify-end pt-4'>
+						<div className='flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800 md:border-transparent'>
 							<DefaultButton
 								width='w-full md:w-auto px-12 py-4'
 								onClick={() =>
@@ -352,7 +553,9 @@ const UserForm = ({ mode, userId, onChange }) => {
 		</>
 	)
 }
+
 const ModerateUsers = () => {
+	const [isOpen, setIsOpen] = useState(false)
 	const [mode, setMode] = useState(null)
 	const [page, setPage] = useState(1)
 	const [users, setUsers] = useState([])
@@ -360,11 +563,11 @@ const ModerateUsers = () => {
 
 	const [searchParams, setSearchParams] = useSearchParams()
 	const activeUserId = searchParams.get('user_id')
+
 	const handleUserClick = id => {
-		// Обновляем query-параметр.
-		// { replace: true } нужен, чтобы не спамить в историю браузера при каждом клике
 		setSearchParams({ user_id: id }, { replace: true })
 	}
+
 	const clearParams = () => {
 		setSearchParams({}, { replace: true })
 		setMode(null)
@@ -391,47 +594,51 @@ const ModerateUsers = () => {
 
 	return (
 		<>
-			<div className='grid grid-cols-[500px_1fr] h-screen gap-6 pt-30 pb-10 '>
-				{/* Боковая панель (Sidebar) */}
-				<div className='w-full h-full overflow-y-auto bg-[var(--white)] shadow-lg rounded-3xl p-4 flex flex-col justify-between'>
-					<h2 className='text-xl font-bold mb-3 px-2 text-[var(--black)]'>
-						Существующие пользователи
-					</h2>
-					<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
-						{users?.items?.map((user, index) => (
-							<motion.div
-								initial={{ scale: 0.9, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-								transition={{
-									duration: 0.125,
-									ease: 'easeOut',
-								}}
-							>
-								<UserCard
-									FullName={user?.full_name}
-									avatar_url={user?.avatar_url}
-									email={user?.email}
-									role={user?.role}
-									onClick={() => {
-										handleUserClick(user.id)
-									}}
-								/>
-							</motion.div>
-						))}
+			<div className='lg:grid grid-cols-[450px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
+				<ResponsiveSidebar
+					title='Существующие пользователи'
+					triggerTitle='Пользователи'
+					triggerIcon={Users}
+					isOpen={isOpen}
+					setIsOpen={setIsOpen}
+				>
+					<div className='flex flex-col justify-between h-full overflow-hidden'>
+						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
+							{users?.items?.map((user, index) => (
+								<motion.div
+									key={user.id || index}
+									initial={{ scale: 0.9, opacity: 0 }}
+									animate={{ scale: 1, opacity: 1 }}
+									transition={{ duration: 0.125, ease: 'easeOut' }}
+								>
+									<UserCard
+										FullName={user?.full_name}
+										avatar_url={user?.avatar_url}
+										email={user?.email}
+										role={user?.role}
+										onClick={() => {
+											handleUserClick(user.id)
+											setIsOpen(false) // Закрываем шторку на мобилках
+										}}
+									/>
+								</motion.div>
+							))}
+						</div>
+						<div className='pt-4 mt-auto shrink-0'>
+							<BasicPagination
+								count={users?.total_pages}
+								page={page}
+								onPageChange={setPage}
+								siblingCount={0}
+							/>
+						</div>
 					</div>
-
-					<BasicPagination
-						count={users?.total_pages}
-						page={page}
-						onPageChange={setPage}
-						siblingCount={0}
-					/>
-				</div>
+				</ResponsiveSidebar>
 
 				{/* Основной контент */}
-				<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
+				<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4 overflow-y-auto'>
 					{mode === null ? (
-						<div className='flex items-center justify-center w-full h-full'>
+						<div className='flex items-center justify-center w-full h-full min-h-[300px]'>
 							<DefaultButton width='w-fit' onClick={() => setMode('create')}>
 								<div className='flex items-center justify-center gap-3 w-full'>
 									<Plus />
@@ -470,7 +677,7 @@ const ModerateUsers = () => {
 									if (data === 'delete') {
 										clearParams()
 									} else {
-										handleUserClick(data)
+										// handleUserClick(data)
 									}
 									getUsers()
 								}}
@@ -482,4 +689,5 @@ const ModerateUsers = () => {
 		</>
 	)
 }
+
 export default ModerateUsers

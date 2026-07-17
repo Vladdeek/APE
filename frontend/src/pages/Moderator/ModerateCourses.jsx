@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import Modal from '../../components/Modal'
 import { InputDefault } from '../../components/Inputs'
+import ResponsiveSidebar from '../../components/ResponsiveSidebar'
 
 const TextStroke = ({ title, value, textarea }) => {
 	return (
@@ -267,6 +268,8 @@ const CourseForm = ({ courseId, onChange }) => {
 }
 
 const ModerateCourses = () => {
+	const [isOpen, setIsOpen] = useState(false)
+
 	const navigate = useNavigate()
 	const { type } = useParams() // Получаем 'admit' или 'release' из URL
 	const [searchParams, setSearchParams] = useSearchParams()
@@ -310,42 +313,43 @@ const ModerateCourses = () => {
 
 	return (
 		<>
-			<div className='grid grid-cols-[500px_1fr] h-screen gap-6 pt-30 pb-10 '>
-				<div className='flex flex-col gap-5'>
-					<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4 flex flex-col justify-between'>
-						<div className='flex items-center gap-3 mb-3'>
-							<h2 className='text-xl font-bold text-[var(--black)]'>Курсы</h2>
-						</div>
-
+			<div className='lg:grid grid-cols-[500px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
+				<ResponsiveSidebar
+					title='Курсы'
+					triggerTitle='Курсы'
+					triggerIcon={BookOpen}
+					isOpen={isOpen}
+					setIsOpen={setIsOpen}
+				>
+					<div className='flex flex-col justify-between h-full overflow-hidden'>
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
-							{/* Пример списка курсов */}
-							{courses?.map(course => (
+							{courses?.map((course, index) => (
 								<motion.div
+									key={course.id || index}
 									initial={{ scale: 0.9, opacity: 0 }}
 									animate={{ scale: 1, opacity: 1 }}
-									transition={{
-										duration: 0.125,
-										ease: 'easeOut',
-									}}
+									transition={{ duration: 0.125, ease: 'easeOut' }}
 								>
 									<CourseMiniCard
 										data={course}
 										onClick={() => {
 											handleCourseClick(course.id)
+											setIsOpen(false)
 										}}
 									/>
 								</motion.div>
 							))}
 						</div>
-
-						<BasicPagination
-							count={1}
-							page={page}
-							onPageChange={setPage}
-							siblingCount={0}
-						/>
+						<div className='pt-4 mt-auto shrink-0'>
+							<BasicPagination
+								count={1}
+								page={page}
+								onPageChange={setPage}
+								siblingCount={0}
+							/>
+						</div>
 					</div>
-				</div>
+				</ResponsiveSidebar>
 
 				{/* Основной контент */}
 				<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>

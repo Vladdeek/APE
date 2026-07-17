@@ -2,9 +2,10 @@ import api, { API } from '../../src/API'
 
 // --- users ---
 export const GetUsers = async role => {
-	const response = await api.get(`${API}/users?role_name=${role}`)
+	const response = await api.get(`${API}/users/?role_name=${role}`)
 	return response.data
 }
+
 export const GetUsersById = async id => {
 	const response = await api.get(`${API}/users/${id}`)
 	return response.data
@@ -13,12 +14,19 @@ export const GetCreatedCoursesByUserId = async id => {
 	const response = await api.get(`${API}/users/created-courses/${id}`)
 	return response.data
 }
-export const AddNewUser = async (first_name, last_name, patronymic, email) => {
+export const AddNewUser = async (
+	first_name,
+	last_name,
+	patronymic,
+	email,
+	role,
+) => {
 	const response = await api.post(`${API}/users/account/register`, {
 		first_name,
 		last_name,
 		patronymic,
 		email,
+		role,
 	})
 	return response.data
 }
@@ -49,7 +57,9 @@ export const ToSendTheMessageAgainUserById = async id => {
 
 // --- courses ---
 export const GetModerationCourses = async course_status => {
-	const response = await api.get(`${API}/course?course_status=${course_status}`)
+	const response = await api.get(
+		`${API}/course/?course_status=${course_status}`,
+	)
 	return response.data
 }
 
@@ -70,7 +80,28 @@ export const GetAllCoursesWithRequest = async () => {
 	return response.data
 }
 
-export const GetAllStudentRequests = async course_id => {
-	const response = await api.get(`${API}/course/${course_id}/student-requests/`)
+export const GetAllStudentRequests = async (course_id, status) => {
+	const response = await api.get(
+		`${API}/course/${course_id}/student-requests/?status=${status}`,
+	)
+	return response.data
+}
+export const GetAllAcceptedStudent = async course_id => {
+	const response = await api.get(
+		`${API}/course/moderation/${course_id}/students/linked`,
+	)
+	return response.data
+}
+export const GetAllStudentWithoutRequests = async course_id => {
+	const response = await api.get(
+		`${API}/course/moderation/${course_id}/students/unlinked`,
+	)
+	return response.data
+}
+export const RegisterStudentOnCourse = async (course_id, user_id) => {
+	const response = await api.post(
+		`${API}/course/moderation/${course_id}/students/register`,
+		{ user_id },
+	)
 	return response.data
 }

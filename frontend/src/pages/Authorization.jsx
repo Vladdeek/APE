@@ -111,7 +111,7 @@ const Authorization = () => {
 					),
 				)
 
-				navigate('/catalog')
+				navigate('/')
 			} catch (err) {
 				console.log('REG ERROR:', err)
 				// Здесь можно вывести ошибку пользователю в UI
@@ -130,7 +130,7 @@ const Authorization = () => {
 					Login(formData.email, formData.password),
 				)
 
-				navigate('/catalog')
+				navigate('/')
 			} catch (err) {
 				console.log('LOGIN ERROR:', err)
 				// Здесь можно вывести ошибку пользователю в UI

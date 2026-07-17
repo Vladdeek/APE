@@ -30,6 +30,7 @@ import AcceptanceOfApplications from './pages/Moderator/AcceptanceOfApplications
 import TaskChecking from './pages/TaskCheking'
 import { UserProvider } from '../service/context/UserContext'
 import { Toaster } from 'sonner'
+import { Redirector } from '../service/utils/Redirector'
 
 function MainApp() {
 	return (
@@ -61,6 +62,7 @@ createRoot(document.getElementById('root')).render(
 	<BrowserRouter>
 		<UserProvider>
 			<MainApp />
+			<Redirector />
 			<Toaster
 				theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
 				position='top-right'

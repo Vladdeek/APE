@@ -204,7 +204,7 @@ const HeaderLink = ({ title, icon: Icon, to, not_clickable = false }) => {
 	return (
 		<NavLink
 			to={!not_clickable && to}
-			onClick={!not_clickable && clearError}
+			onClick={!not_clickable}
 			className={({ isActive }) =>
 				`inline-flex justify-center items-center gap-2 rounded-xl px-4 pb-3 pt-2 cursor-pointer shadow-[var(--shadow)] text-[var(--black)] transition-all select-none ${
 					not_clickable
