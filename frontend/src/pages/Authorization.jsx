@@ -173,7 +173,6 @@ const Authorization = () => {
 					</div>
 
 					<div className='w-1/2 h-full flex flex-col items-center gap-5 py-10'>
-						<AuthToggle select={selected} setSelect={setSelected} />
 						<form
 							className='flex flex-col gap-3 items-center w-full h-full p-10 overflow-visible'
 							onSubmit={handleSubmitLogin}
@@ -210,7 +209,6 @@ const Authorization = () => {
 						</form>
 					</div>
 					<div className='w-1/2 h-full flex flex-col gap-4 items-center py-10'>
-						<AuthToggle select={selected} setSelect={setSelected} />
 						<form
 							className='flex flex-col gap-3 items-center w-full h-full p-10 overflow-visible'
 							onSubmit={handleSubmitRegistration}
