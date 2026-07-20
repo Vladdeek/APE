@@ -1024,7 +1024,7 @@ const CoursePage = () => {
 		try {
 			await ChangeStatus(courseId, status)
 			setIsModalOpen(false)
-			navigate('/moderation-courses/pending_review')
+			navigate('/moderation-courses')
 		} catch (err) {
 			console.error(err)
 		}

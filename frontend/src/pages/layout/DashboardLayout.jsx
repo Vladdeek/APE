@@ -44,7 +44,7 @@ export default function DashboardLayout({ onChange }) {
 				{
 					title: 'Курсы',
 					icon: BookText,
-					to: '/moderation-courses/pending_review',
+					to: '/moderation-courses',
 				},
 				{
 					title: 'Заявки',

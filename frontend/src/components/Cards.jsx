@@ -1,4 +1,5 @@
 import { ImageOff, RussianRuble } from 'lucide-react'
+import { useState } from 'react'
 import { data } from 'react-router-dom'
 
 const CourseCard = ({ data, onClick, status }) => {
@@ -158,6 +159,7 @@ export const CourseMiniCard = ({ data, onClick }) => {
 			month: 'short',
 		})
 	}
+	const [imageError, setImageError] = useState(false)
 
 	return (
 		<div
@@ -165,11 +167,16 @@ export const CourseMiniCard = ({ data, onClick }) => {
 			className='flex gap-4 bg-[var(--white)] p-2 rounded-3xl shadow-[var(--shadow)] border border-[var(--light-middle)] transition-all cursor-pointer group items-center'
 		>
 			<div className='relative shrink-0'>
-				<img
-					className='rounded-2xl w-28 h-28 object-cover'
-					src={data.preview_url}
-					alt={data.name}
-				/>
+				{data.preview_url && !imageError ? (
+					<img
+						className='rounded-2xl w-28 h-28 object-cover'
+						src={data.preview_url}
+						alt=''
+						onError={() => setImageError(true)}
+					/>
+				) : (
+					<ImageOff className='rounded-2xl w-28 h-28 p-8 text-[var(--middle)] bg-gray-100' />
+				)}
 
 				{data.student_request_count
 					? data.student_request_count && (
