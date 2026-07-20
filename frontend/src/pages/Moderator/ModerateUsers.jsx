@@ -185,6 +185,7 @@ const UserForm = ({ mode, userId, onChange }) => {
 				formData.patronymic,
 				formData.email,
 				userId,
+				role,
 			)
 			onChange?.(userId)
 		} catch (err) {}

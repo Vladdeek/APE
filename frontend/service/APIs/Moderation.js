@@ -36,12 +36,14 @@ export const EditUserInfo = async (
 	patronymic,
 	email,
 	userId,
+	role_name,
 ) => {
 	const response = await api.put(`${API}/users/account/${userId}`, {
 		first_name,
 		last_name,
 		patronymic,
 		email,
+		role_name,
 	})
 	return response.data
 }
