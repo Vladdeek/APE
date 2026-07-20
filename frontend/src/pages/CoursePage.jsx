@@ -889,7 +889,7 @@ const CoursePage = () => {
 				'bg-[var(--green-status-bg)] text-[var(--green-status-text)] cursor-default',
 		},
 		pending_review: {
-			title: `${role === 'moderator' ? 'Принять решение' : 'На рассмотрении'}`,
+			title: `${role === 'moderator' ? 'Рецензировать' : 'На рассмотрении'}`,
 			style: `${role === 'moderator' ? 'bg-[var(--black)] text-[var(--white)] hover:bg-[var(--hero)] hover:text-white  cursor-pointer' : 'bg-[var(--yellow-status-bg)] text-[var(--yellow-status-text)] cursor-default'}`,
 		},
 		draft: {
