@@ -11,6 +11,7 @@ import {
 	Key,
 	KeyRound,
 	LibraryBig,
+	Lock,
 	Mail,
 	PanelLeftClose,
 	Plus,
@@ -29,6 +30,7 @@ import {
 	AddNewUser,
 	DeleteUsersById,
 	EditUserInfo,
+	generateNewPassword,
 	GetCreatedCoursesByUserId,
 	GetUsers,
 	GetUsersById,
@@ -94,6 +96,7 @@ const Devider = ({ icon: Icon, title }) => {
 const UserForm = ({ mode, userId, onChange }) => {
 	const [isModalOpen, setIsModalOpen] = useState(null)
 	const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false)
+	const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 	const [formData, setFormData] = useState({
 		first_name: '',
 		last_name: '',
@@ -109,11 +112,12 @@ const UserForm = ({ mode, userId, onChange }) => {
 
 	const [copied, setCopied] = useState(false)
 
-	const handleCopy = async () => {
+	const handleCopy = async whatCopy => {
 		// Формируем шаблон строки для копирования
-		const textToCopy = `Почта: ${resData.email}\nПароль: ${resData.password}`
-
-		console.log(textToCopy)
+		const textToCopy =
+			whatCopy === 'password'
+				? `Пароль: ${resData.password}`
+				: `Почта: ${resData.email}\nПароль: ${resData.password}`
 
 		navigator.clipboard
 			.writeText(textToCopy)
@@ -199,6 +203,16 @@ const UserForm = ({ mode, userId, onChange }) => {
 		} catch (err) {}
 	}
 
+	const generatePassword = async () => {
+		try {
+			const res = await generateNewPassword(userId)
+			if (res) {
+				setResData(res)
+				setIsPasswordModalOpen(true)
+			}
+		} catch (err) {}
+	}
+
 	const states = [
 		'to-send-the-message-again',
 		'generate-new-password',
@@ -218,7 +232,7 @@ const UserForm = ({ mode, userId, onChange }) => {
 			text: 'Старый пароль перестанет действовать. Сгенерировать новый?',
 			confirmLabel: 'Создать',
 			confirmClass: 'bg-[var(--green-base)] hover:bg-[var(--green-hover)]',
-			action: () => toSendTheMessageAgainUserById(),
+			action: () => generatePassword(),
 		},
 		'delete-user': {
 			title: 'Удаление аккаунта',
@@ -290,7 +304,7 @@ const UserForm = ({ mode, userId, onChange }) => {
 								Данные для входа
 							</h3>
 							<button
-								onClick={handleCopy}
+								onClick={() => handleCopy('fullInfo')}
 								className={`text-[var(--hero)] ${copied ? 'bg-[var(--green-status-bg)] hover:bg-[var(--green-status-middle-text)]' : 'hover:bg-[var(--hero-pale)]'}  flex gap-1.5 items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95`}
 							>
 								{copied ? (
@@ -340,6 +354,60 @@ const UserForm = ({ mode, userId, onChange }) => {
 							className='w-full bg-[var(--hero)] hover:bg-[var(--hero)]/90 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg hover:shadow-[var(--hero)]/15 transition-all duration-200 active:scale-[0.99] cursor-pointer text-center text-sm'
 						>
 							Готово, данные отправлены
+						</button>
+					</div>
+				</div>
+			</Modal>
+			<Modal width={'w-130'} isOpen={isPasswordModalOpen}>
+				<div className='flex flex-col gap-6'>
+					{/* Карточка с сгенерированным паролем */}
+					<div className='w-full bg-[var(--bg)]/50 rounded-2xl p-4 flex flex-col gap-4 '>
+						{/* Шапка карточки */}
+						<div className='flex justify-between items-center pb-2 border-b border-[var(--black)]/5'>
+							<p className='text-[var(--black)] text-sm font-bold uppercase tracking-wider'>
+								Новый пароль
+							</p>
+
+							<button
+								onClick={() => handleCopy('password')}
+								className={`text-[var(--hero)] ${
+									copied
+										? 'bg-[var(--green-status-bg)] text-[var(--green-status-text)] hover:bg-[var(--green-status-middle-text)]'
+										: 'hover:bg-[var(--hero-pale)]'
+								} flex gap-1.5 items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95`}
+							>
+								{copied ? (
+									<>
+										<Check size={14} />
+										<span>Скопировано!</span>
+									</>
+								) : (
+									<>
+										<Copy size={14} />
+										<span>Скопировать</span>
+									</>
+								)}
+							</button>
+						</div>
+
+						{/* Поле с паролем */}
+						<div className='flex flex-col gap-1.5'>
+							<span className='text-[var(--black)] text-base font-mono font-bold break-all select-all bg-[var(--white)] py-2.5 px-3 rounded-lg border border-[var(--black)]/5 shadow-inner text-center tracking-wide min-h-[44px] flex items-center justify-center'>
+								{resData.password}
+							</span>
+							<span className='text-[var(--black)]/40 text-[11px] text-center'>
+								Нажмите на текст или кнопку выше, чтобы скопировать
+							</span>
+						</div>
+					</div>
+
+					{/* Кнопка действия (Закрытие) */}
+					<div className='flex flex-col gap-2 pt-2 border-t border-[var(--black)]/5'>
+						<button
+							onClick={() => setIsPasswordModalOpen(false)}
+							className='w-full bg-[var(--hero)] hover:bg-[var(--hero)]/90 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg hover:shadow-[var(--hero)]/15 transition-all duration-200 active:scale-[0.99] cursor-pointer text-center text-sm'
+						>
+							Данные отправлены, закрыть
 						</button>
 					</div>
 				</div>
@@ -426,14 +494,14 @@ const UserForm = ({ mode, userId, onChange }) => {
 							</button> */}
 
 							{/* 2. Генерация нового пароля (если забыл) */}
-							{/* <button
+							<button
 								onClick={() => setIsModalOpen(states[1])}
-								disabled={logined === null || mode === 'create'}
-								className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all text-[var(--black)] ${logined === null || mode === 'create' ? 'opacity-40 cursor-not-allowed' : ' hover:bg-[var(--light-middle)] hover:shadow-[var(--shadow)] active:scale-[0.98] cursor-pointer'}`}
+								disabled={mode === 'create'}
+								className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all text-[var(--black)] ${mode === 'create' ? 'opacity-40 cursor-not-allowed' : ' hover:bg-[var(--light-middle)]/25 hover:shadow-[var(--shadow)] active:scale-[0.98] cursor-pointer'}`}
 							>
 								<Key size={16} className='text-[var(--middle-correct-lvl)]' />
 								Сгенерировать новый пароль
-							</button> */}
+							</button>
 
 							{/* 3. Удаление аккаунта */}
 							<button

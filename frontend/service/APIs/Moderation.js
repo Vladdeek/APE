@@ -54,6 +54,12 @@ export const ToSendTheMessageAgainUserById = async id => {
 	const response = await api.post(`${API}/users/account/${id}/send-password`)
 	return response.data
 }
+export const generateNewPassword = async id => {
+	const response = await api.post(
+		`${API}/users/account/${id}/generate-password`,
+	)
+	return response.data
+}
 
 // --- courses ---
 export const GetModerationCourses = async course_status => {
