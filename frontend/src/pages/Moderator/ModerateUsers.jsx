@@ -624,6 +624,13 @@ const UserForm = ({ mode, userId, onChange }) => {
 }
 
 const ModerateUsers = () => {
+	const options = [
+		{ value: 'teacher', title: 'Преподаватель' },
+		{ value: 'student', title: 'Студент' },
+	]
+
+	const [activeRole, setActiveRole] = useState('teacher')
+
 	const [isOpen, setIsOpen] = useState(false)
 	const [mode, setMode] = useState(null)
 	const [page, setPage] = useState(1)
@@ -652,14 +659,14 @@ const ModerateUsers = () => {
 
 	const getUsers = async () => {
 		try {
-			const res = await GetUsers('teacher')
+			const res = await GetUsers(activeRole)
 			setUsers(res)
 		} catch (err) {}
 	}
 
 	useEffect(() => {
 		getUsers()
-	}, [])
+	}, [activeRole])
 
 	return (
 		<>
@@ -672,6 +679,22 @@ const ModerateUsers = () => {
 					setIsOpen={setIsOpen}
 				>
 					<div className='flex flex-col justify-between h-full overflow-hidden'>
+						<div className='flex gap-1'>
+							{options?.map(option => (
+								<RadioButton
+									key={option.value}
+									name='catalog-type'
+									value={option.value}
+									title={option.title}
+									icon={option.icon}
+									checked={activeRole === option.value}
+									onChange={() => setActiveRole(option.value)}
+									wfull
+									fill
+								/>
+							))}
+						</div>
+
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
 							{users?.items?.map((user, index) => (
 								<motion.div
