@@ -274,7 +274,7 @@ const ContentView = ({
 	}
 
 	// 1. Выносим список типов, которым нужен дебаунс, в константу
-	const DEBOUNCED_TYPES = ['text', 'callout', 'formula']
+	const DEBOUNCED_TYPES = ['text', 'callout', 'formula', 'button']
 
 	// 2. Создаем дебаунс-функцию.
 	// Важно обернуть в useMemo, чтобы debounce не пересоздавался на каждом рендере
@@ -359,6 +359,7 @@ const ContentView = ({
 								'formula',
 								'code',
 								'text',
+								'button',
 							].includes(type)
 
 							return (
