@@ -221,6 +221,7 @@ const ModerateCourses = () => {
 	]
 
 	const [activeStatus, setActiveStatus] = useState('pending_review')
+	const [courseStatus, setCourseStatus] = useState(null)
 
 	const fetchCourses = async () => {
 		try {
@@ -245,6 +246,18 @@ const ModerateCourses = () => {
 			console.error(err)
 		}
 	}
+
+	useEffect(() => {
+		const getCourse = async () => {
+			try {
+				const res = await GetCourseInfoById(activeCourseId)
+				setCourseStatus(res.status)
+			} catch (err) {
+				console.error('Ошибка при загрузке курса:', err)
+			}
+		}
+		if (activeCourseId) getCourse()
+	}, [activeCourseId])
 
 	return (
 		<>
@@ -310,7 +323,6 @@ const ModerateCourses = () => {
 									checked={activeStatus === option.value}
 									onChange={() => {
 										setActiveStatus(option.value)
-										clearParams()
 									}}
 									wfull
 									fill
@@ -371,13 +383,13 @@ const ModerateCourses = () => {
 								<div className='flex gap-3'>
 									<DefaultButton
 										width='px-5 py-2.5 text-sm flex items-center'
-										invert={activeStatus === 'pending_review'}
+										invert={courseStatus === 'pending_review'}
 										onClick={() => navigate(`/course/${activeCourseId}`)}
 									>
 										<Edit3 size={16} />
 										Редактировать
 									</DefaultButton>
-									{activeStatus === 'pending_review' && (
+									{courseStatus === 'pending_review' && (
 										<DefaultButton
 											width='px-6 py-2.5 text-sm flex items-center'
 											onClick={() => setIsModalOpen(true)}
