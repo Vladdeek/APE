@@ -117,7 +117,7 @@ const CourseForm = ({ courseId, onChange }) => {
 				</div>
 			</Modal>
 
-			<div className='mx-40'>
+			<div className='2xl:mx-40 mx-5'>
 				<div className='grid grid-cols-12 gap-10'>
 					{/* ЛЕВАЯ КОЛОНКА: Виджет курса и Создатель */}
 					<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/30 pr-6'>
@@ -249,7 +249,7 @@ const CourseForm = ({ courseId, onChange }) => {
 						</section>
 
 						{/* Кнопка действия */}
-						<div className='flex justify-end pt-4'>
+						<div className='flex justify-end pt-4 mb-9'>
 							<DefaultButton
 								width='w-full md:w-auto px-8 py-4'
 								onClick={() => setIsModalOpen(true)}
@@ -313,7 +313,7 @@ const ModerateCourses = () => {
 
 	return (
 		<>
-			<div className='lg:grid grid-cols-[500px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
+			<div className='lg:grid grid-cols-[400px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
 				<ResponsiveSidebar
 					title='Курсы'
 					triggerTitle='Курсы'
@@ -352,7 +352,7 @@ const ModerateCourses = () => {
 				</ResponsiveSidebar>
 
 				{/* Основной контент */}
-				<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
+				<div className='w-full h-full bg-[var(--white)] overflow-y-scroll shadow-lg rounded-3xl p-4'>
 					{!activeCourseId ? (
 						<div className='flex items-center justify-center w-full h-full'>
 							<p className='text-[var(--middle)] font-light text-2xl'>
