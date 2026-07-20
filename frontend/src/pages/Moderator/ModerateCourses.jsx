@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-	AccessCourse,
+	ChangeStatus,
 	GetCourseInfoById,
 	GetModerationCourses,
 } from '../../../service/APIs/Moderation'
@@ -67,7 +67,7 @@ const CourseForm = ({ courseId, onChange }) => {
 
 	const accessCourse = async status => {
 		try {
-			const res = await AccessCourse(courseId, status)
+			const res = await ChangeStatus(courseId, status)
 			setIsModalOpen(false)
 			onChange?.()
 		} catch (err) {}

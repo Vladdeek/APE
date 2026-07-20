@@ -68,7 +68,7 @@ export const GetCourseInfoById = async course_id => {
 	return response.data
 }
 
-export const AccessCourse = async (course_id, status) => {
+export const ChangeStatus = async (course_id, status) => {
 	const response = await api.patch(`${API}/course/status/${course_id}/change`, {
 		status,
 	})

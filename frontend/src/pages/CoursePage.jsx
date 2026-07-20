@@ -66,6 +66,7 @@ import TestManager from '../components/TestManager/TestManager'
 import { formatTime } from '../../service/utils/formatTime'
 import { useUser } from '../../service/context/UserContext'
 import AccessManagement from './AccessSection'
+import { ChangeStatus } from '../../service/APIs/Moderation'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -86,12 +87,12 @@ const DEFAULT_LESSON_TYPES = [
 		icon: <BookMarked size={18} />,
 		description: 'Теоретический материал с блоками текста и медиа.',
 	},
-	// {
-	// 	label: 'Практика',
-	// 	apiType: 'practice',
-	// 	icon: <NotebookPen size={18} />,
-	// 	description: 'Практическое задание для закрепления материала.',
-	// },
+	{
+		label: 'Практика',
+		apiType: 'practice',
+		icon: <NotebookPen size={18} />,
+		description: 'Практическое задание для закрепления материала.',
+	},
 	{
 		label: 'Тест',
 		apiType: 'test',
@@ -873,12 +874,32 @@ const CourseSidebar = ({
 }
 
 const CoursePage = () => {
+	const STATUSES_CONFIG = {
+		approved: {
+			title: 'Одобрено',
+			style:
+				'bg-[var(--green-status-bg)] text-[var(--green-status-text)] cursor-default',
+		},
+		pending_review: {
+			title: 'На рассмотрении',
+			style:
+				'bg-[var(--yellow-status-bg)] text-[var(--yellow-status-text)] cursor-default',
+		},
+		draft: {
+			title: 'Отправить на рассмотрение',
+			style:
+				'bg-[var(--black)] text-[var(--white)] hover:bg-[var(--hero)] hover:text-white  cursor-pointer',
+		},
+	}
+
 	const { courseId } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
 	const [activeSectionId, setActiveSectionId] = useState(
 		searchParams.get('section') || '',
 	)
 	const [activeType, setActiveType] = useState('')
+	const [title, setTitle] = useState('')
+	const [status, setStatus] = useState('draft')
 
 	const { role } = useUser()
 
@@ -893,10 +914,12 @@ const CoursePage = () => {
 		{ value: 'access', title: 'Управление доступом' },
 	]
 
-	const fetchCourseData = useCallback(async () => {
+	const fetchCourseData = async () => {
 		if (!courseId) return
 		try {
 			const res = await ReadCourseById(courseId)
+			setTitle(res.name)
+			setStatus(res.status)
 			if (res && res.modules) {
 				setModules(res.modules)
 
@@ -913,13 +936,13 @@ const CoursePage = () => {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [courseId, searchParams, setSearchParams])
+	}
 
 	// Первый рендер и смена courseId
 	useEffect(() => {
 		setIsLoading(true)
 		fetchCourseData()
-	}, [courseId, fetchCourseData])
+	}, [courseId])
 
 	// Поиск активной секции (лекции/теста) для отображения в шапке контента
 	const activeSection = modules
@@ -934,6 +957,13 @@ const CoursePage = () => {
 
 	const handleSectionClick = id => {
 		setSearchParams({ section: id }, { replace: true })
+	}
+
+	const changeStatus = async () => {
+		try {
+			const res = await ChangeStatus(courseId, 'pending_review')
+			fetchCourseData()
+		} catch (err) {}
 	}
 
 	// Обработчики создания с async/await
@@ -986,7 +1016,7 @@ const CoursePage = () => {
 
 	return (
 		<div className='flex flex-col gap-3 pt-25 pb-10'>
-			<div className='flex justify-between'>
+			<div className='flex justify-between items-center'>
 				<div className='flex items-center gap-3'>
 					{options?.map(option => (
 						<RadioButton
@@ -1001,7 +1031,14 @@ const CoursePage = () => {
 						/>
 					))}
 				</div>
-				<p></p>
+				<p className='text-2xl uppercase font-bold'>{title}</p>
+				<button
+					disabled={status !== 'draft'}
+					onClick={() => changeStatus()}
+					className={`${STATUSES_CONFIG[status].style}  px-4 py-1.75 rounded-xl font-semibold  transition-all`}
+				>
+					{STATUSES_CONFIG[status].title}
+				</button>
 			</div>
 			{activeChapter === 'constructor' ? (
 				<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 lg:pl-0 pl-18 '>
