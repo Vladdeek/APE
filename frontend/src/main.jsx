@@ -45,10 +45,7 @@ function MainApp() {
 						path='/acceptance-of-applications'
 						element={<AcceptanceOfApplications />}
 					/>
-					<Route
-						path='/moderation-courses/:type'
-						element={<ModerateCourses />}
-					/>
+					<Route path='/moderation-courses/' element={<ModerateCourses />} />
 					<Route path='/profile' element={<Profile />} />
 					<Route path='/checking' element={<TaskChecking />} />
 					<Route path='/request/:courseId' element={<StudentCourseRequest />} />

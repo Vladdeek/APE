@@ -5,7 +5,7 @@ import {
 	GetModerationCourses,
 } from '../../../service/APIs/Moderation'
 import BasicPagination from '../../components/Pagination'
-import { DefaultButton } from '../../components/Buttons'
+import { DefaultButton, RadioButton } from '../../components/Buttons'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CourseMiniCard } from '../../components/Cards'
@@ -200,7 +200,7 @@ const ModerateCourses = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false)
 
 	const navigate = useNavigate()
-	const { type } = useParams()
+
 	const [searchParams, setSearchParams] = useSearchParams()
 	const activeCourseId = searchParams.get('course_id')
 
@@ -215,15 +215,16 @@ const ModerateCourses = () => {
 		setSearchParams({ course_id: id })
 	}
 
-	useEffect(() => {
-		if (!type) {
-			navigate('/moderation-courses/pending_review', { replace: true })
-		}
-	}, [type, navigate])
+	const options = [
+		{ value: 'pending_review', title: 'На рассмотрении' },
+		{ value: 'approved', title: 'Одобренные' },
+	]
+
+	const [activeStatus, setActiveStatus] = useState('pending_review')
 
 	const fetchCourses = async () => {
 		try {
-			const res = await GetModerationCourses(type)
+			const res = await GetModerationCourses(activeStatus)
 			setCourses(res)
 		} catch (err) {
 			console.error(err)
@@ -232,7 +233,7 @@ const ModerateCourses = () => {
 
 	useEffect(() => {
 		fetchCourses()
-	}, [type])
+	}, [activeStatus])
 
 	const accessCourse = async status => {
 		try {
@@ -298,6 +299,24 @@ const ModerateCourses = () => {
 					setIsOpen={setIsOpen}
 				>
 					<div className='flex flex-col justify-between h-full overflow-hidden'>
+						<div className='flex gap-1'>
+							{options?.map(option => (
+								<RadioButton
+									key={option.value}
+									name='catalog-type'
+									value={option.value}
+									title={option.title}
+									icon={option.icon}
+									checked={activeStatus === option.value}
+									onChange={() => {
+										setActiveStatus(option.value)
+										clearParams()
+									}}
+									wfull
+									fill
+								/>
+							))}
+						</div>
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
 							{courses?.map((course, index) => (
 								<motion.div
@@ -352,20 +371,21 @@ const ModerateCourses = () => {
 								<div className='flex gap-3'>
 									<DefaultButton
 										width='px-5 py-2.5 text-sm flex items-center'
-										invert={true}
+										invert={activeStatus === 'pending_review'}
 										onClick={() => navigate(`/course/${activeCourseId}`)}
 									>
 										<Edit3 size={16} />
 										Редактировать
 									</DefaultButton>
-
-									<DefaultButton
-										width='px-6 py-2.5 text-sm flex items-center'
-										onClick={() => setIsModalOpen(true)}
-									>
-										<ShieldAlert size={16} />
-										Рецензировать
-									</DefaultButton>
+									{activeStatus === 'pending_review' && (
+										<DefaultButton
+											width='px-6 py-2.5 text-sm flex items-center'
+											onClick={() => setIsModalOpen(true)}
+										>
+											<ShieldAlert size={16} />
+											Рецензировать
+										</DefaultButton>
+									)}
 								</div>
 							</div>
 
