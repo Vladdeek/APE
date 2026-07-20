@@ -22,10 +22,13 @@ import {
 	ChevronRight,
 	LibraryBig,
 	PanelLeftClose,
+	ShieldAlert,
+	XCircle,
+	CheckCircle2,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { TextEditor } from '../components/ConstructorViews/TextEditor'
 import { PhotoBlock } from '../components/ConstructorViews/PhotoImport'
 import { VideoImport } from '../components/ConstructorViews/VideoImport'
@@ -67,6 +70,7 @@ import { formatTime } from '../../service/utils/formatTime'
 import { useUser } from '../../service/context/UserContext'
 import AccessManagement from './AccessSection'
 import { ChangeStatus } from '../../service/APIs/Moderation'
+import Modal from '../components/Modal'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -797,7 +801,7 @@ const CourseSidebar = ({
 						</motion.div>
 					))}
 
-					{role === 'teacher' && (
+					{role !== 'student' && (
 						<CreateItemButton
 							type='lesson'
 							onAdd={lessonData => {
@@ -812,7 +816,7 @@ const CourseSidebar = ({
 				</Module>
 			))}
 
-			{role === 'teacher' && (
+			{role !== 'student' && (
 				<CreateItemButton
 					type='module'
 					onAdd={moduleData => {
@@ -875,6 +879,9 @@ const CourseSidebar = ({
 }
 
 const CoursePage = () => {
+	const { role } = useUser()
+	const navigate = useNavigate()
+
 	const STATUSES_CONFIG = {
 		approved: {
 			title: 'Одобрено',
@@ -882,9 +889,8 @@ const CoursePage = () => {
 				'bg-[var(--green-status-bg)] text-[var(--green-status-text)] cursor-default',
 		},
 		pending_review: {
-			title: 'На рассмотрении',
-			style:
-				'bg-[var(--yellow-status-bg)] text-[var(--yellow-status-text)] cursor-default',
+			title: `${role === 'moderator' ? 'Принять решение' : 'На рассмотрении'}`,
+			style: `${role === 'moderator' ? 'bg-[var(--black)] text-[var(--white)] hover:bg-[var(--hero)] hover:text-white  cursor-pointer' : 'bg-[var(--yellow-status-bg)] text-[var(--yellow-status-text)] cursor-default'}`,
 		},
 		draft: {
 			title: 'Отправить на рассмотрение',
@@ -901,8 +907,6 @@ const CoursePage = () => {
 	const [activeType, setActiveType] = useState('')
 	const [title, setTitle] = useState('')
 	const [status, setStatus] = useState('draft')
-
-	const { role } = useUser()
 
 	const [blocks, setBlocks] = useState([])
 	const [isEdit, setIsEdit] = useState(false)
@@ -1014,65 +1018,125 @@ const CoursePage = () => {
 	}, [searchParams, modules])
 
 	const [timeLeft, setTimeLeft] = useState()
+	const [isModalOpen, setIsModalOpen] = useState(false)
+
+	const accessCourse = async status => {
+		try {
+			await ChangeStatus(courseId, status)
+			setIsModalOpen(false)
+			navigate('/moderation-courses/pending_review')
+		} catch (err) {
+			console.error(err)
+		}
+	}
 
 	return (
-		<div className='flex flex-col gap-3 pt-25 pb-10'>
-			<div className='flex justify-between items-center'>
-				<div className='flex items-center gap-3'>
-					{options?.map(option => (
-						<RadioButton
-							key={option.value}
-							name='chapter'
-							value={option.value}
-							title={option.title}
-							icon={option.icon}
-							checked={activeChapter === option.value}
-							onChange={() => setActiveChapter(option.value)}
-							style='solid'
-						/>
-					))}
+		<>
+			{/* Модалка вынесена на уровень родителя */}
+			<Modal width={'w-110'} isOpen={isModalOpen}>
+				<div className='flex flex-col gap-6 p-2'>
+					<div className='flex flex-col items-center text-center gap-3'>
+						<div className='p-4 bg-[var(--transparent-hero)] rounded-full text-[var(--hero)]'>
+							<ShieldAlert size={40} />
+						</div>
+						<h2 className='text-2xl font-bold text-[var(--black)]'>
+							Вынесение вердикта
+						</h2>
+						<p className='text-[var(--middle)] text-sm'>
+							Выберите статус для курса после проверки данных. Автору придет
+							соответствующее уведомление.
+						</p>
+					</div>
+
+					<div className='grid grid-cols-2 gap-4'>
+						<button
+							onClick={() => accessCourse('draft')}
+							className='flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-all cursor-pointer border border-red-500/20'
+						>
+							<XCircle size={24} />
+							<span className='font-semibold text-sm'>Отклонить</span>
+						</button>
+						<button
+							onClick={() => accessCourse('approved')}
+							className='flex flex-col items-center gap-2 p-4 rounded-2xl bg-green-500/10 hover:bg-green-500/20 text-green-600 transition-all cursor-pointer border border-green-500/20'
+						>
+							<CheckCircle2 size={24} />
+							<span className='font-semibold text-sm'>Одобрить</span>
+						</button>
+					</div>
+
+					<button
+						onClick={() => setIsModalOpen(false)}
+						className='w-full py-3 text-[var(--middle)] font-medium hover:bg-[var(--light-middle)]/10 rounded-xl transition-all text-sm'
+					>
+						Вернуться к просмотру
+					</button>
 				</div>
-				<p className='text-2xl uppercase font-bold'>{title}</p>
-				<button
-					disabled={status !== 'draft'}
-					onClick={() => changeStatus()}
-					className={`${STATUSES_CONFIG[status].style}  px-4 py-1.75 rounded-xl font-semibold  transition-all`}
-				>
-					{STATUSES_CONFIG[status].title}
-				</button>
-			</div>
-			{activeChapter === 'constructor' ? (
-				<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 lg:pl-0 pl-18 '>
-					{/* Боковая панель (Sidebar) */}
-					<CourseSidebar
-						role={role}
-						modules={modules}
-						toggleModule={toggleModule}
-						activeSectionId={activeSectionId}
-						handleSectionClick={handleSectionClick}
-						setActiveType={setActiveType}
-						createLesson={createLesson}
-						createModule={createModule}
-					/>
+			</Modal>
+			<div className='flex flex-col gap-3 pt-25 pb-10'>
+				<div className='flex justify-between items-center'>
+					{role !== 'student' && (
+						<div className='flex items-center gap-3'>
+							{options?.map(option => (
+								<RadioButton
+									key={option.value}
+									name='chapter'
+									value={option.value}
+									title={option.title}
+									icon={option.icon}
+									checked={activeChapter === option.value}
+									onChange={() => setActiveChapter(option.value)}
+									style='solid'
+								/>
+							))}
+						</div>
+					)}
+					<p className='text-2xl uppercase font-bold'>{title}</p>
+					{role !== 'student' && (
+						<button
+							disabled={status !== 'draft' && role !== 'moderator'}
+							onClick={() =>
+								role === 'moderator' ? setIsModalOpen(true) : changeStatus()
+							}
+							className={`${STATUSES_CONFIG[status].style}  px-4 py-1.75 rounded-xl font-semibold  transition-all`}
+						>
+							{STATUSES_CONFIG[status].title}
+						</button>
+					)}
+				</div>
+				{activeChapter === 'constructor' ? (
+					<div className='lg:grid grid-cols-[350px_1fr] h-screen gap-6 lg:pl-0 pl-18 '>
+						{/* Боковая панель (Sidebar) */}
+						<CourseSidebar
+							role={role}
+							modules={modules}
+							toggleModule={toggleModule}
+							activeSectionId={activeSectionId}
+							handleSectionClick={handleSectionClick}
+							setActiveType={setActiveType}
+							createLesson={createLesson}
+							createModule={createModule}
+						/>
 
-					{/* Основной контент */}
-					<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-						{activeSection && <ContentHeader />}
+						{/* Основной контент */}
+						<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
+							{activeSection && <ContentHeader />}
 
-						<div className='w-full h-full overflow-y-auto px-2 py-4'>
-							{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-							<ContentView
-								isEdit={role === 'teacher' && true}
-								sectionId={activeSectionId}
-								SectionType={activeType}
-							/>
+							<div className='w-full h-full overflow-y-auto px-2 py-4'>
+								{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
+								<ContentView
+									isEdit={role === 'teacher' && true}
+									sectionId={activeSectionId}
+									SectionType={activeType}
+								/>
+							</div>
 						</div>
 					</div>
-				</div>
-			) : (
-				activeChapter === 'access' && <AccessManagement />
-			)}
-		</div>
+				) : (
+					activeChapter === 'access' && <AccessManagement />
+				)}
+			</div>
+		</>
 	)
 }
 

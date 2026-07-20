@@ -5,10 +5,9 @@ import {
 	GetModerationCourses,
 } from '../../../service/APIs/Moderation'
 import BasicPagination from '../../components/Pagination'
-import { DefaultButton, ToggleButton } from '../../components/Buttons'
-import Help from '../../components/Help'
+import { DefaultButton } from '../../components/Buttons'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { CourseMiniCard } from '../../components/Cards'
 import {
 	ArrowLeft,
@@ -16,16 +15,16 @@ import {
 	Calendar,
 	CheckCircle2,
 	CreditCard,
-	RussianRuble,
+	Edit3,
 	ShieldAlert,
 	Tag,
 	User,
 	XCircle,
 } from 'lucide-react'
 import Modal from '../../components/Modal'
-import { InputDefault } from '../../components/Inputs'
 import ResponsiveSidebar from '../../components/ResponsiveSidebar'
 
+// Компонент отображения строки данных
 const TextStroke = ({ title, value, textarea }) => {
 	return (
 		<div className='flex flex-col gap-1 w-full'>
@@ -34,13 +33,12 @@ const TextStroke = ({ title, value, textarea }) => {
 					{title}
 				</span>
 			)}
-
 			{textarea ? (
-				<div className='rounded-2xl p-4 bg-[var(--light-middle)]/10 text-[var(--black)] shadow-inner border-1 border-[var(--middle)]/3 min-h-32 whitespace-pre-wrap break-words leading-relaxed cursor-default select-text'>
+				<div className='rounded-2xl p-4 bg-[var(--light-middle)]/10 text-[var(--black)] shadow-inner border border-[var(--middle)]/5 min-h-32 whitespace-pre-wrap break-words leading-relaxed cursor-default select-text'>
 					{value || '—'}
 				</div>
 			) : (
-				<div className='rounded-2xl p-3 bg-[var(--light-middle)]/10 text-[var(--black)] shadow-inner border-1 border-[var(--middle)]/3 truncate cursor-default select-text font-medium'>
+				<div className='rounded-2xl p-3 bg-[var(--light-middle)]/10 text-[var(--black)] shadow-inner border border-[var(--middle)]/5 truncate cursor-default select-text font-medium'>
 					{value || '—'}
 				</div>
 			)}
@@ -48,9 +46,8 @@ const TextStroke = ({ title, value, textarea }) => {
 	)
 }
 
-const CourseForm = ({ courseId, onChange }) => {
-	const [isModalOpen, setIsModalOpen] = useState(false)
-	// Инициализируем пустым объектом, чтобы не падали проверки типа courseInfo.id
+// Форма просмотра курса (теперь чистая презентационная логика)
+const CourseForm = ({ courseId }) => {
 	const [courseInfo, setCourseInfo] = useState({})
 
 	useEffect(() => {
@@ -63,19 +60,194 @@ const CourseForm = ({ courseId, onChange }) => {
 			}
 		}
 		if (courseId) getCourse()
-	}, [])
+	}, [courseId])
+
+	return (
+		<div className='2xl:mx-20 mx-2 pb-24'>
+			{' '}
+			{/* Отступ снизу под Action Bar */}
+			<div className='grid grid-cols-12 gap-8'>
+				{/* ЛЕВАЯ КОЛОНКА */}
+				<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/10 pr-6'>
+					<div className='relative group h-64 w-full rounded-3xl overflow-hidden shadow-md bg-[var(--light-gray)]/50'>
+						{courseInfo.preview_url ? (
+							<img
+								src={courseInfo.preview_url}
+								alt='Preview'
+								className='w-full h-full object-cover'
+							/>
+						) : (
+							<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
+								<BookOpen size={48} />
+							</div>
+						)}
+						<div className='absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur rounded-lg text-xs font-bold text-[var(--hero)] shadow-sm'>
+							ID: {courseInfo.id?.slice(0, 8)}...
+						</div>
+					</div>
+
+					<div className='space-y-4 border-t border-[var(--light-middle)]/20 pt-5'>
+						<div className='flex items-center gap-3 p-3 bg-[var(--white)] shadow-sm rounded-2xl border border-[var(--light-middle)]/10'>
+							<div className='w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-inner'>
+								{courseInfo.creator?.avatar_url ? (
+									<img
+										src={courseInfo.creator.avatar_url}
+										alt='Avatar'
+										className='w-full h-full object-cover'
+									/>
+								) : (
+									<User className='p-2 bg-[var(--light-gray)]/50 text-[var(--middle)] w-full h-full' />
+								)}
+							</div>
+							<div className='overflow-hidden'>
+								<p className='text-[10px] text-[var(--middle)] uppercase tracking-wider font-semibold'>
+									Создатель курса
+								</p>
+								<p className='text-sm font-semibold truncate text-[var(--black)]'>
+									{courseInfo.creator?.last_name}{' '}
+									{courseInfo.creator?.first_name}
+								</p>
+							</div>
+						</div>
+
+						<div className='flex items-center gap-2 px-3 py-2 bg-[var(--transparent-hero)] text-[var(--hero)] rounded-xl w-fit text-sm font-medium'>
+							<Tag size={14} />
+							{courseInfo.tag || 'Без тега'}
+						</div>
+					</div>
+				</div>
+
+				{/* ПРАВАЯ КОЛОНКА */}
+				<div className='col-span-12 lg:col-span-8 flex flex-col space-y-8'>
+					<section className='space-y-5'>
+						<div className='flex items-center gap-3'>
+							<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
+								<BookOpen size={20} />
+							</div>
+							<h3 className='text-lg font-bold text-[var(--black)]'>
+								Основная информация
+							</h3>
+						</div>
+						<TextStroke title='Название курса' value={courseInfo.name} />
+						<TextStroke
+							title='Описание'
+							value={courseInfo.description}
+							textarea
+						/>
+					</section>
+
+					<section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+						<div className='space-y-4'>
+							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
+								<Calendar size={14} /> Регистрация
+							</div>
+							<TextStroke
+								title='Начало'
+								value={courseInfo.registration_start?.split('T')[0]}
+							/>
+							<TextStroke
+								title='Конец'
+								value={courseInfo.registration_end?.split('T')[0]}
+							/>
+						</div>
+						<div className='space-y-4'>
+							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
+								<Calendar size={14} /> Обучение
+							</div>
+							<TextStroke
+								title='Дата старта'
+								value={courseInfo.start_date?.split('T')[0]}
+							/>
+							<TextStroke
+								title='Дата завершения'
+								value={courseInfo.end_date?.split('T')[0]}
+							/>
+						</div>
+					</section>
+
+					<section className='grid grid-cols-1 md:grid-cols-3 gap-6 items-end'>
+						<div className='md:col-span-2 flex flex-col gap-4 w-full'>
+							<TextStroke
+								title='Формат обучения'
+								value={courseInfo.format_name}
+							/>
+							<TextStroke
+								title='Тип сертификата'
+								value={courseInfo.certificate_type_name}
+							/>
+						</div>
+						<div className='flex flex-col gap-1 w-full'>
+							<span className='flex items-center gap-2 text-xs font-semibold text-[var(--middle)] mb-1 uppercase tracking-wider'>
+								<CreditCard size={14} /> Цена
+							</span>
+							<TextStroke
+								value={
+									courseInfo.is_free
+										? 'Бесплатно'
+										: `${courseInfo.price || 0} ₽`
+								}
+							/>
+						</div>
+					</section>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+const ModerateCourses = () => {
+	const [isOpen, setIsOpen] = useState(false)
+	const [isModalOpen, setIsModalOpen] = useState(false)
+
+	const navigate = useNavigate()
+	const { type } = useParams()
+	const [searchParams, setSearchParams] = useSearchParams()
+	const activeCourseId = searchParams.get('course_id')
+
+	const [page, setPage] = useState(1)
+	const [courses, setCourses] = useState([])
+
+	const clearParams = () => {
+		setSearchParams({})
+	}
+
+	const handleCourseClick = id => {
+		setSearchParams({ course_id: id })
+	}
+
+	useEffect(() => {
+		if (!type) {
+			navigate('/moderation-courses/pending_review', { replace: true })
+		}
+	}, [type, navigate])
+
+	const fetchCourses = async () => {
+		try {
+			const res = await GetModerationCourses(type)
+			setCourses(res)
+		} catch (err) {
+			console.error(err)
+		}
+	}
+
+	useEffect(() => {
+		fetchCourses()
+	}, [type])
 
 	const accessCourse = async status => {
 		try {
-			const res = await ChangeStatus(courseId, status)
+			await ChangeStatus(activeCourseId, status)
 			setIsModalOpen(false)
-			onChange?.()
-		} catch (err) {}
+			clearParams()
+			fetchCourses() // Обновляем список курсов в сайдбаре после модерации
+		} catch (err) {
+			console.error(err)
+		}
 	}
 
 	return (
 		<>
-			{/* Модальное окно: Допуск */}
+			{/* Модалка вынесена на уровень родителя */}
 			<Modal width={'w-110'} isOpen={isModalOpen}>
 				<div className='flex flex-col gap-6 p-2'>
 					<div className='flex flex-col items-center text-center gap-3'>
@@ -83,239 +255,43 @@ const CourseForm = ({ courseId, onChange }) => {
 							<ShieldAlert size={40} />
 						</div>
 						<h2 className='text-2xl font-bold text-[var(--black)]'>
-							Модерация курса
+							Вынесение вердикта
 						</h2>
-						<p className='text-[var(--middle)]'>
-							Проверьте корректность всех заполненных данных перед тем, как
-							изменить статус доступа к редактированию.
+						<p className='text-[var(--middle)] text-sm'>
+							Выберите статус для курса после проверки данных. Автору придет
+							соответствующее уведомление.
 						</p>
 					</div>
 
 					<div className='grid grid-cols-2 gap-4'>
 						<button
 							onClick={() => accessCourse('draft')}
-							className='flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-[var(--red-hover)] bg-[var(--red-base)] text-[var(--red-surface)] transition-all cursor-pointer'
+							className='flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-all cursor-pointer border border-red-500/20'
 						>
 							<XCircle size={24} />
-							<span className='font-semibold'>Запретить</span>
+							<span className='font-semibold text-sm'>Отклонить</span>
 						</button>
 						<button
 							onClick={() => accessCourse('approved')}
-							className='flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-[var(--green-hover)] bg-[var(--green-base)] text-[var(--green-surface)] transition-all cursor-pointer'
+							className='flex flex-col items-center gap-2 p-4 rounded-2xl bg-green-500/10 hover:bg-green-500/20 text-green-600 transition-all cursor-pointer border border-green-500/20'
 						>
 							<CheckCircle2 size={24} />
-							<span className='font-semibold'>Допустить</span>
+							<span className='font-semibold text-sm'>Одобрить</span>
 						</button>
 					</div>
 
 					<button
 						onClick={() => setIsModalOpen(false)}
-						className='w-full py-3 text-[var(--middle)] font-medium hover:bg-[var(--light-middle)] rounded-xl transition-all'
+						className='w-full py-3 text-[var(--middle)] font-medium hover:bg-[var(--light-middle)]/10 rounded-xl transition-all text-sm'
 					>
-						Отмена
+						Вернуться к просмотру
 					</button>
 				</div>
 			</Modal>
 
-			<div className='2xl:mx-40 mx-5'>
-				<div className='grid grid-cols-12 gap-10'>
-					{/* ЛЕВАЯ КОЛОНКА: Виджет курса и Создатель */}
-					<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/30 pr-6'>
-						<div className='relative group h-64 w-full rounded-3xl overflow-hidden ring-5 ring-[var(--white)] shadow-[var(--shadow)] bg-[var(--light-gray)]/50'>
-							{courseInfo.preview_url ? (
-								<img
-									src={courseInfo.preview_url}
-									alt='Preview'
-									className='w-full h-full object-cover'
-								/>
-							) : (
-								<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
-									<BookOpen size={48} />
-								</div>
-							)}
-							<div className='absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur rounded-lg text-xs font-bold text-[var(--hero)] shadow-sm'>
-								ID: {courseInfo.id?.slice(0, 8)}...
-							</div>
-						</div>
-
-						<div className='space-y-4 border-t border-[var(--light-middle)]/30 pt-5'>
-							<div className='flex items-center gap-3 p-3 bg-[var(--white)] shadow-[var(--shadow)] rounded-2xl'>
-								<div className='w-12 h-12 rounded-lg ring-4 ring-[var(--white)] shadow-[var(--shadow)] overflow-hidden shrink-0'>
-									{courseInfo.creator?.avatar_url ? (
-										<img
-											src={courseInfo.creator.avatar_url}
-											alt='Avatar'
-											className='w-full h-full object-cover'
-										/>
-									) : (
-										<User className='p-2 bg-[var(--light-gray)]/50 text-[var(--middle)] w-full h-full' />
-									)}
-								</div>
-								<div className='overflow-hidden'>
-									<p className='text-xs text-[var(--middle)]'>
-										Создатель курса
-									</p>
-									<p className='text-sm font-semibold truncate text-[var(--black)]'>
-										{courseInfo.creator?.last_name}{' '}
-										{courseInfo.creator?.first_name}{' '}
-										{courseInfo.creator?.patronymic}
-									</p>
-								</div>
-							</div>
-
-							<div className='flex items-center gap-2 px-3 py-2 bg-[var(--transparent-hero)] text-[var(--hero)] rounded-xl w-fit text-sm font-medium'>
-								<Tag size={14} />
-								{courseInfo.tag || 'Без тега'}
-							</div>
-						</div>
-					</div>
-
-					{/* ПРАВАЯ КОЛОНКА: Использование компонента TextStroke */}
-					<div className='col-span-12 lg:col-span-8 flex flex-col space-y-8'>
-						{/* Блок 1: Основное */}
-						<section className='space-y-5'>
-							<div className='flex items-center gap-3'>
-								<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
-									<BookOpen size={20} />
-								</div>
-								<h3 className='text-lg font-bold text-[var(--black)]'>
-									Основная информация
-								</h3>
-							</div>
-
-							<TextStroke title='Название курса' value={courseInfo.name} />
-							<TextStroke
-								title='Описание'
-								value={courseInfo.description}
-								textarea
-							/>
-						</section>
-
-						{/* Блок 2: Даты */}
-						<section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-							<div className='space-y-4'>
-								<div className='flex items-center gap-2 text-[var(--hero)] font-medium text-sm uppercase tracking-wider mb-1'>
-									<Calendar size={16} /> Регистрация
-								</div>
-								<TextStroke
-									title='Начало'
-									value={courseInfo.registration_start?.split('T')[0]}
-								/>
-								<TextStroke
-									title='Конец'
-									value={courseInfo.registration_end?.split('T')[0]}
-								/>
-							</div>
-
-							<div className='space-y-4'>
-								<div className='flex items-center gap-2 text-[var(--hero)] font-medium text-sm uppercase tracking-wider mb-1'>
-									<Calendar size={16} /> Обучение
-								</div>
-								<TextStroke
-									title='Дата старта'
-									value={courseInfo.start_date?.split('T')[0]}
-								/>
-								<TextStroke
-									title='Дата завершения'
-									value={courseInfo.end_date?.split('T')[0]}
-								/>
-							</div>
-						</section>
-
-						{/* Блок 3: Стоимость и Доп. информация */}
-						<section className='grid grid-cols-1 md:grid-cols-3 gap-6 items-end'>
-							<div className='md:col-span-2 flex flex-col gap-4 w-full'>
-								<TextStroke
-									title='Формат обучения'
-									value={courseInfo.format_name}
-								/>
-								<TextStroke
-									title='Тип сертификата'
-									value={courseInfo.certificate_type_name}
-								/>
-							</div>
-							<div className='flex flex-col gap-1 w-full'>
-								<span className='flex items-center gap-2 text-sm font-medium text-[var(--middle)] mb-1 select-none'>
-									<CreditCard size={16} /> Цена
-								</span>
-								<TextStroke
-									value={
-										courseInfo.is_free
-											? 'Бесплатно'
-											: `${courseInfo.price || 0} ₽`
-									}
-								/>
-							</div>
-						</section>
-
-						{/* Кнопка действия */}
-						<div className='flex justify-end pt-4 mb-9'>
-							<DefaultButton
-								width='w-full md:w-auto px-8 py-4'
-								onClick={() => setIsModalOpen(true)}
-							>
-								<div className='flex items-center gap-3'>
-									<ShieldAlert size={18} strokeWidth={3} />
-									Рецензировать
-								</div>
-							</DefaultButton>
-						</div>
-					</div>
-				</div>
-			</div>
-		</>
-	)
-}
-
-const ModerateCourses = () => {
-	const [isOpen, setIsOpen] = useState(false)
-
-	const navigate = useNavigate()
-	const { type } = useParams() // Получаем 'admit' или 'release' из URL
-	const [searchParams, setSearchParams] = useSearchParams()
-	const activeCourseId = searchParams.get('course_id')
-
-	const [page, setPage] = useState(1)
-	const [courses, setCourses] = useState([])
-
-	// Маппинг для удобной работы с индексами ToggleButton
-	const types = ['pending_review', 'draft']
-	const selected = types.indexOf(type) !== -1 ? types.indexOf(type) : 0
-
-	const handleSelectChange = index => {
-		// При смене таба меняем URL. course_id пока сбрасываем или оставляем по логике.
-		const newType = types[index]
-		navigate(`/moderation-courses/${newType}`)
-	}
-
-	const handleCourseClick = id => {
-		// Пример добавления query-параметра при клике на курс
-		setSearchParams({ course_id: id })
-	}
-
-	useEffect(() => {
-		// Если зашли просто по базовому адресу, редиректим на 'admit'
-		if (!type) {
-			navigate('/moderation-courses/pending_review', { replace: true })
-		}
-	}, [type, navigate])
-
-	useEffect(() => {
-		const getModerateCourses = async () => {
-			try {
-				// Здесь можно передавать selected или type в API
-				const res = await GetModerationCourses(type)
-				setCourses(res)
-			} catch (err) {}
-		}
-		getModerateCourses()
-	}, [type]) // Перезагружаем данные при смене типа в URL
-
-	return (
-		<>
-			<div className='lg:grid grid-cols-[400px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25'>
+			<div className='lg:grid grid-cols-[400px_1fr] h-screen gap-6 lg:pl-0 pl-18 pt-25 bg-[var(--light-gray)]/30'>
 				<ResponsiveSidebar
-					title='Курсы'
+					title='Курсы на проверку'
 					triggerTitle='Курсы'
 					triggerIcon={BookOpen}
 					isOpen={isOpen}
@@ -352,35 +328,49 @@ const ModerateCourses = () => {
 				</ResponsiveSidebar>
 
 				{/* Основной контент */}
-				<div className='w-full h-full bg-[var(--white)] overflow-y-scroll shadow-lg rounded-3xl p-4'>
+				<div className='w-full h-full bg-[var(--white)] overflow-y-auto shadow-lg rounded-t-3xl border-t border-x border-[var(--light-middle)]/10 p-6 relative'>
 					{!activeCourseId ? (
 						<div className='flex items-center justify-center w-full h-full'>
-							<p className='text-[var(--middle)] font-light text-2xl'>
-								Курс для модерации не выбран
+							<p className='text-[var(--middle)] font-light text-xl'>
+								Выберите курс из списка для проведения модерации
 							</p>
 						</div>
 					) : (
-						<div className='flex flex-col gap-5 h-full w-full'>
-							<div className='flex items-start w-full justify-between'>
+						<div className='flex flex-col gap-6 h-full w-full'>
+							{/* ВЕРХНЯЯ ПАНЕЛЬ: Навигация и Редактирование */}
+							<div className='flex items-center w-full justify-between border-b border-[var(--light-middle)]/10 pb-4 shrink-0'>
 								<DefaultButton
 									paddings='p-3'
 									width='w-fit aspect-square'
 									flexParams='items-center'
 									invert={true}
-									onClick={() => {
-										clearParams()
-									}}
+									onClick={clearParams}
 								>
-									<ArrowLeft className='text-[var(--black)]' />
+									<ArrowLeft className='text-[var(--black)]' size={20} />
 								</DefaultButton>
+
+								<div className='flex gap-3'>
+									<DefaultButton
+										width='px-5 py-2.5 text-sm flex items-center'
+										invert={true}
+										onClick={() => navigate(`/course/${activeCourseId}`)}
+									>
+										<Edit3 size={16} />
+										Редактировать
+									</DefaultButton>
+
+									<DefaultButton
+										width='px-6 py-2.5 text-sm flex items-center'
+										onClick={() => setIsModalOpen(true)}
+									>
+										<ShieldAlert size={16} />
+										Рецензировать
+									</DefaultButton>
+								</div>
 							</div>
 
-							<CourseForm
-								courseId={activeCourseId}
-								onChange={data => {
-									handleUserClick(data)
-								}}
-							/>
+							{/* Сама анкета данных курса */}
+							<CourseForm courseId={activeCourseId} />
 						</div>
 					)}
 				</div>
@@ -388,4 +378,5 @@ const ModerateCourses = () => {
 		</>
 	)
 }
+
 export default ModerateCourses

@@ -56,7 +56,7 @@ export const DefaultButton = ({
 		<button
 			disabled={disabled}
 			onClick={onClick}
-			className={` ${disabled ? 'bg-[var(--middle)] text-[var(--light-middle)] cursor-not-allowed' : `${invert ? 'bg-[var(--white)] text-[var(--black)]' : 'bg-[var(--black)] text-[var(--white)]'} hover:bg-[var(--hero)] hover:text-white cursor-pointer`}  ${paddings} ${rounded} ${width} flex  ${flexParams} font-bold transition-all shadow-[var(--shadow)] text-center `}
+			className={` ${disabled ? 'bg-[var(--middle)] text-[var(--light-middle)] cursor-not-allowed' : `${invert ? 'bg-[var(--white)] text-[var(--black)] hover:text-white' : 'bg-[var(--black)] text-[var(--white)] hover:text-white'} hover:bg-[var(--hero)]  cursor-pointer`}  ${paddings} ${rounded} ${width} flex  ${flexParams} font-bold transition-all shadow-[var(--shadow)] text-center `}
 		>
 			{children}
 		</button>
