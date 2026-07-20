@@ -239,6 +239,7 @@ const ContentView = ({
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSectionId = searchParams.get('section')
 	const { courseId } = useParams()
+	const { role } = useUser()
 
 	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
 	const firstRenderMap = useRef({})
@@ -379,7 +380,7 @@ const ContentView = ({
 								>
 									<Component
 										data={isSpecialBlock ? block.content : block}
-										isEdit={isEdit}
+										isEdit={role !== 'student'}
 										onChange={data => putContentInBlock(block.id, data, type)}
 										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
@@ -390,7 +391,7 @@ const ContentView = ({
 							)
 						})}
 
-						{activeSectionId && isEdit && (
+						{activeSectionId && role !== 'student' && (
 							<ConstructorMenu onAdd={type => addBlock(sectionId, type)} />
 						)}
 					</div>
