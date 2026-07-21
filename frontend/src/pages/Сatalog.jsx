@@ -48,7 +48,7 @@ import { useUser } from '../../service/context/UserContext'
 import { createCourseRequest } from '../../service/APIs/Request'
 import { toast } from 'sonner'
 
-const CourseViewForStudent = ({ data, onApply }) => {
+const CourseViewForStudent = ({ data, onApply, onClose }) => {
 	const navigate = useNavigate()
 	const { userInfo } = useUser()
 	// Красивое форматирование дат
@@ -80,6 +80,7 @@ const CourseViewForStudent = ({ data, onApply }) => {
 		try {
 			const result = await createCourseRequest(finalData)
 			toast.success('Заявка отправлена')
+			onClose?.(false, null)
 		} catch (err) {
 			console.error('Ошибка при отправке:', err)
 		}
@@ -586,31 +587,32 @@ const Catalog = () => {
 
 	const [selectedCourse, setSelectedCourse] = useState(null)
 
+	const getAllTeacherCourses = async () => {
+		try {
+			const res = await GetAllCoursesForTeacher()
+			setCourses(res)
+		} catch (err) {}
+	}
+	const getAllStudentCourses = async () => {
+		try {
+			const res = await GetAllCoursesForStudent()
+			setCourses(res)
+		} catch (err) {}
+	}
+	const getAllAvailableCoursesForStudent = async () => {
+		try {
+			const res = await GetAllAvailableCoursesForStudent()
+			setCourses(res)
+		} catch (err) {}
+	}
+	const getAllModerationCourses = async () => {
+		try {
+			const res = await GetAllCourses()
+			setCourses(res)
+		} catch (err) {}
+	}
+
 	useEffect(() => {
-		const getAllTeacherCourses = async () => {
-			try {
-				const res = await GetAllCoursesForTeacher()
-				setCourses(res)
-			} catch (err) {}
-		}
-		const getAllStudentCourses = async () => {
-			try {
-				const res = await GetAllCoursesForStudent()
-				setCourses(res)
-			} catch (err) {}
-		}
-		const getAllAvailableCoursesForStudent = async () => {
-			try {
-				const res = await GetAllAvailableCoursesForStudent()
-				setCourses(res)
-			} catch (err) {}
-		}
-		const getAllModerationCourses = async () => {
-			try {
-				const res = await GetAllCourses()
-				setCourses(res)
-			} catch (err) {}
-		}
 		if (userInfo?.role === 'teacher') {
 			getAllTeacherCourses()
 		} else if (userInfo?.role === 'student') {
@@ -675,11 +677,12 @@ const Catalog = () => {
 				{selectedCourse && (
 					<div className='p-4 w-full'>
 						<CourseViewForStudent
-							data={selectedCourse}
-							onApply={courseId => {
-								console.log(`Подаем заявку на курс с ID: ${courseId}`)
-								// Тут вызывай свою функцию API для записи студента
+							onClose={(imo, sc) => {
+								setSelectedCourse(sc)
+								setIsModalOpen(imo)
+								getAllStudentCourses()
 							}}
+							data={selectedCourse}
 						/>
 					</div>
 				)}
