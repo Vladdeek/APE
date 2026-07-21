@@ -96,3 +96,37 @@ export const ChangeCoursePhoto = async (course_id, file) => {
 
 	return response.data
 }
+
+// ---- Module ----
+export const RenameModule = async (id, name) => {
+	const response = await api.patch(`${API}/course/module/${id}`, { name })
+	return response.data
+}
+export const DeleteModule = async id => {
+	const response = await api.delete(`${API}/course/module/${id}`)
+	return response.data
+}
+export const TranslateModule = async (course_id, module_id, direction) => {
+	const response = await api.post(
+		`${API}/course/module/${course_id}/move/${module_id}/?direction=${direction}`,
+	)
+	return response.data
+}
+
+// ---- Section ----
+export const RenameSection = async (id, name) => {
+	const response = await api.patch(`${API}/course/module/section/${id}`, {
+		name,
+	})
+	return response.data
+}
+export const DeleteSection = async id => {
+	const response = await api.delete(`${API}/course/module/section/${id}`)
+	return response.data
+}
+export const TranslateSection = async (module_id, section_id, direction) => {
+	const response = await api.post(
+		`${API}/course/module/section/${module_id}/move/${section_id}/?direction=${direction}`,
+	)
+	return response.data
+}

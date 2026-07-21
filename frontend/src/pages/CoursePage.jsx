@@ -25,6 +25,12 @@ import {
 	ShieldAlert,
 	XCircle,
 	CheckCircle2,
+	Ellipsis,
+	EllipsisVertical,
+	Edit3,
+	ChevronDown,
+	Trash,
+	Trash2,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -41,6 +47,7 @@ import {
 	Checkbox,
 	ColoredButton,
 	DefaultButton,
+	OutlineButton,
 	RadioButton,
 	Toggle,
 } from '../components/Buttons'
@@ -49,8 +56,14 @@ import {
 	CreateCourse,
 	CreateLesson,
 	CreateModule,
+	DeleteModule,
+	DeleteSection,
 	GetSectionInfo,
 	ReadCourseById,
+	RenameModule,
+	RenameSection,
+	TranslateModule,
+	TranslateSection,
 } from '../../service/APIs/Couses'
 import {
 	AppendLectureContent,
@@ -77,6 +90,8 @@ import { useUser } from '../../service/context/UserContext'
 import AccessManagement from './AccessSection'
 import { ChangeStatus } from '../../service/APIs/Moderation'
 import Modal from '../components/Modal'
+import { useClickOutside } from '../../service/Hooks/useClickOutside'
+import { useScrollListener } from '../../service/Hooks/useScrollListener'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -483,43 +498,248 @@ const ConstructorMenu = ({ onAdd }) => {
 	)
 }
 
-const Module = ({ title, index, isExpanded, onToggle, children }) => {
+const Module = ({
+	title,
+	index,
+	id,
+	isExpanded,
+	onToggle,
+	children,
+	onChange,
+	length,
+}) => {
+	const { courseId } = useParams()
+	const { role } = useUser()
+	const [menuIsOpen, setMenuIsOpen] = useState(false)
+	const [modalIsOpen, setModalIsOpen] = useState(null)
+	const [newTitle, setNewTitle] = useState(title)
+
+	// ref для контейнера меню
+	const menuRef = useRef(null)
+
+	// Закрытие при клике вне меню
+	useClickOutside(menuRef, () => setMenuIsOpen(false), menuIsOpen)
+
+	// Закрытие при скролле страницы/контейнера
+	useScrollListener(() => setMenuIsOpen(false), menuIsOpen)
+
+	const menuItems = [
+		{
+			title: 'Переименовать',
+			icon: <Edit3 size={16} />,
+			active: () => setModalIsOpen('rename'),
+			disabled: false,
+		},
+		{
+			title: 'Вверх',
+			icon: <ChevronUp size={16} />,
+			active: () => handleTranslate('up'),
+			disabled: length === 1 || index <= 1,
+		},
+		{
+			title: 'Вниз',
+			icon: <ChevronDown size={16} />,
+			active: () => handleTranslate('down'),
+			disabled: length === 1 || index >= length,
+		},
+		{
+			title: 'Удалить',
+			icon: <Trash2 size={16} />,
+			active: () => setModalIsOpen('delete'),
+			disabled: false,
+		},
+	]
+
+	const handleDelete = async () => {
+		try {
+			await DeleteModule(id)
+			onChange?.()
+		} catch (err) {
+		} finally {
+			setModalIsOpen(null)
+		}
+	}
+	const handleRename = async () => {
+		try {
+			await RenameModule(id, newTitle)
+			onChange?.()
+		} catch (err) {
+		} finally {
+			setModalIsOpen(null)
+		}
+	}
+	const handleTranslate = async direction => {
+		console.log('move in - ', direction)
+		try {
+			await TranslateModule(courseId, id, direction)
+			onChange?.()
+		} catch (err) {}
+	}
+
+	const renderModalContent = () => {
+		switch (modalIsOpen) {
+			case 'delete':
+				return (
+					<div className='flex flex-col gap-6 p-2'>
+						<div className='flex flex-col gap-2'>
+							<h3 className='text-xl font-bold text-[var(--black)]'>
+								Удаление
+							</h3>
+							<p className='text-sm text-[var(--middle)]'>
+								Вы действительно хотите удалить модуль{' '}
+								<span className='font-semibold text-[var(--black)]'>
+									«{title}»
+								</span>
+								? Это действие нельзя будет отменить.
+							</p>
+						</div>
+
+						<div className='flex items-center justify-end gap-3 pt-2'>
+							<OutlineButton onClick={() => setModalIsOpen(null)}>
+								Отмена
+							</OutlineButton>
+							<ColoredButton
+								onClick={handleDelete}
+								color={{
+									bg: 'var(--red-status-bg)',
+									text: 'var(--red-status-text)',
+								}}
+							>
+								Удалить
+							</ColoredButton>
+						</div>
+					</div>
+				)
+
+			case 'rename':
+				return (
+					<div className='flex flex-col gap-6 p-2'>
+						<div className='flex flex-col gap-1'>
+							<h3 className='text-xl font-bold text-[var(--black)]'>
+								Переименование
+							</h3>
+							<p className='text-xs text-[var(--middle)]'>
+								Укажите новое название для элемента
+							</p>
+						</div>
+
+						<InputDefault
+							title='Новое название'
+							placeholder='Введите название...'
+							value={newTitle}
+							onChange={e => setNewTitle(e.target.value)}
+							required
+						/>
+
+						<div className='flex items-center justify-end gap-3 pt-2'>
+							<OutlineButton onClick={() => setModalIsOpen(null)}>
+								Отмена
+							</OutlineButton>
+							<ColoredButton
+								onClick={handleRename}
+								color={{
+									bg: 'var(--green-status-bg)',
+									text: 'var(--green-status-text)',
+								}}
+							>
+								Сохранить
+							</ColoredButton>
+						</div>
+					</div>
+				)
+
+			default:
+				return null
+		}
+	}
 	return (
-		<div className='flex flex-col gap-2 mb-4'>
-			<div className='flex items-center justify-between bg-[var(--white)] rounded-xl shadow-[var(--shadow)] p-3'>
-				<div className='flex items-center gap-3 text-[var(--black)]'>
-					<Package size={20} className='text-[var(--middle)]' />
-					<div>
-						<p className='text-xs text-[var(--middle)]'>Модуль {index}</p>
-						<h3 className='font-semibold text-sm leading-tight text-[var(--black)]'>
-							{title}
-						</h3>
+		<>
+			<Modal
+				width={'w-125'}
+				onClose={() => setModalIsOpen(null)}
+				isOpen={modalIsOpen !== null}
+			>
+				{renderModalContent()}
+			</Modal>
+			<div className='flex flex-col gap-2 mb-4'>
+				<div className='flex items-center justify-between bg-[var(--white)] rounded-xl shadow-[var(--shadow)] p-3'>
+					<div className='flex items-center gap-3 text-[var(--black)]'>
+						<Package size={20} className='text-[var(--middle)]' />
+						<div>
+							<p className='text-xs text-[var(--middle)]'>Модуль {index}</p>
+							<h3 className='font-semibold text-sm leading-tight text-[var(--black)]'>
+								{title}
+							</h3>
+						</div>
+					</div>
+
+					<div className='flex gap-1 items-center'>
+						<button
+							onClick={onToggle}
+							className='p-1.5 hover:bg-[var(--light-middle)] text-[var(--black)] rounded-lg cursor-pointer transition-all'
+						>
+							<ChevronUp
+								className={`${!isExpanded ? 'rotate-180' : ''} transition-all`}
+								size={18}
+							/>
+						</button>
+						{role !== 'student' && (
+							<button
+								ref={menuRef}
+								onClick={e => {
+									e.stopPropagation() // Останвливает дальнейшее всплытие события к родителю
+									setMenuIsOpen(prev => !prev)
+								}}
+								className='p-1.5 relative hover:bg-[var(--light-middle)] text-[var(--black)] rounded-lg cursor-pointer transition-all'
+							>
+								<EllipsisVertical className={` transition-all`} size={18} />
+								{menuIsOpen && (
+									<div className='absolute right-0 top-8 bg-[var(--white)] shadow-[var(--shadow)] rounded-lg flex flex-col overflow-hidden z-100'>
+										{menuItems.map(item => (
+											<div
+												onClick={() => {
+													if (!item.disabled) {
+														item.active()
+													}
+												}}
+												className={`flex gap-3 items-center  text-[var(--black)] text-sm p-2 pr-3 ${!item.disabled ? (item.title === 'Удалить' ? 'hover:bg-[var(--red-status-bg)] hover:text-[var(--red-status-text)]' : 'hover:bg-[var(--bg)]/50') : 'bg-[var(--bg)]/25 cursor-not-allowed'}`}
+											>
+												{item.icon}
+												{item.title}
+											</div>
+										))}
+									</div>
+								)}
+							</button>
+						)}
 					</div>
 				</div>
 
-				<button
-					onClick={onToggle}
-					className='p-1.5 hover:bg-[var(--light-middle)] text-[var(--black)] rounded-lg cursor-pointer transition-all'
-				>
-					<ChevronUp
-						className={`${!isExpanded ? 'rotate-180' : ''} transition-all`}
-						size={18}
-					/>
-				</button>
+				{/* Отрисовка внутреннего контента (секций) */}
+				{isExpanded && (
+					<div className='flex flex-col gap-2 pl-4 transition-all'>
+						{children}
+					</div>
+				)}
 			</div>
-
-			{/* Отрисовка внутреннего контента (секций) */}
-			{isExpanded && (
-				<div className='flex flex-col gap-2 pl-4 transition-all'>
-					{children}
-				</div>
-			)}
-		</div>
+		</>
 	)
 }
 
 // Компонент Контента (Лекция/Практика/Тест)
-const Content = ({ type, title, isSelected, onClick, role, score = 0 }) => {
+const Content = ({
+	type,
+	module_id,
+	section_id,
+	title,
+	isSelected,
+	onClick,
+	role,
+	score = 0,
+	onChange,
+	length,
+	index,
+}) => {
 	const icons = {
 		lecture: <BookMarked size={18} />,
 		practice: <NotebookPen size={18} />,
@@ -547,43 +767,224 @@ const Content = ({ type, title, isSelected, onClick, role, score = 0 }) => {
 		good: 'bg-[var(--green-base)] text-[var(--green-surface)]',
 	}
 
+	const [menuIsOpen, setMenuIsOpen] = useState(false)
+	const [modalIsOpen, setModalIsOpen] = useState(null)
+	const [newTitle, setNewTitle] = useState(title)
+
+	// ref для контейнера меню
+	const menuRef = useRef(null)
+
+	// Закрытие при клике вне меню
+	useClickOutside(menuRef, () => setMenuIsOpen(false), menuIsOpen)
+
+	// Закрытие при скролле страницы/контейнера
+	useScrollListener(() => setMenuIsOpen(false), menuIsOpen)
+
+	const menuItems = [
+		{
+			title: 'Переименовать',
+			icon: <Edit3 size={16} />,
+			active: () => setModalIsOpen('rename'),
+			disabled: false,
+		},
+		{
+			title: 'Вверх',
+			icon: <ChevronUp size={16} />,
+			active: () => handleTranslate('up'),
+			disabled: length === 1 || index + 1 <= 1,
+		},
+		{
+			title: 'Вниз',
+			icon: <ChevronDown size={16} />,
+			active: () => handleTranslate('down'),
+			disabled: length === 1 || index + 1 >= length,
+		},
+		{
+			title: 'Удалить',
+			icon: <Trash2 size={16} />,
+			active: () => setModalIsOpen('delete'),
+			disabled: false,
+		},
+	]
+
+	const handleDelete = async () => {
+		try {
+			await DeleteSection(id)
+			onChange?.()
+		} catch (err) {
+		} finally {
+			setModalIsOpen(null)
+		}
+	}
+	const handleRename = async () => {
+		try {
+			await RenameSection(id, newTitle)
+			onChange?.()
+		} catch (err) {
+		} finally {
+			setModalIsOpen(null)
+		}
+	}
+	const handleTranslate = async direction => {
+		console.log('move in - ', direction)
+		try {
+			await TranslateSection(module_id, section_id, direction)
+			onChange?.()
+		} catch (err) {}
+	}
+	const renderModalContent = () => {
+		switch (modalIsOpen) {
+			case 'delete':
+				return (
+					<div className='flex flex-col gap-6 p-2'>
+						<div className='flex flex-col gap-2'>
+							<h3 className='text-xl font-bold text-[var(--black)]'>
+								Удаление
+							</h3>
+							<p className='text-sm text-[var(--middle)]'>
+								Вы действительно хотите удалить модуль{' '}
+								<span className='font-semibold text-[var(--black)]'>
+									«{title}»
+								</span>
+								? Это действие нельзя будет отменить.
+							</p>
+						</div>
+
+						<div className='flex items-center justify-end gap-3 pt-2'>
+							<OutlineButton onClick={() => setModalIsOpen(null)}>
+								Отмена
+							</OutlineButton>
+							<ColoredButton
+								onClick={handleDelete}
+								color={{
+									bg: 'var(--red-status-bg)',
+									text: 'var(--red-status-text)',
+								}}
+							>
+								Удалить
+							</ColoredButton>
+						</div>
+					</div>
+				)
+
+			case 'rename':
+				return (
+					<div className='flex flex-col gap-6 p-2'>
+						<div className='flex flex-col gap-1'>
+							<h3 className='text-xl font-bold text-[var(--black)]'>
+								Переименование
+							</h3>
+							<p className='text-xs text-[var(--middle)]'>
+								Укажите новое название для элемента
+							</p>
+						</div>
+
+						<InputDefault
+							title='Новое название'
+							placeholder='Введите название...'
+							value={newTitle}
+							onChange={e => setNewTitle(e.target.value)}
+							required
+						/>
+
+						<div className='flex items-center justify-end gap-3 pt-2'>
+							<OutlineButton onClick={() => setModalIsOpen(null)}>
+								Отмена
+							</OutlineButton>
+							<ColoredButton
+								onClick={handleRename}
+								color={{
+									bg: 'var(--green-status-bg)',
+									text: 'var(--green-status-text)',
+								}}
+							>
+								Сохранить
+							</ColoredButton>
+						</div>
+					</div>
+				)
+
+			default:
+				return null
+		}
+	}
+
 	return (
-		<div
-			onClick={onClick}
-			className={`flex flex-col gap-1 w-full p-3 rounded-xl transition-all shadow-[var(--shadow)] border 
+		<>
+			<Modal
+				width={'w-125'}
+				onClose={() => setModalIsOpen(null)}
+				isOpen={modalIsOpen !== null}
+			>
+				{renderModalContent()}
+			</Modal>
+			<div
+				onClick={onClick}
+				className={`flex flex-col gap-1 w-full p-3 rounded-xl transition-all shadow-[var(--shadow)] border 
                 ${
 									isSelected
 										? 'border-[var(--hero)] bg-[var(--transparent-hero)]'
-										: 'border-transparent bg-[var(--white)] hover:bg-[var(--light-middle)] cursor-pointer'
+										: 'border-transparent bg-[var(--white)] hover:bg-[var(--light-middle)]/25 cursor-pointer'
 								}`}
-		>
-			<div className='flex items-center justify-between w-full'>
-				<div className='flex items-center gap-2'>
-					<span
-						className={
-							isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'
-						}
-					>
-						{icons[type]}
-					</span>
-					<div className='flex flex-col'>
-						<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
-							{labels[type]}
+			>
+				<div className='flex items-center justify-between w-full'>
+					<div className='flex items-center gap-2'>
+						<span
+							className={
+								isSelected ? 'text-[var(--hero)]' : 'text-[var(--middle)]'
+							}
+						>
+							{icons[type]}
 						</span>
-						<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+						<div className='flex flex-col'>
+							<span className='text-[10px] uppercase tracking-wider text-[var(--middle)] font-bold'>
+								{labels[type]}
+							</span>
+							<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
+						</div>
 					</div>
+					{role !== 'student' && (
+						<button
+							ref={menuRef}
+							onClick={e => {
+								e.stopPropagation() // Останвливает дальнейшее всплытие события к родителю
+								setMenuIsOpen(prev => !prev)
+							}}
+							className={`p-1.5 relative ${isSelected ? 'hover:bg-[var(--hero)] hover:text-white' : 'hover:bg-[var(--light-middle)]'}  text-[var(--black)] rounded-lg cursor-pointer transition-all`}
+						>
+							<EllipsisVertical className={` transition-all`} size={18} />
+							{menuIsOpen && (
+								<div className='absolute right-0 top-8 bg-[var(--white)] shadow-[var(--shadow)] rounded-lg flex flex-col overflow-hidden z-100'>
+									{menuItems.map(item => (
+										<div
+											onClick={() => {
+												if (!item.disabled) {
+													item.active()
+												}
+											}}
+											className={`flex gap-3 items-center  text-[var(--black)] text-sm p-2 pr-3 ${!item.disabled ? (item.title === 'Удалить' ? 'hover:bg-[var(--red-status-bg)] hover:text-[var(--red-status-text)]' : 'hover:bg-[var(--bg)]/50') : 'bg-[var(--bg)]/25'}`}
+										>
+											{item.icon}
+											{item.title}
+										</div>
+									))}
+								</div>
+							)}
+						</button>
+					)}
+
+					{type === 'test' && role === 'student' && score !== 0 && (
+						<div
+							className={`flex items-center justify-center h-7 w-7 rounded-md ${
+								colorClasses[status]
+							} text-lg`}
+						>
+							{score}
+						</div>
+					)}
 				</div>
-				{type === 'test' && role === 'student' && score !== 0 && (
-					<div
-						className={`flex items-center justify-center h-7 w-7 rounded-md ${
-							colorClasses[status]
-						} text-lg`}
-					>
-						{score}
-					</div>
-				)}
 			</div>
-		</div>
+		</>
 	)
 }
 
@@ -780,6 +1181,7 @@ const CourseSidebar = ({
 	setActiveType,
 	createLesson,
 	createModule,
+	onItemChange,
 }) => {
 	const [isOpen, setIsOpen] = useState(false)
 
@@ -790,8 +1192,11 @@ const CourseSidebar = ({
 					key={module.id}
 					title={module.name}
 					index={idx + 1}
+					id={module.id}
 					isExpanded={module.isExpanded}
 					onToggle={() => toggleModule(module.id)}
+					onChange={onItemChange}
+					length={modules?.length}
 				>
 					{module?.content?.map((section, index) => (
 						<motion.div
@@ -805,7 +1210,10 @@ const CourseSidebar = ({
 							}}
 						>
 							<Content
+								index={index}
 								role={role}
+								module_id={module.id}
+								section_id={section.id}
 								title={section.name}
 								type={section.type}
 								isSelected={activeSectionId === section.id}
@@ -814,6 +1222,8 @@ const CourseSidebar = ({
 									setActiveType(section.type)
 									setIsOpen(false)
 								}}
+								onChange={onItemChange}
+								length={module?.content?.length}
 							/>
 						</motion.div>
 					))}
@@ -1133,6 +1543,7 @@ const CoursePage = () => {
 							setActiveType={setActiveType}
 							createLesson={createLesson}
 							createModule={createModule}
+							onItemChange={() => fetchCourseData()}
 						/>
 
 						{/* Основной контент */}
