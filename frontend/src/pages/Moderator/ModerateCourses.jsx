@@ -249,7 +249,7 @@ const CourseForm = ({ courseId, isEdit = false, onIsEditChange }) => {
 								</p>
 								<p className='text-sm font-semibold truncate text-[var(--black)]'>
 									{courseInfo.creator
-										? `${courseInfo.creator.last_name || ''} ${courseInfo.creator.first_name || ''}`.trim()
+										? `${courseInfo.creator.last_name || ''} ${courseInfo.creator.first_name || ''} ${courseInfo.creator.patronymic || ''}`.trim()
 										: 'Не указан'}
 								</p>
 							</div>
