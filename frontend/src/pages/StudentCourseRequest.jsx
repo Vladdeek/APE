@@ -16,6 +16,7 @@ import {
 	GetСitizenship,
 	GetEducationInstitution,
 } from '../../service/APIs/Request'
+import { toast } from 'sonner'
 
 const FULL_FORM_ACTIVE = false
 
@@ -138,7 +139,7 @@ const StudentCourseRequest = () => {
 
 		try {
 			const result = await createCourseRequest(finalData)
-			console.log('Успешно отправлено:', result)
+			toast.success('Заявка отправлена')
 		} catch (err) {
 			console.error('Ошибка при отправке:', err)
 		}

@@ -46,6 +46,7 @@ import {
 import { Me } from '../../service/APIs/Authorization'
 import { useUser } from '../../service/context/UserContext'
 import { createCourseRequest } from '../../service/APIs/Request'
+import { toast } from 'sonner'
 
 const CourseViewForStudent = ({ data, onApply }) => {
 	const navigate = useNavigate()
@@ -78,7 +79,7 @@ const CourseViewForStudent = ({ data, onApply }) => {
 
 		try {
 			const result = await createCourseRequest(finalData)
-			console.log('Успешно отправлено:', result)
+			toast.success('Заявка отправлена')
 		} catch (err) {
 			console.error('Ошибка при отправке:', err)
 		}
@@ -149,19 +150,26 @@ const CourseViewForStudent = ({ data, onApply }) => {
 								//Временная подача заявки на курс
 								handleSubmit(e)
 							}}
-							disabled={!isRegistrationOpen}
-							className={`w-full py-4 px-6 rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg transition-all transform hover:scale-[101%] active:scale-[99%] cursor-pointer
+							disabled={
+								!isRegistrationOpen || data.course_request_status !== null
+							}
+							className={`w-full py-4 px-6 rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg transition-all transform hover:scale-[101%] active:scale-[99%] 
                                 ${
-																	isRegistrationOpen
-																		? 'bg-[var(--hero)] text-white hover:bg-[var(--hero-hover)]'
-																		: 'bg-[var(--light-middle)] text-[var(--middle)] cursor-not-allowed shadow-none'
+																	!isRegistrationOpen ||
+																	data.course_request_status !== null
+																		? 'bg-[var(--light-middle)] text-[var(--middle)] cursor-not-allowed shadow-none'
+																		: 'bg-[var(--hero)] text-white hover:brightness-95 cursor-pointer'
 																}`}
 						>
 							{isRegistrationOpen ? (
-								<>
-									Подать заявку на курс
-									<ArrowRight size={18} />
-								</>
+								data.course_request_status !== null ? (
+									<p className='text-sm'>Ваша заявка на рассмотрении</p>
+								) : (
+									<>
+										Подать заявку на курс
+										<ArrowRight size={18} />
+									</>
+								)
 							) : (
 								'Регистрация окончена'
 							)}

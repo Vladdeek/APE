@@ -344,7 +344,6 @@ const TestHeader = ({ isEdit }) => {
 	const getQuestions = async () => {
 		try {
 			const res = await GetQuestions(activeSection)
-			console.log(res)
 			setQuestionsData(res.question_ids)
 		} catch (err) {
 			console.log(err)

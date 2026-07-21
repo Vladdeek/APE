@@ -622,8 +622,6 @@ const ContentHeader = ({ isEdit, onIsEditChange }) => {
 				if (res) {
 					setSectionInfo(res)
 				}
-
-				console.log(res)
 			} catch (err) {
 				console.log(err)
 			}
