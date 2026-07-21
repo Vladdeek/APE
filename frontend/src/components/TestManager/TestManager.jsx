@@ -344,6 +344,7 @@ const TestHeader = ({ isEdit }) => {
 	const getQuestions = async () => {
 		try {
 			const res = await GetQuestions(activeSection)
+			console.log(res)
 			setQuestionsData(res.question_ids)
 		} catch (err) {
 			console.log(err)
@@ -363,8 +364,22 @@ const TestHeader = ({ isEdit }) => {
 		}
 	}
 
+	const fetchQuestions = async () => {
+		try {
+			const res = await GetQuestions(activeSection)
+		} catch (err) {}
+	}
+
+	const prevSection = useRef
+
 	useEffect(() => {
-		activeSection && getQuestions()
+		if (!activeSection) return
+
+		if (prevSection.current === activeSection) return
+
+		prevSection.current = activeSection
+
+		getQuestions(activeSection)
 	}, [activeSection])
 
 	return (
@@ -786,7 +801,6 @@ const TestView = ({ isEdit, role }) => {
 
 							<AnimatePresence mode='popLayout'>
 								{data?.options?.map((q, i) => {
-									console.log('isEdit: ', isEdit)
 									const abcdefg = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 									return (
 										<motion.div

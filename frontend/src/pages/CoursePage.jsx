@@ -37,7 +37,13 @@ import { FileManager } from '../components/ConstructorViews/FilesImport'
 import { Formula } from '../components/ConstructorViews/FormulaConstructor'
 import { ButtonConstructor } from '../components/ConstructorViews/ButtonConstructor'
 import { Callout } from '../components/ConstructorViews/Callout'
-import { Checkbox, DefaultButton, RadioButton } from '../components/Buttons'
+import {
+	Checkbox,
+	ColoredButton,
+	DefaultButton,
+	RadioButton,
+	Toggle,
+} from '../components/Buttons'
 import { InputDefault, TimeLimitInput } from '../components/Inputs'
 import {
 	CreateCourse,
@@ -225,10 +231,8 @@ const CreateItemButton = ({
 const ContentView = ({
 	content,
 	onBlocksChange,
-	SectionType,
 	SectionName,
 	isLoading,
-	sectionId,
 	onSectionTypeChange,
 	isEdit,
 	clearSelection,
@@ -238,6 +242,7 @@ const ContentView = ({
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSectionId = searchParams.get('section')
+	const activeType = searchParams.get('type')
 	const { courseId } = useParams()
 	const { role } = useUser()
 
@@ -247,12 +252,12 @@ const ContentView = ({
 	// Сбрасываем карту первых рендеров, если пользователь переключился на другую лекцию
 	useEffect(() => {
 		firstRenderMap.current = {}
-	}, [sectionId])
+	}, [activeSectionId])
 
 	const handleRemove = async blockId => {
 		console.log('delete block - ', blockId)
 		try {
-			await DeleteBlock(sectionId, blockId)
+			await DeleteBlock(activeSectionId, blockId)
 			readContent()
 		} catch (err) {}
 	}
@@ -273,7 +278,7 @@ const ContentView = ({
 
 	const readContent = async () => {
 		try {
-			const res = await ReadLectureContent(sectionId)
+			const res = await ReadLectureContent(activeSectionId)
 			setBlocks(res?.items)
 		} catch (err) {}
 	}
@@ -285,9 +290,9 @@ const ContentView = ({
 	// Важно обернуть в useMemo, чтобы debounce не пересоздавался на каждом рендере
 	const debouncedUpdate = useMemo(
 		() =>
-			debounce(async (sectionId, blockId, body, type) => {
+			debounce(async (activeSectionId, blockId, body, type) => {
 				try {
-					await UpdateLectureContent(sectionId, blockId, body, type)
+					await UpdateLectureContent(activeSectionId, blockId, body, type)
 				} catch (err) {
 					console.error(err)
 				}
@@ -301,7 +306,7 @@ const ContentView = ({
 			// ЕСЛИ ТИП НЕ НУЖДАЕТСЯ В ДЕБАУНСЕ — отправляем мгновенно и выходим
 			if (!DEBOUNCED_TYPES.includes(type)) {
 				try {
-					await UpdateLectureContent(sectionId, blockId, body, type)
+					await UpdateLectureContent(activeSectionId, blockId, body, type)
 					readContent()
 				} catch (err) {
 					console.error(err)
@@ -334,21 +339,21 @@ const ContentView = ({
 			}
 
 			// Если все проверки пройдены — пускаем в дебаунс
-			debouncedUpdate(sectionId, blockId, body, type)
+			debouncedUpdate(activeSectionId, blockId, body, type)
 		},
-		[sectionId, debouncedUpdate],
+		[activeSectionId, debouncedUpdate],
 	)
 
 	useEffect(() => {
-		if (sectionId) {
+		if (activeSectionId) {
 			readContent() // Теперь это вызовется при смене sectionId
 		}
-	}, [sectionId])
+	}, [activeSectionId])
 
 	return (
 		<div className='h-fit overflow-y-scroll hide-scrollbar'>
 			<div className='flex flex-col gap-3 p-2'>
-				{SectionType === 'test' ? (
+				{activeType === 'test' ? (
 					<TestManager />
 				) : (
 					<div className='flex flex-col gap-4'>
@@ -380,20 +385,25 @@ const ContentView = ({
 								>
 									<Component
 										data={isSpecialBlock ? block.content : block}
-										isEdit={role !== 'student'}
+										isEdit={role !== 'student' && isEdit}
 										onChange={data => putContentInBlock(block.id, data, type)}
 										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
-										sectionId={sectionId}
+										sectionId={activeSectionId}
 										onDeleteFile={data => handleRemoveFile(block.id, data)}
 									/>
 								</motion.div>
 							)
 						})}
 
-						{activeSectionId && role !== 'student' && (
-							<ConstructorMenu onAdd={type => addBlock(sectionId, type)} />
-						)}
+						{activeType !== 'test' &&
+							activeSectionId &&
+							role !== 'student' &&
+							isEdit && (
+								<ConstructorMenu
+									onAdd={type => addBlock(activeSectionId, type)}
+								/>
+							)}
 					</div>
 				)}
 			</div>
@@ -577,7 +587,7 @@ const Content = ({ type, title, isSelected, onClick, role, score = 0 }) => {
 	)
 }
 
-const ContentHeader = () => {
+const ContentHeader = ({ isEdit, onIsEditChange }) => {
 	const { role } = useUser()
 	const [searchParams, setSearchParams] = useSearchParams()
 
@@ -668,7 +678,7 @@ const ContentHeader = () => {
 	}, [sessionIsActive, timeLeft, role])
 
 	const changeTimeLimit = async time => {
-		if (time > 0) {
+		if (time > 0 && activeSection.id) {
 			try {
 				await EditTest(activeSection.id, null, null, time, null)
 				setQuestionsData(res)
@@ -711,7 +721,7 @@ const ContentHeader = () => {
 					</>
 				)}
 			</div>
-			{sectionInfo.type === 'test' && (
+			{sectionInfo.type === 'test' ? (
 				<>
 					{accessToTheTest && (
 						<>
@@ -739,11 +749,22 @@ const ContentHeader = () => {
 						</>
 					)}
 
-					{role === 'teacher' && (
+					{role !== 'student' && (
 						<TimeLimitInput
 							COUNT_QUESTION={questionsData?.question_ids?.length}
 							value={questionsData?.time_limit}
 							onChange={data => changeTimeLimit(data)}
+						/>
+					)}
+				</>
+			) : (
+				<>
+					{role !== 'student' && (
+						<Toggle
+							label='Режим редактирования'
+							isActive={isEdit}
+							defaultValue={true}
+							onChange={data => onIsEditChange?.(data)}
 						/>
 					)}
 				</>
@@ -791,7 +812,7 @@ const CourseSidebar = ({
 								type={section.type}
 								isSelected={activeSectionId === section.id}
 								onClick={() => {
-									handleSectionClick(section.id)
+									handleSectionClick(section.type, section.id)
 									setActiveType(section.type)
 									setIsOpen(false)
 								}}
@@ -907,7 +928,7 @@ const CoursePage = () => {
 	const [status, setStatus] = useState('draft')
 
 	const [blocks, setBlocks] = useState([])
-	const [isEdit, setIsEdit] = useState(false)
+	const [isEdit, setIsEdit] = useState(true)
 	const [modules, setModules] = useState([])
 	const [isLoading, setIsLoading] = useState(true)
 
@@ -958,8 +979,8 @@ const CoursePage = () => {
 		)
 	}
 
-	const handleSectionClick = id => {
-		setSearchParams({ section: id }, { replace: true })
+	const handleSectionClick = (type, id) => {
+		setSearchParams({ type: type, section: id }, { replace: true })
 	}
 
 	const changeStatus = async () => {
@@ -1110,7 +1131,7 @@ const CoursePage = () => {
 							modules={modules}
 							toggleModule={toggleModule}
 							activeSectionId={activeSectionId}
-							handleSectionClick={handleSectionClick}
+							handleSectionClick={(type, id) => handleSectionClick(type, id)}
 							setActiveType={setActiveType}
 							createLesson={createLesson}
 							createModule={createModule}
@@ -1118,15 +1139,13 @@ const CoursePage = () => {
 
 						{/* Основной контент */}
 						<div className='w-full h-full bg-[var(--white)] shadow-lg rounded-3xl p-4'>
-							{activeSection && <ContentHeader />}
+							{activeSection && (
+								<ContentHeader onIsEditChange={setIsEdit} isEdit={isEdit} />
+							)}
 
 							<div className='w-full h-full overflow-y-auto px-2 py-4'>
 								{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-								<ContentView
-									isEdit={role === 'teacher' && true}
-									sectionId={activeSectionId}
-									SectionType={activeType}
-								/>
+								<ContentView isEdit={role === 'teacher' && isEdit} />
 							</div>
 						</div>
 					</div>

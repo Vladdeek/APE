@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { data } from 'react-router-dom'
 
 const CourseCard = ({ data, onClick, status }) => {
-	console.log(data)
 	// Функция для красивого форматирования дат
 	const formatDate = dateStr => {
 		return new Date(dateStr).toLocaleDateString('ru-RU', {

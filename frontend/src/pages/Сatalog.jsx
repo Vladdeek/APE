@@ -399,125 +399,127 @@ const CreateModal = ({ onChange }) => {
 	}
 
 	return (
-		<div className=''>
-			<h2 className='text-2xl font-medium text-[var(--black)] mb-5 text-center'>
-				Создание курса
-			</h2>
+		<>
+			<div className=''>
+				<h2 className='text-2xl font-medium text-[var(--black)] mb-5 text-center'>
+					Создание курса
+				</h2>
 
-			<form
-				action={() => handleSubmit()}
-				className='w-[600px] max-md:w-[80vw] inline-flex flex-col items-center gap-5'
-			>
-				<InputDefault
-					title='Название курса'
-					placeholder='Введите название...'
-					value={title}
-					onChange={e => setTitle(e.target.value)}
-					validate={val => val.length >= 3}
-					onStatusChange={setIsTitleValid}
-					required
-					width='w-full'
-				/>
-				<TextArea
-					title='Описание курса'
-					placeholder='Введите описание...'
-					value={description}
-					onChange={e => setDescription(e.target.value)}
-					validate={val => val.length >= 10}
-					onStatusChange={setIsDescriptionValid}
-					required
-				/>
-				<OptionInputWithSearch
-					title='Категория'
-					required
-					options={categories}
-					placeholder='Выберите категорию'
-					labelKey='name'
-					value={selectedCategory}
-					onSelect={item => {
-						setSelectedCategory(item)
-						setIsCategoryValid(true)
-					}}
-					onCreate={name => addTag(name)}
-					CreateOrNot={true}
-				/>
-				<div className='grid grid-cols-2 gap-3 w-full'>
-					<DateInput
-						text={'text-md'}
-						title='Дата начала регистрации'
+				<form
+					action={() => handleSubmit()}
+					className='w-[600px] max-md:w-[80vw] inline-flex flex-col items-center gap-5'
+				>
+					<InputDefault
+						title='Название курса'
+						placeholder='Введите название...'
+						value={title}
+						onChange={e => setTitle(e.target.value)}
+						validate={val => val.length >= 3}
+						onStatusChange={setIsTitleValid}
 						required
-						value={regStartDate}
-						onChange={val => setRegStartDate(val)}
+						width='w-full'
 					/>
-					<DateInput
-						text={'text-md'}
-						title='Дата окончания регистрации'
+					<TextArea
+						title='Описание курса'
+						placeholder='Введите описание...'
+						value={description}
+						onChange={e => setDescription(e.target.value)}
+						validate={val => val.length >= 10}
+						onStatusChange={setIsDescriptionValid}
 						required
-						value={regEndDate}
-						onChange={val => setRegEndDate(val)}
 					/>
-					<DateInput
-						text={'text-md'}
-						title='Дата начала курса'
+					<OptionInputWithSearch
+						title='Категория'
 						required
-						value={startDate}
-						onChange={val => setStartDate(val)}
+						options={categories}
+						placeholder='Выберите категорию'
+						labelKey='name'
+						value={selectedCategory}
+						onSelect={item => {
+							setSelectedCategory(item)
+							setIsCategoryValid(true)
+						}}
+						onCreate={name => addTag(name)}
+						CreateOrNot={true}
 					/>
-					<DateInput
-						text={'text-md'}
-						title='Дата конца курса'
+					<div className='grid grid-cols-2 gap-3 w-full'>
+						<DateInput
+							text={'text-md'}
+							title='Дата начала регистрации'
+							required
+							value={regStartDate}
+							onChange={val => setRegStartDate(val)}
+						/>
+						<DateInput
+							text={'text-md'}
+							title='Дата окончания регистрации'
+							required
+							value={regEndDate}
+							onChange={val => setRegEndDate(val)}
+						/>
+						<DateInput
+							text={'text-md'}
+							title='Дата начала курса'
+							required
+							value={startDate}
+							onChange={val => setStartDate(val)}
+						/>
+						<DateInput
+							text={'text-md'}
+							title='Дата конца курса'
+							required
+							value={endDate}
+							onChange={val => setEndDate(val)}
+						/>
+					</div>
+					<Checkbox text={'Платный курс'} onChange={data => setIsFree(!data)}>
+						<InputPrice
+							step={Number(import.meta.env.VITE_PRICE_STEP)}
+							value={price}
+							onChange={e => setPrice(e.target.value)}
+						/>
+					</Checkbox>
+					<OptionInputWithSearch
+						title='Сертификат'
 						required
-						value={endDate}
-						onChange={val => setEndDate(val)}
+						options={certificate}
+						placeholder='Выберите сертификат'
+						labelKey='name'
+						value={selectedCertificate}
+						onSelect={item => {
+							setSelectedCertificate(item)
+							setIsCertificateValid(true)
+						}}
 					/>
-				</div>
-				<Checkbox text={'Платный курс'} onChange={data => setIsFree(!data)}>
-					<InputPrice
-						step={Number(import.meta.env.VITE_PRICE_STEP)}
-						value={price}
-						onChange={e => setPrice(e.target.value)}
+					<OptionInputWithSearch
+						title='Формат'
+						required
+						options={format}
+						placeholder='Выберите формат'
+						labelKey='name'
+						value={selectedFormat}
+						onSelect={item => {
+							setSelectedFormat(item)
+							setIsFormatValid(true)
+						}}
 					/>
-				</Checkbox>
-				<OptionInputWithSearch
-					title='Сертификат'
-					required
-					options={certificate}
-					placeholder='Выберите сертификат'
-					labelKey='name'
-					value={selectedCertificate}
-					onSelect={item => {
-						setSelectedCertificate(item)
-						setIsCertificateValid(true)
-					}}
-				/>
-				<OptionInputWithSearch
-					title='Формат'
-					required
-					options={format}
-					placeholder='Выберите формат'
-					labelKey='name'
-					value={selectedFormat}
-					onSelect={item => {
-						setSelectedFormat(item)
-						setIsFormatValid(true)
-					}}
-				/>
-				<FileInputZone
-					onFileChange={file => setImg(file)}
-					onStatusChange={setIsFileValid}
-				/>
-				<input
-					className={`px-12 py-3 font-medium text-xl rounded-2xl w-fit  transition ${
-						isFormValid
-							? 'bg-[var(--black)] text-[var(--white)] cursor-pointer hover:bg-[var(--hero)]  active:shadow-inner active:brightness-75 active:scale-99 '
-							: 'bg-[var(--light-middle)] text-[var(--middle)] cursor-not-allowed'
-					}`}
-					type='submit'
-					value='Создать курс'
-					disabled={!isFormValid}
-				/>
-			</form>
-		</div>
+					<FileInputZone
+						onFileChange={file => setImg(file)}
+						onStatusChange={setIsFileValid}
+					/>
+					<input
+						className={`px-12 py-3 font-medium text-xl rounded-2xl w-fit  transition ${
+							isFormValid
+								? 'bg-[var(--black)] text-[var(--white)] cursor-pointer hover:bg-[var(--hero)]  active:shadow-inner active:brightness-75 active:scale-99 '
+								: 'bg-[var(--light-middle)] text-[var(--middle)] cursor-not-allowed'
+						}`}
+						type='submit'
+						value='Создать курс'
+						disabled={!isFormValid}
+					/>
+				</form>
+			</div>
+		</>
 	)
 }
 
