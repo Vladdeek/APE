@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
 	ChangeStatus,
 	GetCourseInfoById,
@@ -20,11 +20,14 @@ import {
 	Calendar,
 	CheckCircle2,
 	CreditCard,
+	Edit,
+	Edit2,
 	Edit3,
 	ImageOff,
 	Save,
 	ShieldAlert,
 	Tag,
+	Upload,
 	User,
 	XCircle,
 } from 'lucide-react'
@@ -39,10 +42,12 @@ import {
 } from '../../components/Inputs'
 import { GetTags } from '../../../service/APIs/CourseTagsSpecific'
 import {
+	ChangeCoursePhoto,
 	editCourse,
 	GetCertificates,
 	GetFormats,
 } from '../../../service/APIs/Couses'
+import { GlobalLoader } from '../../components/Loader'
 
 // Компонент отображения строки данных
 const TextStroke = ({ title, value, textarea }) => {
@@ -204,269 +209,317 @@ const CourseForm = ({ courseId, isEdit = false, onIsEditChange }) => {
 
 	const [imageError, setImageError] = useState(false)
 
+	// Внутри твоего компонента:
+	const fileInputRef = useRef(null)
+
+	const [isLoading, setIsLoading] = useState(false)
+
+	const handleFileChange = async e => {
+		const file = e.target.files?.[0]
+		setIsLoading(true)
+		if (file) {
+			try {
+				await ChangeCoursePhoto(courseId, file)
+			} catch (err) {
+			} finally {
+				getCourse()
+				onIsEditChange?.(false)
+				setIsLoading(false)
+			}
+		}
+	}
+	console.log('isLoading', isLoading)
+
 	return (
-		<div className='2xl:mx-20 mx-2 pb-24'>
-			{/* Отступ снизу под Action Bar */}
-			<div className='grid grid-cols-12 gap-8'>
-				{/* ЛЕВАЯ КОЛОНКА */}
-				<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/10 pr-6'>
-					<div className='relative group h-64 w-full rounded-3xl overflow-hidden shadow-md bg-[var(--light-gray)]/50'>
-						{courseInfo.preview_url && !imageError ? (
-							<img
-								src={courseInfo.preview_url}
-								alt='Preview'
-								className='w-full h-full object-cover'
-								onError={() => setImageError(true)}
-							/>
-						) : (
-							<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
-								<ImageOff className='w-full h-full p-[25%]' />
+		<>
+			<GlobalLoader isOpen={isLoading} />
+			<div className='2xl:mx-20 mx-2 pb-24'>
+				{/* Отступ снизу под Action Bar */}
+				<div className='grid grid-cols-12 gap-8'>
+					{/* ЛЕВАЯ КОЛОНКА */}
+					<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/10 pr-6'>
+						<div
+							className={`relative group h-64 w-full rounded-3xl overflow-hidden shadow-md bg-[var(--light-gray)]/50 `}
+						>
+							{/* Скрытый инпут */}
+							{isEdit && (
+								<input
+									type='file'
+									ref={fileInputRef}
+									onChange={handleFileChange}
+									accept='image/*'
+									className='hidden'
+								/>
+							)}
+
+							{/* Картинка / Заглушка */}
+							{courseInfo.preview_url ? (
+								<img
+									src={courseInfo.preview_url}
+									alt='Preview'
+									className='w-full h-full object-cover'
+								/>
+							) : (
+								<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
+									<ImageOff className='w-full h-full p-[25%]' />
+								</div>
+							)}
+
+							{isEdit && (
+								<div
+									onClick={() => isEdit && fileInputRef.current?.click()}
+									className='absolute w-10 h-10 bottom-4 right-4 rounded-xl shadow-[var(--shadow)] bg-[var(--white)] transition-all hover:bg-[var(--hero)] hover:text-white flex items-center justify-center text-[var(--black)] p-2.5 cursor-pointer'
+								>
+									<Edit2 className='w-full h-full' />
+								</div>
+							)}
+
+							{/* Бэдж с ID */}
+							{courseInfo.id && (
+								<div className='absolute top-4 left-4 px-3 py-1 bg-[var(--white)]/50 border-1 border-b-[var(--white)]/25 border-r-[var(--white)]/35 border-t-[var(--white)]/15 border-l-[var(--white)]/10 backdrop-blur-lg rounded-lg text-xs font-bold text-white shadow-sm'>
+									ID: {courseInfo.id.slice(0, 8)}...
+								</div>
+							)}
+						</div>
+
+						<div className='space-y-4 border-t border-[var(--light-middle)]/20 pt-5'>
+							<div className='flex items-center gap-3 p-3 bg-[var(--white)] shadow-sm rounded-2xl border border-[var(--light-middle)]/10'>
+								<div className='w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-inner'>
+									{courseInfo.creator?.avatar_url ? (
+										<img
+											src={courseInfo.creator.avatar_url}
+											alt='Avatar'
+											className='w-full h-full object-cover'
+										/>
+									) : (
+										<User className='p-2 bg-[var(--light-gray)]/50 text-[var(--middle)] w-full h-full' />
+									)}
+								</div>
+								<div className='overflow-hidden'>
+									<p className='text-[10px] text-[var(--middle)] uppercase tracking-wider font-semibold'>
+										Создатель курса
+									</p>
+									<p className='text-sm font-semibold truncate text-[var(--black)]'>
+										{courseInfo.creator
+											? `${courseInfo.creator.last_name || ''} ${courseInfo.creator.first_name || ''} ${courseInfo.creator.patronymic || ''}`.trim()
+											: 'Не указан'}
+									</p>
+								</div>
 							</div>
-						)}
-						{courseInfo.id && (
-							<div className='absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur rounded-lg text-xs font-bold text-[var(--hero)] shadow-sm'>
-								ID: {courseInfo.id.slice(0, 8)}...
+
+							<div className='flex items-center gap-2 px-3 py-2 bg-[var(--transparent-hero)] text-[var(--hero)] rounded-xl w-fit text-sm font-medium'>
+								<Tag size={14} />
+								{courseInfo.tag || 'Без тега'}
 							</div>
-						)}
+						</div>
 					</div>
 
-					<div className='space-y-4 border-t border-[var(--light-middle)]/20 pt-5'>
-						<div className='flex items-center gap-3 p-3 bg-[var(--white)] shadow-sm rounded-2xl border border-[var(--light-middle)]/10'>
-							<div className='w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-inner'>
-								{courseInfo.creator?.avatar_url ? (
-									<img
-										src={courseInfo.creator.avatar_url}
-										alt='Avatar'
-										className='w-full h-full object-cover'
+					{/* ПРАВАЯ КОЛОНКА */}
+					<div className='col-span-12 lg:col-span-8 flex flex-col space-y-8'>
+						{/* ОСНОВНАЯ ИНФОРМАЦИЯ */}
+						<section className='space-y-5'>
+							<div className='flex items-center gap-3'>
+								<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
+									<BookOpen size={20} />
+								</div>
+								<h3 className='text-lg font-bold text-[var(--black)]'>
+									Основная информация
+								</h3>
+							</div>
+							{isEdit ? (
+								<InputDefault
+									title='Название курса'
+									placeholder='Введите название...'
+									value={formData.title}
+									onChange={e => handleChange('title', e.target.value)}
+									validate={val => val.length >= 3}
+									width='w-full'
+								/>
+							) : (
+								<TextStroke title='Название курса' value={courseInfo.name} />
+							)}
+							{isEdit ? (
+								<TextArea
+									title='Описание курса'
+									placeholder='Введите описание...'
+									value={formData.description}
+									onChange={e => handleChange('description', e.target.value)}
+									validate={val => val.length >= 10}
+								/>
+							) : (
+								<TextStroke
+									title='Описание'
+									value={courseInfo.description}
+									textarea
+								/>
+							)}
+							{isEdit && (
+								<OptionInputWithSearch
+									title='Категория'
+									options={categories}
+									placeholder='Выберите категорию'
+									labelKey='name'
+									value={formData.selectedCategory}
+									onSelect={item => {
+										handleChange('selectedCategory', item)
+										setIsCategoryValid(true)
+									}}
+									onCreate={name => addTag(name)}
+									CreateOrNot={true}
+								/>
+							)}
+						</section>
+
+						{/* ДАТЫ */}
+						<section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+							<div className='space-y-4'>
+								<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
+									<Calendar size={14} /> Регистрация
+								</div>
+
+								{isEdit ? (
+									<DateInput
+										text={'text-sm'}
+										title='Начало'
+										value={formData.regStartDate}
+										onChange={val => handleChange('regStartDate', val)}
 									/>
 								) : (
-									<User className='p-2 bg-[var(--light-gray)]/50 text-[var(--middle)] w-full h-full' />
+									<TextStroke
+										title='Начало'
+										value={formatDate(courseInfo.registration_start)}
+									/>
+								)}
+
+								{isEdit ? (
+									<DateInput
+										text={'text-sm'}
+										title='Конец'
+										value={formData.regEndDate}
+										onChange={val => handleChange('regEndDate', val)}
+									/>
+								) : (
+									<TextStroke
+										title='Конец'
+										value={formatDate(courseInfo.registration_end)}
+									/>
 								)}
 							</div>
-							<div className='overflow-hidden'>
-								<p className='text-[10px] text-[var(--middle)] uppercase tracking-wider font-semibold'>
-									Создатель курса
-								</p>
-								<p className='text-sm font-semibold truncate text-[var(--black)]'>
-									{courseInfo.creator
-										? `${courseInfo.creator.last_name || ''} ${courseInfo.creator.first_name || ''} ${courseInfo.creator.patronymic || ''}`.trim()
-										: 'Не указан'}
-								</p>
-							</div>
-						</div>
 
-						<div className='flex items-center gap-2 px-3 py-2 bg-[var(--transparent-hero)] text-[var(--hero)] rounded-xl w-fit text-sm font-medium'>
-							<Tag size={14} />
-							{courseInfo.tag || 'Без тега'}
-						</div>
+							<div className='space-y-4'>
+								<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
+									<Calendar size={14} /> Обучение
+								</div>
+								{isEdit ? (
+									<DateInput
+										text={'text-sm'}
+										title='Дата старта'
+										value={formData.startDate}
+										onChange={val => handleChange('startDate', val)}
+									/>
+								) : (
+									<TextStroke
+										title='Дата старта'
+										value={formatDate(courseInfo.start_date)}
+									/>
+								)}
+								{isEdit ? (
+									<DateInput
+										text={'text-sm'}
+										title='Дата завершения'
+										value={formData.endDate}
+										onChange={val => handleChange('endDate', val)}
+									/>
+								) : (
+									<TextStroke
+										title='Дата завершения'
+										value={formatDate(courseInfo.end_date)}
+									/>
+								)}
+							</div>
+						</section>
+
+						{/* ФОРМАТ, СЕРТИФИКАТ И ЦЕНА */}
+						<section className='grid grid-cols-1 md:grid-cols-3 gap-6 items-end'>
+							<div className='md:col-span-2 flex flex-col gap-4 w-full'>
+								{isEdit ? (
+									<OptionInputWithSearch
+										title='Формат'
+										options={format}
+										placeholder='Выберите формат'
+										labelKey='name'
+										value={formData.selectedFormat}
+										onSelect={item => {
+											handleChange('selectedFormat', item)
+											setIsFormatValid(true)
+										}}
+									/>
+								) : (
+									<TextStroke
+										title='Формат обучения'
+										value={courseInfo.format_name}
+									/>
+								)}
+								{isEdit ? (
+									<OptionInputWithSearch
+										title='Сертификат'
+										options={certificate}
+										placeholder='Выберите сертификат'
+										labelKey='name'
+										value={formData.selectedCertificate}
+										onSelect={item => {
+											handleChange('selectedCertificate', item)
+											setIsCertificateValid(true)
+										}}
+									/>
+								) : (
+									<TextStroke
+										title='Тип сертификата'
+										value={courseInfo.certificate_type_name}
+									/>
+								)}
+							</div>
+
+							{isEdit ? (
+								<Checkbox
+									text={'Платный курс'}
+									value={!formData.isFree}
+									onChange={isPaid => handleChange('isFree', !isPaid)}
+								>
+									<InputPrice
+										step={Number(import.meta.env.VITE_PRICE_STEP)}
+										value={formData.price}
+										onChange={e => handleChange('price', e.target.value)}
+									/>
+								</Checkbox>
+							) : (
+								<div className='flex flex-col gap-1 w-full'>
+									<span className='flex items-center gap-2 text-xs font-semibold text-[var(--middle)] mb-1 uppercase tracking-wider'>
+										<CreditCard size={14} /> Цена
+									</span>
+									<TextStroke
+										value={
+											courseInfo.is_free
+												? 'Бесплатно'
+												: `${courseInfo.price || 0} ₽`
+										}
+									/>
+								</div>
+							)}
+						</section>
+						{isEdit && (
+							<DefaultButton
+								onClick={() => editCourseInfo()}
+								width='flex items-center w-fit self-end'
+							>
+								<Save size={18} />
+								Сохранить
+							</DefaultButton>
+						)}
 					</div>
 				</div>
-
-				{/* ПРАВАЯ КОЛОНКА */}
-				<div className='col-span-12 lg:col-span-8 flex flex-col space-y-8'>
-					{/* ОСНОВНАЯ ИНФОРМАЦИЯ */}
-					<section className='space-y-5'>
-						<div className='flex items-center gap-3'>
-							<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
-								<BookOpen size={20} />
-							</div>
-							<h3 className='text-lg font-bold text-[var(--black)]'>
-								Основная информация
-							</h3>
-						</div>
-						{isEdit ? (
-							<InputDefault
-								title='Название курса'
-								placeholder='Введите название...'
-								value={formData.title}
-								onChange={e => handleChange('title', e.target.value)}
-								validate={val => val.length >= 3}
-								width='w-full'
-							/>
-						) : (
-							<TextStroke title='Название курса' value={courseInfo.name} />
-						)}
-						{isEdit ? (
-							<TextArea
-								title='Описание курса'
-								placeholder='Введите описание...'
-								value={formData.description}
-								onChange={e => handleChange('description', e.target.value)}
-								validate={val => val.length >= 10}
-							/>
-						) : (
-							<TextStroke
-								title='Описание'
-								value={courseInfo.description}
-								textarea
-							/>
-						)}
-						{isEdit && (
-							<OptionInputWithSearch
-								title='Категория'
-								options={categories}
-								placeholder='Выберите категорию'
-								labelKey='name'
-								value={formData.selectedCategory}
-								onSelect={item => {
-									handleChange('selectedCategory', item)
-									setIsCategoryValid(true)
-								}}
-								onCreate={name => addTag(name)}
-								CreateOrNot={true}
-							/>
-						)}
-					</section>
-
-					{/* ДАТЫ */}
-					<section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-						<div className='space-y-4'>
-							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
-								<Calendar size={14} /> Регистрация
-							</div>
-
-							{isEdit ? (
-								<DateInput
-									text={'text-sm'}
-									title='Начало'
-									value={formData.regStartDate}
-									onChange={val => handleChange('regStartDate', val)}
-								/>
-							) : (
-								<TextStroke
-									title='Начало'
-									value={formatDate(courseInfo.registration_start)}
-								/>
-							)}
-
-							{isEdit ? (
-								<DateInput
-									text={'text-sm'}
-									title='Конец'
-									value={formData.regEndDate}
-									onChange={val => handleChange('regEndDate', val)}
-								/>
-							) : (
-								<TextStroke
-									title='Конец'
-									value={formatDate(courseInfo.registration_end)}
-								/>
-							)}
-						</div>
-
-						<div className='space-y-4'>
-							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
-								<Calendar size={14} /> Обучение
-							</div>
-							{isEdit ? (
-								<DateInput
-									text={'text-sm'}
-									title='Дата старта'
-									value={formData.startDate}
-									onChange={val => handleChange('startDate', val)}
-								/>
-							) : (
-								<TextStroke
-									title='Дата старта'
-									value={formatDate(courseInfo.start_date)}
-								/>
-							)}
-							{isEdit ? (
-								<DateInput
-									text={'text-sm'}
-									title='Дата завершения'
-									value={formData.endDate}
-									onChange={val => handleChange('endDate', val)}
-								/>
-							) : (
-								<TextStroke
-									title='Дата завершения'
-									value={formatDate(courseInfo.end_date)}
-								/>
-							)}
-						</div>
-					</section>
-
-					{/* ФОРМАТ, СЕРТИФИКАТ И ЦЕНА */}
-					<section className='grid grid-cols-1 md:grid-cols-3 gap-6 items-end'>
-						<div className='md:col-span-2 flex flex-col gap-4 w-full'>
-							{isEdit ? (
-								<OptionInputWithSearch
-									title='Формат'
-									options={format}
-									placeholder='Выберите формат'
-									labelKey='name'
-									value={formData.selectedFormat}
-									onSelect={item => {
-										handleChange('selectedFormat', item)
-										setIsFormatValid(true)
-									}}
-								/>
-							) : (
-								<TextStroke
-									title='Формат обучения'
-									value={courseInfo.format_name}
-								/>
-							)}
-							{isEdit ? (
-								<OptionInputWithSearch
-									title='Сертификат'
-									options={certificate}
-									placeholder='Выберите сертификат'
-									labelKey='name'
-									value={formData.selectedCertificate}
-									onSelect={item => {
-										handleChange('selectedCertificate', item)
-										setIsCertificateValid(true)
-									}}
-								/>
-							) : (
-								<TextStroke
-									title='Тип сертификата'
-									value={courseInfo.certificate_type_name}
-								/>
-							)}
-						</div>
-
-						{isEdit ? (
-							<Checkbox
-								text={'Платный курс'}
-								value={!formData.isFree}
-								onChange={isPaid => handleChange('isFree', !isPaid)}
-							>
-								<InputPrice
-									step={Number(import.meta.env.VITE_PRICE_STEP)}
-									value={formData.price}
-									onChange={e => handleChange('price', e.target.value)}
-								/>
-							</Checkbox>
-						) : (
-							<div className='flex flex-col gap-1 w-full'>
-								<span className='flex items-center gap-2 text-xs font-semibold text-[var(--middle)] mb-1 uppercase tracking-wider'>
-									<CreditCard size={14} /> Цена
-								</span>
-								<TextStroke
-									value={
-										courseInfo.is_free
-											? 'Бесплатно'
-											: `${courseInfo.price || 0} ₽`
-									}
-								/>
-							</div>
-						)}
-					</section>
-					{isEdit && (
-						<DefaultButton
-							onClick={() => editCourseInfo()}
-							width='flex items-center w-fit self-end'
-						>
-							<Save size={18} />
-							Сохранить
-						</DefaultButton>
-					)}
-				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 
@@ -502,8 +555,10 @@ const ModerateCourses = () => {
 	const [courseStatus, setCourseStatus] = useState(null)
 
 	const fetchCourses = async () => {
+		setCourses([])
 		try {
 			const res = await GetModerationCourses(activeStatus)
+			console.log('getCourses!')
 			setCourses(res)
 		} catch (err) {
 			console.error(err)
@@ -696,7 +751,10 @@ const ModerateCourses = () => {
 							<CourseForm
 								courseId={activeCourseId}
 								isEdit={isEdit}
-								onIsEditChange={setIsEdit}
+								onIsEditChange={data => {
+									setIsEdit(data)
+									fetchCourses()
+								}}
 							/>
 						</div>
 					)}

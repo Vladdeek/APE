@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
+import ReactDOM from 'react-dom'
 
-export const Loader = () => {
+export const Loader = ({ size = '2.5em' }) => {
 	return (
-		<StyledWrapper>
+		<StyledWrapper $size={size}>
 			<svg
 				xmlns='http://www.w3.org/2000/svg'
 				height='200px'
@@ -34,7 +35,7 @@ export const Loader = () => {
 							strokeDashoffset={402}
 							strokeDasharray='402.12 402.12'
 							strokeWidth={30}
-							stroke='#f43b75'
+							stroke='var(--pencil-color1, #232135)'
 							r={64}
 							className='pencil__body1'
 						/>
@@ -43,7 +44,7 @@ export const Loader = () => {
 							strokeDashoffset={465}
 							strokeDasharray='464.96 464.96'
 							strokeWidth={10}
-							stroke='#fd598d'
+							stroke='var(--pencil-color2, #403d52)'
 							r={74}
 							className='pencil__body2'
 						/>
@@ -52,7 +53,7 @@ export const Loader = () => {
 							strokeDashoffset={339}
 							strokeDasharray='339.29 339.29'
 							strokeWidth={10}
-							stroke='#f02364'
+							stroke='var(--pencil-color3, #6b6387)'
 							r={54}
 							className='pencil__body3'
 						/>
@@ -88,10 +89,17 @@ export const Loader = () => {
 }
 
 const StyledWrapper = styled.div`
+	/* Привязываем размер к переданному пропу или CSS-переменной */
+	--loader-size: ${props => props.$size || '2.5em'};
+
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+
 	.pencil {
 		display: block;
-		width: 2.5em;
-		height: 2.5em;
+		width: var(--loader-size);
+		height: var(--loader-size);
 	}
 
 	.pencil__body1,
@@ -159,7 +167,6 @@ const StyledWrapper = styled.div`
 
 		50% {
 			stroke-dashoffset: 150.8;
-			/* 3/8 of diameter */
 			transform: rotate(-225deg);
 		}
 	}
@@ -294,6 +301,22 @@ export const Loading = ({ className }) => {
 				{states[step]}
 			</span>
 		</p>
+	)
+}
+
+export const GlobalLoader = ({ isOpen }) => {
+	if (!isOpen) return null
+
+	return ReactDOM.createPortal(
+		<div className='bg-[#00000025] backdrop-blur-xs fixed top-0 z-100 left-0 right-0 bottom-0 flex justify-center items-center'>
+			<div
+				className={`w-fit p-5 rounded-3xl text-[var(--black)]`}
+				onClick={e => e.stopPropagation()}
+			>
+				<Loader size='10em' />
+			</div>
+		</div>,
+		document.body,
 	)
 }
 

@@ -44,9 +44,12 @@ import {
 	GetModerationCourses,
 } from '../../service/APIs/Moderation'
 import { Me } from '../../service/APIs/Authorization'
+import { useUser } from '../../service/context/UserContext'
+import { createCourseRequest } from '../../service/APIs/Request'
 
 const CourseViewForStudent = ({ data, onApply }) => {
 	const navigate = useNavigate()
+	const { userInfo } = useUser()
 	// Красивое форматирование дат
 	const formatDate = (dateStr, includeYear = false) => {
 		if (!dateStr) return ''
@@ -61,6 +64,25 @@ const CourseViewForStudent = ({ data, onApply }) => {
 	const isRegistrationOpen = data.registration_end
 		? new Date(data.registration_end) > new Date()
 		: true
+
+	const handleSubmit = async e => {
+		// Защита от перезагрузки страницы при классическом сабмите
+		if (e && e.preventDefault) e.preventDefault()
+
+		const finalData = {
+			first_name_nominative: userInfo.first_name,
+			last_name_nominative: userInfo.last_name,
+			patronymic_nominative: userInfo.patronymic,
+			course_id: data.id,
+		}
+
+		try {
+			const result = await createCourseRequest(finalData)
+			console.log('Успешно отправлено:', result)
+		} catch (err) {
+			console.error('Ошибка при отправке:', err)
+		}
+	}
 
 	return (
 		<div className='w-full max-w-6xl mx-auto p-2 rounded-4xl'>
@@ -121,7 +143,12 @@ const CourseViewForStudent = ({ data, onApply }) => {
 
 						{/* Главная кнопка действия */}
 						<button
-							onClick={() => navigate(`/request/${data.id}`)}
+							onClick={e => {
+								//Когда вернем заявки
+								//navigate(`/request/${data.id}`)
+								//Временная подача заявки на курс
+								handleSubmit(e)
+							}}
 							disabled={!isRegistrationOpen}
 							className={`w-full py-4 px-6 rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg transition-all transform hover:scale-[101%] active:scale-[99%] cursor-pointer
                                 ${

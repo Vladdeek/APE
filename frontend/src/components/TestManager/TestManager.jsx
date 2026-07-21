@@ -730,14 +730,16 @@ const TestView = ({ isEdit, role }) => {
 				</div>
 			</Modal>
 			<div className='w-full flex flex-col gap-3 items-center'>
-				<div className='w-full max-w-2xl flex justify-end'>
-					<LinkButton
-						title={'Удалить вопрос'}
-						color={'var(--red-base)'}
-						textsize='text-xs'
-						onClick={() => setIsModalOpen(prev => !prev)}
-					/>
-				</div>
+				{role !== 'student' && (
+					<div className='w-full max-w-2xl flex justify-end'>
+						<LinkButton
+							title={'Удалить вопрос'}
+							color={'var(--red-base)'}
+							textsize='text-xs'
+							onClick={() => setIsModalOpen(prev => !prev)}
+						/>
+					</div>
+				)}
 
 				{/* Верхняя часть с вопросом и оценкой */}
 				{isEdit ? (
@@ -898,21 +900,18 @@ const TestManager = ({}) => {
 	}
 
 	useEffect(() => {
-		const getQuestions = async () => {
-			try {
-				const res = await GetQuestions(activeSection)
-				return res.time_limit
-			} catch (err) {
-				console.log(err)
-			}
-		}
 		const getSession = async () => {
 			try {
 				const res = await GetSession(activeSection)
 				const currentTime = Date.now() / 1000 // Текущее время в секундах
 				const tl = Math.floor(currentTime - res.expire_at)
+				const tlim = 0
 				setSessionIsStart(true)
-				setTimeLeft(getQuestions() - tl)
+				try {
+					const res = await GetQuestions(activeSection)
+					tlim = res.time_limit
+				} catch (err) {}
+				setTimeLeft(tlim - tl)
 			} catch (err) {
 				// Обработка ошибки
 				setSessionIsStart(false)
@@ -931,10 +930,6 @@ const TestManager = ({}) => {
 			setAccessToTheTest(false)
 		}
 	}, [sessionIsStart, timeLeft, role])
-
-	console.log(accessToTheTest)
-
-	console.log(activeQuestionId)
 
 	return (
 		<>

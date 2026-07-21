@@ -122,8 +122,23 @@ export const StartSession = async test_id => {
 	)
 	return response.data
 }
+// ---> EndSession - заканчивает сессию тестирования <---
+export const EndSession = async test_id => {
+	const response = await api.post(
+		`${API}/test-content/student-session/start/${test_id}`,
+		{},
+	)
+	return response.data
+}
 // ---> GetStudentAnswers - отдает ответы студента <---
 export const GetStudentAnswers = async test_id => {
+	const response = await api.get(
+		`${API}/test-content/student-session/active/${test_id}/question-answers`,
+	)
+	return response.data
+}
+// ---> GetResultStudentAnswers - отдает результаты тестирования студента <---
+export const GetResultStudentAnswers = async test_id => {
 	const response = await api.get(
 		`${API}/test-content/student-session/active/${test_id}/question-answers`,
 	)

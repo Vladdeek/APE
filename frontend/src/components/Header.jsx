@@ -290,8 +290,6 @@ const MobileHeaderModal = ({ links, active, onClick }) => {
 		visible: { opacity: 1, y: 0 },
 	}
 
-	console.log(links)
-
 	return (
 		<AnimatePresence>
 			{active && (

@@ -509,7 +509,7 @@ const Module = ({ title, index, isExpanded, onToggle, children }) => {
 }
 
 // Компонент Контента (Лекция/Практика/Тест)
-const Content = ({ type, title, isSelected, onClick, role }) => {
+const Content = ({ type, title, isSelected, onClick, role, score = 0 }) => {
 	const icons = {
 		lecture: <BookMarked size={18} />,
 		practice: <NotebookPen size={18} />,
@@ -521,8 +521,6 @@ const Content = ({ type, title, isSelected, onClick, role }) => {
 		practice: 'Практика',
 		test: 'Тест',
 	}
-
-	const [score, setScore] = useState(3)
 
 	// Вычисляем статус прямо при рендере
 	const getStatus = s => {
@@ -565,16 +563,15 @@ const Content = ({ type, title, isSelected, onClick, role }) => {
 						<p className='font-medium text-sm text-[var(--black)]'>{title}</p>
 					</div>
 				</div>
-				{type === 'test' ||
-					(role === 'student' && (
-						<div
-							className={`flex items-center justify-center h-7 w-7 rounded-md ${
-								colorClasses[status]
-							} text-lg`}
-						>
-							{score}
-						</div>
-					))}
+				{type === 'test' && role === 'student' && score !== 0 && (
+					<div
+						className={`flex items-center justify-center h-7 w-7 rounded-md ${
+							colorClasses[status]
+						} text-lg`}
+					>
+						{score}
+					</div>
+				)}
 			</div>
 		</div>
 	)

@@ -79,3 +79,20 @@ export const CreateLesson = async (name, module_content_type, module_id) => {
 	})
 	return response.data
 }
+
+export const ChangeCoursePhoto = async (course_id, file) => {
+	const formData = new FormData()
+	formData.append('preview_image', file)
+
+	const response = await api.patch(
+		`${API}/course/${course_id}/preview/attach`,
+		formData,
+		{
+			headers: {
+				'Content-Type': 'multipart/form-data',
+			},
+		},
+	)
+
+	return response.data
+}
