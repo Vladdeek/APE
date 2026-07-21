@@ -39,7 +39,10 @@ import {
 } from '../../service/APIs/Couses'
 import Modal from '../components/Modal'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { GetCourseInfoById } from '../../service/APIs/Moderation'
+import {
+	GetCourseInfoById,
+	GetModerationCourses,
+} from '../../service/APIs/Moderation'
 import { Me } from '../../service/APIs/Authorization'
 
 const CourseViewForStudent = ({ data, onApply }) => {
@@ -567,6 +570,12 @@ const Catalog = () => {
 				setCourses(res)
 			} catch (err) {}
 		}
+		const getAllModerationCourses = async () => {
+			try {
+				const res = await GetAllCourses()
+				setCourses(res)
+			} catch (err) {}
+		}
 		if (userInfo?.role === 'teacher') {
 			getAllTeacherCourses()
 		} else if (userInfo?.role === 'student') {
@@ -575,6 +584,8 @@ const Catalog = () => {
 			} else if (type === 'patched') {
 				getAllAvailableCoursesForStudent()
 			}
+		} else if (userInfo?.role === 'moderator') {
+			getAllModerationCourses()
 		}
 	}, [userInfo, type])
 
@@ -603,6 +614,8 @@ const Catalog = () => {
 				// Для pending_review и rejected_preview открываем превью/модалку модерации
 				setSelectedCourse(course)
 			}
+		} else if (userInfo?.role === 'moderator') {
+			navigate(`/course/${course.id}`)
 		} else {
 			if (type === 'all') {
 				setSelectedCourse(course)
@@ -702,7 +715,7 @@ const Catalog = () => {
 						>
 							<CourseCard
 								onClick={() => handleCourseClick(course)}
-								status={userInfo?.role === 'teacher' && course.status}
+								status={userInfo?.role !== 'student' && course.status}
 								data={course}
 							/>
 						</motion.div>

@@ -51,6 +51,11 @@ export default function DashboardLayout({ onChange }) {
 					icon: FileUser,
 					to: '/acceptance-of-applications',
 				},
+				{
+					title: 'Все курсы',
+					icon: GraduationCap,
+					to: '/catalog',
+				},
 			],
 		},
 	]

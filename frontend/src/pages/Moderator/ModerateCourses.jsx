@@ -312,7 +312,7 @@ const ModerateCourses = () => {
 					setIsOpen={setIsOpen}
 				>
 					<div className='flex flex-col justify-between h-full overflow-hidden'>
-						<div className='flex gap-1'>
+						{/* <div className='flex gap-1'>
 							{options?.map(option => (
 								<RadioButton
 									key={option.value}
@@ -328,7 +328,7 @@ const ModerateCourses = () => {
 									fill
 								/>
 							))}
-						</div>
+						</div> */}
 						<div className='flex flex-col gap-3 h-full overflow-y-auto p-2'>
 							{courses?.map((course, index) => (
 								<motion.div
@@ -381,14 +381,14 @@ const ModerateCourses = () => {
 								</DefaultButton>
 
 								<div className='flex gap-3'>
-									<DefaultButton
+									{/* <DefaultButton
 										width='px-5 py-2.5 text-sm flex items-center'
 										invert={courseStatus === 'pending_review'}
 										onClick={() => navigate(`/course/${activeCourseId}`)}
 									>
 										<Edit3 size={16} />
 										Редактировать
-									</DefaultButton>
+									</DefaultButton> */}
 									{courseStatus === 'pending_review' && (
 										<DefaultButton
 											width='px-6 py-2.5 text-sm flex items-center'

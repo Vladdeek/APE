@@ -66,7 +66,7 @@ export const generateNewPassword = async id => {
 // --- courses ---
 export const GetModerationCourses = async course_status => {
 	const response = await api.get(
-		`${API}/course/?course_status=${course_status}`,
+		`${API}/course${course_status ? `/?course_status=${course_status}` : ''}`,
 	)
 	return response.data
 }

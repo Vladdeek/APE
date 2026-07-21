@@ -1093,7 +1093,7 @@ const CoursePage = () => {
 						</div>
 					)}
 					<p className='text-2xl uppercase font-bold'>{title}</p>
-					{role !== 'student' && (
+					{role === 'teacher' && (
 						<button
 							disabled={status !== 'draft' && role !== 'moderator'}
 							onClick={() =>
