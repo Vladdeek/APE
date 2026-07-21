@@ -751,6 +751,8 @@ export const OptionInputWithSearch = ({
 	const [search, setSearch] = useState('')
 	const [selected, setSelected] = useState(value)
 
+	console.log(value, options, selected)
+
 	// Реф для всего компонента, чтобы ловить клики "мимо"
 	const containerRef = useRef(null)
 

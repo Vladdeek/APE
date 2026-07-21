@@ -5,7 +5,12 @@ import {
 	GetModerationCourses,
 } from '../../../service/APIs/Moderation'
 import BasicPagination from '../../components/Pagination'
-import { DefaultButton, RadioButton } from '../../components/Buttons'
+import {
+	Checkbox,
+	ColoredButton,
+	DefaultButton,
+	RadioButton,
+} from '../../components/Buttons'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CourseMiniCard } from '../../components/Cards'
@@ -16,6 +21,8 @@ import {
 	CheckCircle2,
 	CreditCard,
 	Edit3,
+	ImageOff,
+	Save,
 	ShieldAlert,
 	Tag,
 	User,
@@ -23,6 +30,19 @@ import {
 } from 'lucide-react'
 import Modal from '../../components/Modal'
 import ResponsiveSidebar from '../../components/ResponsiveSidebar'
+import {
+	DateInput,
+	InputDefault,
+	InputPrice,
+	OptionInputWithSearch,
+	TextArea,
+} from '../../components/Inputs'
+import { GetTags } from '../../../service/APIs/CourseTagsSpecific'
+import {
+	editCourse,
+	GetCertificates,
+	GetFormats,
+} from '../../../service/APIs/Couses'
 
 // Компонент отображения строки данных
 const TextStroke = ({ title, value, textarea }) => {
@@ -46,44 +66,168 @@ const TextStroke = ({ title, value, textarea }) => {
 	)
 }
 
+const formatDate = dateString => (dateString ? dateString.split('T')[0] : '')
+
 // Форма просмотра курса (теперь чистая презентационная логика)
-const CourseForm = ({ courseId }) => {
+const CourseForm = ({ courseId, isEdit = false, onIsEditChange }) => {
 	const [courseInfo, setCourseInfo] = useState({})
 
-	useEffect(() => {
-		const getCourse = async () => {
-			try {
-				const res = await GetCourseInfoById(courseId)
-				setCourseInfo(res)
-			} catch (err) {
-				console.error('Ошибка при загрузке курса:', err)
-			}
+	// Опции для выпадающих списков
+	const [categories, setCategories] = useState(null)
+	const [certificate, setCertificate] = useState([])
+	const [format, setFormat] = useState([])
+
+	// Валидация списков
+	const [isCategoryValid, setIsCategoryValid] = useState(true)
+	const [isFormatValid, setIsFormatValid] = useState(true)
+	const [isCertificateValid, setIsCertificateValid] = useState(true)
+
+	// ЕДИНЫЙ СТЕЙТ ФОРМЫ
+	const [formData, setFormData] = useState({
+		title: '',
+		description: '',
+		selectedCategory: null,
+		isFree: true,
+		price: '',
+		regStartDate: '',
+		regEndDate: '',
+		startDate: '',
+		endDate: '',
+		selectedCertificate: null,
+		selectedFormat: null,
+	})
+
+	const getCourse = async () => {
+		try {
+			const res = await GetCourseInfoById(courseId)
+			setCourseInfo(res)
+		} catch (err) {
+			console.error('Ошибка при загрузке курса:', err)
 		}
+	}
+
+	// Загрузка курса
+	useEffect(() => {
 		if (courseId) getCourse()
 	}, [courseId])
 
+	// Синхронизация formData с пришедшими данными courseInfo
+	useEffect(() => {
+		if (courseInfo && Object.keys(courseInfo).length > 0) {
+			setFormData({
+				title: courseInfo.name || '',
+				description: courseInfo.description || '',
+				selectedCategory: courseInfo.category || null,
+				isFree: courseInfo.is_free ?? true,
+				price: courseInfo.price || '',
+				regStartDate: formatDate(courseInfo.registration_start),
+				regEndDate: formatDate(courseInfo.registration_end),
+				startDate: formatDate(courseInfo.start_date),
+				endDate: formatDate(courseInfo.end_date),
+				selectedCertificate:
+					{
+						id: courseInfo.certificate_id,
+						name: courseInfo.certificate_type_name,
+					} || null,
+				selectedFormat:
+					{
+						id: courseInfo.format_id,
+						name: courseInfo.format_name,
+					} || null,
+				selectedCategory:
+					{
+						id: courseInfo.tag_id,
+						name: courseInfo.tag,
+					} || null,
+			})
+		}
+	}, [courseInfo])
+
+	// Хэндлеры для изменения полей
+	const handleChange = (field, value) => {
+		setFormData(prev => ({ ...prev, [field]: value }))
+	}
+
+	useEffect(() => {
+		const getTags = async () => {
+			try {
+				const res = await GetTags()
+				setCategories(res)
+			} catch (err) {}
+		}
+		const getCertificates = async name => {
+			try {
+				const res = await GetCertificates()
+				setCertificate(res)
+			} catch (err) {}
+		}
+		const getFormats = async name => {
+			try {
+				const res = await GetFormats()
+				setFormat(res)
+			} catch (err) {}
+		}
+		getCertificates()
+		getFormats()
+		getTags()
+	}, [])
+
+	const editCourseInfo = async () => {
+		const dataToSend = {
+			name: formData.title, // У тебя стейт 'title', а бэкенд ждет 'name'
+			description: formData.description,
+
+			is_free: formData.isFree,
+			price: formData.price,
+
+			registration_start: formData.regStartDate,
+			registration_end: formData.regEndDate,
+
+			start_date: formData.startDate,
+			end_date: formData.endDate,
+
+			// Вытаскиваем id, если объект выбран, иначе передаем null
+			tag_id: formData.selectedCategory ? formData.selectedCategory.id : null,
+			certificate_type_id: formData.selectedCertificate
+				? formData.selectedCertificate.id
+				: null,
+			format_id: formData.selectedFormat ? formData.selectedFormat.id : null,
+		}
+		try {
+			await editCourse(dataToSend, courseId)
+		} catch (err) {
+		} finally {
+			onIsEditChange?.(false)
+			getCourse()
+		}
+	}
+
+	const [imageError, setImageError] = useState(false)
+
 	return (
 		<div className='2xl:mx-20 mx-2 pb-24'>
-			{' '}
 			{/* Отступ снизу под Action Bar */}
 			<div className='grid grid-cols-12 gap-8'>
 				{/* ЛЕВАЯ КОЛОНКА */}
 				<div className='col-span-12 lg:col-span-4 flex flex-col space-y-6 border-r border-[var(--light-middle)]/10 pr-6'>
 					<div className='relative group h-64 w-full rounded-3xl overflow-hidden shadow-md bg-[var(--light-gray)]/50'>
-						{courseInfo.preview_url ? (
+						{courseInfo.preview_url && !imageError ? (
 							<img
 								src={courseInfo.preview_url}
 								alt='Preview'
 								className='w-full h-full object-cover'
+								onError={() => setImageError(true)}
 							/>
 						) : (
 							<div className='w-full h-full flex items-center justify-center text-[var(--middle)]'>
-								<BookOpen size={48} />
+								<ImageOff className='w-full h-full p-[25%]' />
 							</div>
 						)}
-						<div className='absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur rounded-lg text-xs font-bold text-[var(--hero)] shadow-sm'>
-							ID: {courseInfo.id?.slice(0, 8)}...
-						</div>
+						{courseInfo.id && (
+							<div className='absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur rounded-lg text-xs font-bold text-[var(--hero)] shadow-sm'>
+								ID: {courseInfo.id.slice(0, 8)}...
+							</div>
+						)}
 					</div>
 
 					<div className='space-y-4 border-t border-[var(--light-middle)]/20 pt-5'>
@@ -104,8 +248,9 @@ const CourseForm = ({ courseId }) => {
 									Создатель курса
 								</p>
 								<p className='text-sm font-semibold truncate text-[var(--black)]'>
-									{courseInfo.creator?.last_name}{' '}
-									{courseInfo.creator?.first_name}
+									{courseInfo.creator
+										? `${courseInfo.creator.last_name || ''} ${courseInfo.creator.first_name || ''}`.trim()
+										: 'Не указан'}
 								</p>
 							</div>
 						</div>
@@ -119,6 +264,7 @@ const CourseForm = ({ courseId }) => {
 
 				{/* ПРАВАЯ КОЛОНКА */}
 				<div className='col-span-12 lg:col-span-8 flex flex-col space-y-8'>
+					{/* ОСНОВНАЯ ИНФОРМАЦИЯ */}
 					<section className='space-y-5'>
 						<div className='flex items-center gap-3'>
 							<div className='p-2 bg-[var(--transparent-hero)] rounded-lg text-[var(--hero)]'>
@@ -128,67 +274,196 @@ const CourseForm = ({ courseId }) => {
 								Основная информация
 							</h3>
 						</div>
-						<TextStroke title='Название курса' value={courseInfo.name} />
-						<TextStroke
-							title='Описание'
-							value={courseInfo.description}
-							textarea
-						/>
+						{isEdit ? (
+							<InputDefault
+								title='Название курса'
+								placeholder='Введите название...'
+								value={formData.title}
+								onChange={e => handleChange('title', e.target.value)}
+								validate={val => val.length >= 3}
+								width='w-full'
+							/>
+						) : (
+							<TextStroke title='Название курса' value={courseInfo.name} />
+						)}
+						{isEdit ? (
+							<TextArea
+								title='Описание курса'
+								placeholder='Введите описание...'
+								value={formData.description}
+								onChange={e => handleChange('description', e.target.value)}
+								validate={val => val.length >= 10}
+							/>
+						) : (
+							<TextStroke
+								title='Описание'
+								value={courseInfo.description}
+								textarea
+							/>
+						)}
+						{isEdit && (
+							<OptionInputWithSearch
+								title='Категория'
+								options={categories}
+								placeholder='Выберите категорию'
+								labelKey='name'
+								value={formData.selectedCategory}
+								onSelect={item => {
+									handleChange('selectedCategory', item)
+									setIsCategoryValid(true)
+								}}
+								onCreate={name => addTag(name)}
+								CreateOrNot={true}
+							/>
+						)}
 					</section>
 
+					{/* ДАТЫ */}
 					<section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 						<div className='space-y-4'>
 							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
 								<Calendar size={14} /> Регистрация
 							</div>
-							<TextStroke
-								title='Начало'
-								value={courseInfo.registration_start?.split('T')[0]}
-							/>
-							<TextStroke
-								title='Конец'
-								value={courseInfo.registration_end?.split('T')[0]}
-							/>
+
+							{isEdit ? (
+								<DateInput
+									text={'text-sm'}
+									title='Начало'
+									value={formData.regStartDate}
+									onChange={val => handleChange('regStartDate', val)}
+								/>
+							) : (
+								<TextStroke
+									title='Начало'
+									value={formatDate(courseInfo.registration_start)}
+								/>
+							)}
+
+							{isEdit ? (
+								<DateInput
+									text={'text-sm'}
+									title='Конец'
+									value={formData.regEndDate}
+									onChange={val => handleChange('regEndDate', val)}
+								/>
+							) : (
+								<TextStroke
+									title='Конец'
+									value={formatDate(courseInfo.registration_end)}
+								/>
+							)}
 						</div>
+
 						<div className='space-y-4'>
 							<div className='flex items-center gap-2 text-[var(--hero)] font-semibold text-xs uppercase tracking-wider mb-1'>
 								<Calendar size={14} /> Обучение
 							</div>
-							<TextStroke
-								title='Дата старта'
-								value={courseInfo.start_date?.split('T')[0]}
-							/>
-							<TextStroke
-								title='Дата завершения'
-								value={courseInfo.end_date?.split('T')[0]}
-							/>
+							{isEdit ? (
+								<DateInput
+									text={'text-sm'}
+									title='Дата старта'
+									value={formData.startDate}
+									onChange={val => handleChange('startDate', val)}
+								/>
+							) : (
+								<TextStroke
+									title='Дата старта'
+									value={formatDate(courseInfo.start_date)}
+								/>
+							)}
+							{isEdit ? (
+								<DateInput
+									text={'text-sm'}
+									title='Дата завершения'
+									value={formData.endDate}
+									onChange={val => handleChange('endDate', val)}
+								/>
+							) : (
+								<TextStroke
+									title='Дата завершения'
+									value={formatDate(courseInfo.end_date)}
+								/>
+							)}
 						</div>
 					</section>
 
+					{/* ФОРМАТ, СЕРТИФИКАТ И ЦЕНА */}
 					<section className='grid grid-cols-1 md:grid-cols-3 gap-6 items-end'>
 						<div className='md:col-span-2 flex flex-col gap-4 w-full'>
-							<TextStroke
-								title='Формат обучения'
-								value={courseInfo.format_name}
-							/>
-							<TextStroke
-								title='Тип сертификата'
-								value={courseInfo.certificate_type_name}
-							/>
+							{isEdit ? (
+								<OptionInputWithSearch
+									title='Формат'
+									options={format}
+									placeholder='Выберите формат'
+									labelKey='name'
+									value={formData.selectedFormat}
+									onSelect={item => {
+										handleChange('selectedFormat', item)
+										setIsFormatValid(true)
+									}}
+								/>
+							) : (
+								<TextStroke
+									title='Формат обучения'
+									value={courseInfo.format_name}
+								/>
+							)}
+							{isEdit ? (
+								<OptionInputWithSearch
+									title='Сертификат'
+									options={certificate}
+									placeholder='Выберите сертификат'
+									labelKey='name'
+									value={formData.selectedCertificate}
+									onSelect={item => {
+										handleChange('selectedCertificate', item)
+										setIsCertificateValid(true)
+									}}
+								/>
+							) : (
+								<TextStroke
+									title='Тип сертификата'
+									value={courseInfo.certificate_type_name}
+								/>
+							)}
 						</div>
-						<div className='flex flex-col gap-1 w-full'>
-							<span className='flex items-center gap-2 text-xs font-semibold text-[var(--middle)] mb-1 uppercase tracking-wider'>
-								<CreditCard size={14} /> Цена
-							</span>
-							<TextStroke
-								value={
-									courseInfo.is_free
-										? 'Бесплатно'
-										: `${courseInfo.price || 0} ₽`
-								}
-							/>
-						</div>
+
+						{isEdit ? (
+							<Checkbox
+								text={'Платный курс'}
+								value={!formData.isFree}
+								onChange={isPaid => handleChange('isFree', !isPaid)}
+							>
+								<InputPrice
+									step={Number(import.meta.env.VITE_PRICE_STEP)}
+									value={formData.price}
+									onChange={e => handleChange('price', e.target.value)}
+								/>
+							</Checkbox>
+						) : (
+							<div className='flex flex-col gap-1 w-full'>
+								<span className='flex items-center gap-2 text-xs font-semibold text-[var(--middle)] mb-1 uppercase tracking-wider'>
+									<CreditCard size={14} /> Цена
+								</span>
+								<TextStroke
+									value={
+										courseInfo.is_free
+											? 'Бесплатно'
+											: `${courseInfo.price || 0} ₽`
+									}
+								/>
+							</div>
+						)}
 					</section>
+					{isEdit && (
+						<DefaultButton
+							onClick={() => editCourseInfo()}
+							width='flex items-center w-fit self-end'
+						>
+							<Save size={18} />
+							Сохранить
+						</DefaultButton>
+					)}
 				</div>
 			</div>
 		</div>
@@ -207,11 +482,14 @@ const ModerateCourses = () => {
 	const [page, setPage] = useState(1)
 	const [courses, setCourses] = useState([])
 
+	const [isEdit, setIsEdit] = useState(false)
+
 	const clearParams = () => {
 		setSearchParams({})
 	}
 
 	const handleCourseClick = id => {
+		setIsEdit(false)
 		setSearchParams({ course_id: id })
 	}
 
@@ -381,14 +659,27 @@ const ModerateCourses = () => {
 								</DefaultButton>
 
 								<div className='flex gap-3'>
-									{/* <DefaultButton
+									<ColoredButton
 										width='px-5 py-2.5 text-sm flex items-center'
-										invert={courseStatus === 'pending_review'}
-										onClick={() => navigate(`/course/${activeCourseId}`)}
+										onClick={() => setIsEdit(prev => !prev)}
+										color={{
+											bg: isEdit ? 'var(--hero)' : 'var(--white)',
+											text: isEdit ? 'white' : 'var(--black)',
+										}}
 									>
-										<Edit3 size={16} />
-										Редактировать
-									</DefaultButton> */}
+										{isEdit ? (
+											<>
+												<Edit3 size={16} />
+												Редактирование
+											</>
+										) : (
+											<>
+												<Edit3 size={16} />
+												Редактировать
+											</>
+										)}
+									</ColoredButton>
+
 									{courseStatus === 'pending_review' && (
 										<DefaultButton
 											width='px-6 py-2.5 text-sm flex items-center'
@@ -402,7 +693,11 @@ const ModerateCourses = () => {
 							</div>
 
 							{/* Сама анкета данных курса */}
-							<CourseForm courseId={activeCourseId} />
+							<CourseForm
+								courseId={activeCourseId}
+								isEdit={isEdit}
+								onIsEditChange={setIsEdit}
+							/>
 						</div>
 					)}
 				</div>

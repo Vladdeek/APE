@@ -462,7 +462,6 @@ const CreateModal = ({ onChange }) => {
 						setSelectedCertificate(item)
 						setIsCertificateValid(true)
 					}}
-					CreateOrNot={true}
 				/>
 				<OptionInputWithSearch
 					title='Формат'
@@ -475,7 +474,6 @@ const CreateModal = ({ onChange }) => {
 						setSelectedFormat(item)
 						setIsFormatValid(true)
 					}}
-					CreateOrNot={true}
 				/>
 				<FileInputZone
 					onFileChange={file => setImg(file)}

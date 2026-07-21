@@ -170,11 +170,14 @@ export const SubmitButton = ({
 	)
 }
 
-export const Checkbox = ({ children, text, title, onChange, flex = false }) => {
-	const [checked, setChecked] = useState(false)
-	useEffect(() => {
-		onChange?.(checked)
-	}, [checked])
+export const Checkbox = ({
+	children,
+	text,
+	title,
+	onChange,
+	value = false, // Управляемое значение напрямую из родителя
+	flex = false,
+}) => {
 	return (
 		<div className='flex flex-col items-start w-full'>
 			{title && (
@@ -185,16 +188,15 @@ export const Checkbox = ({ children, text, title, onChange, flex = false }) => {
 			<div className={`${flex && 'flex-row'} flex-col flex gap-1 w-full`}>
 				<div className='flex items-center gap-3 w-fit'>
 					<div
-						onClick={() => setChecked(prev => !prev)}
-						className={`flex justify-center items-center aspect-square rounded-[10px] border-1 h-7 w-auto text-[var(--white)] transition-all cursor-pointer ${!checked ? 'bg-transparent border-[var(--light-middle)]' : 'bg-[var(--hero)] border-[var(--hero)]'}`}
+						// Передаём инвертированное значение напрямую в onChange
+						onClick={() => onChange?.(!value)}
+						className={`flex justify-center items-center aspect-square rounded-[10px] border-1 h-7 w-auto text-[var(--white)] transition-all cursor-pointer ${!value ? 'bg-transparent border-[var(--light-middle)]' : 'bg-[var(--hero)] border-[var(--hero)]'}`}
 					>
-						<Check className={`opacity-0 ${checked && 'opacity-100'}`} />
+						<Check className={`opacity-0 ${value && 'opacity-100'}`} />
 					</div>
 					{text && <p className='text-[var(--black)]'>{text}</p>}
 				</div>
-				<div
-					className={`${!checked && 'opacity-50 pointer-events-none'} w-full`}
-				>
+				<div className={`${!value && 'opacity-50 pointer-events-none'} w-full`}>
 					{children}
 				</div>
 			</div>

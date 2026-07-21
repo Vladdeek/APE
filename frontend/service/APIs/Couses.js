@@ -22,6 +22,12 @@ export const CreateCourse = async courseData => {
 	return response.data
 }
 
+export const editCourse = async (courseData, course_id) => {
+	const response = await api.put(`${API}/course/${course_id}`, courseData)
+
+	return response.data
+}
+
 export const GetAllCourses = async () => {
 	const response = await api.get(`${API}/course`)
 	return response.data
