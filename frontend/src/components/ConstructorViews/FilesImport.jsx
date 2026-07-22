@@ -7,6 +7,7 @@ import {
 	FileQuestionMark,
 	FileSpreadsheet,
 	FileText,
+	Presentation, // <-- Добавили иконку для презентаций
 	Trash2,
 	Download,
 } from 'lucide-react'
@@ -63,6 +64,17 @@ export const FileManager = ({
 				formats: ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'],
 				icon: (
 					<FileText
+						size={24}
+						className='text-[var(--black)]'
+						strokeWidth={1.75}
+					/>
+				),
+			},
+			// Добавили отдельную категорию для презентаций
+			presentation: {
+				formats: ['ppt', 'pptx', 'key', 'odp'],
+				icon: (
+					<Presentation
 						size={24}
 						className='text-[var(--black)]'
 						strokeWidth={1.75}

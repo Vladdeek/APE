@@ -33,7 +33,17 @@ export const UPLOAD_TYPES = {
 		icon: FileText,
 		title: 'файл',
 		maxSize: Number(import.meta.env.VITE_MAX_TOTAL_FILES_SIZE),
-		exts: ['.pdf', '.zip', '.rar', '.docx'],
+		exts: [
+			'.pdf',
+			'.zip',
+			'.rar',
+			'.docx',
+			'.doc',
+			'.ppt',
+			'.pptx',
+			'.key',
+			'.odp',
+		],
 	},
 	code: {
 		icon: FileCode2, // из lucide-react
