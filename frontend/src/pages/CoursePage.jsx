@@ -264,6 +264,8 @@ const ContentView = ({
 	const { courseId } = useParams()
 	const { role } = useUser()
 
+	console.log(role)
+
 	// Реф-карта для отслеживания ПЕРВОГО рендера КАЖДОГО блока по его id
 	const firstRenderMap = useRef({})
 
@@ -372,6 +374,13 @@ const ContentView = ({
 		}
 	}, [activeSectionId])
 
+	const showConstructorMenu =
+		activeType !== 'test' && activeSectionId && role !== 'student' && isEdit
+
+	console.log(
+		`activeType: ${activeType}\nactiveSectionId: ${activeSectionId}\nrole: ${role}\nisEdit: ${isEdit}\n\nshowConstructorMenu: ${showConstructorMenu}`,
+	)
+
 	return (
 		<div className='h-fit overflow-y-scroll hide-scrollbar'>
 			<div className='flex flex-col gap-3 p-2'>
@@ -421,14 +430,11 @@ const ContentView = ({
 							)
 						})}
 
-						{activeType !== 'test' &&
-							activeSectionId &&
-							role !== 'student' &&
-							isEdit && (
-								<ConstructorMenu
-									onAdd={type => addBlock(activeSectionId, type)}
-								/>
-							)}
+						{showConstructorMenu && (
+							<ConstructorMenu
+								onAdd={type => addBlock(activeSectionId, type)}
+							/>
+						)}
 					</div>
 				)}
 			</div>
@@ -492,7 +498,7 @@ const ConstructorMenu = ({ onAdd }) => {
 
 	return (
 		<>
-			<div className='grid lg:grid-cols-4 grid-cols-2 gap-2 p-3 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] w-fit'>
+			<div className='grid lg:grid-cols-5 grid-cols-3 gap-2 p-3 bg-[var(--white)] rounded-2xl shadow-[var(--shadow)] w-fit'>
 				{buttons.map((item, index) => (
 					<button
 						key={index}
@@ -1342,7 +1348,7 @@ const CoursePage = () => {
 	const [activeSectionId, setActiveSectionId] = useState(
 		searchParams.get('section') || '',
 	)
-	const [activeType, setActiveType] = useState('')
+	const [activeType, setActiveType] = useState(searchParams.get('type') || '')
 	const [title, setTitle] = useState('')
 	const [status, setStatus] = useState('draft')
 
@@ -1565,7 +1571,7 @@ const CoursePage = () => {
 
 							<div className='w-full h-full overflow-y-auto px-2 py-4'>
 								{/* Передаем id активной секции внутрь ContentView, чтобы он знал, что загружать */}
-								<ContentView isEdit={role === 'teacher' && isEdit} />
+								<ContentView isEdit={role !== 'student' && isEdit} />
 							</div>
 						</div>
 					</div>
