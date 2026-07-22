@@ -29,7 +29,7 @@ export const editCourse = async (courseData, course_id) => {
 }
 
 export const GetAllCourses = async () => {
-	const response = await api.get(`${API}/course`)
+	const response = await api.get(`${API}/course/`)
 	return response.data
 }
 

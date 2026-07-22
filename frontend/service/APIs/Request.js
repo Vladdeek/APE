@@ -33,7 +33,7 @@ export const GetEducationInstitution = async () => {
 
 export const createCourseRequest = async data => {
 	console.log('data: ', data)
-	const response = await api.post(`${API}/course-request`, data, {
+	const response = await api.post(`${API}/course-request/`, data, {
 		headers: {
 			// Axios обычно сам выставляет нужный Content-Type для FormData,
 			// но явное указание защищает от некоторых багов
