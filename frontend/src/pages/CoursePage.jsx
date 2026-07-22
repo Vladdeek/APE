@@ -1005,6 +1005,7 @@ const ContentHeader = ({ isEdit, onIsEditChange }) => {
 	// Достаем текущий questionId из URL (строка, содержащая UUID)
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSection = searchParams.get('section')
+	const activeType = searchParams.get('type')
 
 	const [sectionInfo, setSectionInfo] = useState([])
 	const [questionsData, setQuestionsData] = useState([])
@@ -1073,10 +1074,10 @@ const ContentHeader = ({ isEdit, onIsEditChange }) => {
 			}
 		}
 
-		if (role === 'student' && activeSection) {
+		if (role === 'student' && activeType === 'test' && activeSection) {
 			getSession()
 		}
-	}, [activeSection, role])
+	}, [activeSection, role, activeType])
 
 	useEffect(() => {
 		if (sessionIsActive === true && timeLeft > 0 && role === 'student') {

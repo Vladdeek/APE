@@ -886,6 +886,7 @@ const TestManager = ({}) => {
 	const [searchParams] = useSearchParams() // Достаем хук
 	const activeQuestionId = searchParams.get('questionId')
 	const activeSection = searchParams.get('section')
+	const activeType = searchParams.get('type')
 
 	const [sessionIsStart, setSessionIsStart] = useState(false)
 	const [accessToTheTest, setAccessToTheTest] = useState(false)
@@ -915,6 +916,7 @@ const TestManager = ({}) => {
 	useEffect(() => {
 		const getSession = async () => {
 			try {
+				console.log('запрос здесь')
 				const res = await GetSession(activeSection)
 				const currentTime = Date.now() / 1000 // Текущее время в секундах
 				const tl = Math.floor(currentTime - res.expire_at)
@@ -931,10 +933,10 @@ const TestManager = ({}) => {
 			}
 		}
 
-		if (role === 'student' && activeSection) {
+		if (role === 'student' && activeType === 'test' && activeSection) {
 			getSession()
 		}
-	}, [activeSection, role])
+	}, [activeSection, role, activeType])
 
 	useEffect(() => {
 		if (sessionIsStart === true && timeLeft > 0 && role === 'student') {
