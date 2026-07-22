@@ -26,7 +26,13 @@ export const UpdateLectureContent = async (
 	type,
 ) => {
 	const isText = type === 'text'
-	const isSpecialBlock = ['callout', 'formula', 'code', 'button'].includes(type)
+	const isSpecialBlock = [
+		'callout',
+		'formula',
+		'code',
+		'button',
+		'table',
+	].includes(type)
 
 	const response = await api.put(
 		`${API}/lecture-content/${lecture_content_id}/block-content/${block_content_id}`,
