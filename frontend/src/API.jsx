@@ -19,27 +19,65 @@ export const { API, FILE_API } = config[env]
 
 import axios from 'axios'
 import { toast } from 'sonner'
-import { BACKEND_ERRORS, STATUS_ERRORS } from '../service/data/errors'
+import {
+	DEVELOPER_BACKEND_ERRORS,
+	DEVELOPER_STATUS_ERRORS,
+	USER_FRIENDLY_BACKEND_ERRORS,
+	USER_FRIENDLY_STATUS_ERRORS,
+} from '../service/data/errors'
 
 const api = axios.create({
 	withCredentials: true,
 })
 
-const showError = err => {
+export const showError = err => {
 	const uniqueCode = err?.data?.unique_code
 	const status = err?.status
+	const mode = import.meta.env.VITE_ENV
 
-	const httpStatus_message =
-		STATUS_ERRORS[status] || 'Произошла непредвиденная ошибка'
-	const uniqueCode_message = BACKEND_ERRORS[uniqueCode] || ''
+	// ---------- РЕЖИМ РАЗРАБОТКИ (DEV) ----------
+	if (mode === 'dev') {
+		// Формируем заголовок: Код ошибки + расшифровка статуса
+		const statusText = DEVELOPER_STATUS_ERRORS[status] || 'Неизвестный статус'
+		const title = status
+			? `${status}: ${statusText}`
+			: 'Ошибка соединения с сервером'
 
-	const title = status
-		? `${status}: ${httpStatus_message}`
-		: 'Ошибка соединения с сервером'
+		// Описание: забираем дев-текст по unique_code
+		const devMessage =
+			DEVELOPER_BACKEND_ERRORS[uniqueCode] ||
+			err?.data?.message ||
+			'Описание от бэкенда отсутствует'
+
+		// Лог в консоль
+		console.error('🛠 [DEV API ERROR]:', {
+			status,
+			uniqueCode,
+			backendDescription: DEVELOPER_BACKEND_ERRORS[uniqueCode],
+			rawError: err,
+		})
+
+		toast.error(title, {
+			description: uniqueCode ? `[${uniqueCode}]\n${devMessage}` : devMessage,
+			id: 'api-error',
+			duration: 16000,
+		})
+		return
+	}
+
+	// ---------- ПРОДАКШЕН (PROD) ----------
+	const title = USER_FRIENDLY_STATUS_ERRORS[status] || 'Произошла ошибка'
+
+	const userDescription =
+		USER_FRIENDLY_BACKEND_ERRORS[uniqueCode] ||
+		(status >= 500
+			? 'Сервис временно недоступен. Мы уже чиним проблему, попробуйте позже.'
+			: 'Что-то пошло не так. Проверьте данные и попробуйте ещё раз.')
 
 	toast.error(title, {
-		description: uniqueCode_message,
+		description: `${userDescription}`,
 		id: 'api-error',
+		duration: 10000,
 	})
 }
 
