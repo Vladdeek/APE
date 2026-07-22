@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { FileUploaderZone, RemoveButton } from './FileUploaderZone'
-import { useEditor } from '@tiptap/react'
 
-// Модалка просмотра (без изменений по логике)
+// Модалка полноэкранного просмотра
 const FullScreenModal = ({ photos, index, close, setIndex }) => {
-	if (index === null) return null
+	if (index === null || !photos[index]) return null
+
 	const next = () => setIndex((index + 1) % photos.length)
 	const prev = () => setIndex((index - 1 + photos.length) % photos.length)
+
+	// Получаем правильный URL изображения (поддержка объектов и строк)
+	const getSrc = item => (typeof item === 'string' ? item : item?.file_path)
 
 	return (
 		<div className='fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4'>
@@ -18,25 +21,27 @@ const FullScreenModal = ({ photos, index, close, setIndex }) => {
 			>
 				<X size={24} />
 			</button>
+
 			<div className='relative max-w-7xl w-full h-full flex items-center justify-center'>
 				{photos.length > 1 && (
 					<>
 						<button
 							onClick={prev}
-							className='absolute left-4 bg-white/10 hover:bg-white/20 p-4 rounded-full text-white transition-all'
+							className='absolute left-4 bg-white/10 hover:bg-white/20 p-4 rounded-full text-white transition-all z-10'
 						>
 							<ChevronLeft size={40} />
 						</button>
 						<button
 							onClick={next}
-							className='absolute right-4 bg-white/10 hover:bg-white/20 p-4 rounded-full text-white transition-all'
+							className='absolute right-4 bg-white/10 hover:bg-white/20 p-4 rounded-full text-white transition-all z-10'
 						>
 							<ChevronRight size={40} />
 						</button>
 					</>
 				)}
+
 				<img
-					src={photos[index]}
+					src={getSrc(photos[index])}
 					className='max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl'
 					alt=''
 				/>
@@ -46,26 +51,21 @@ const FullScreenModal = ({ photos, index, close, setIndex }) => {
 }
 
 export const PhotoBlock = ({
-	data, // Приходит объект с бэка: { type: "images", block: { files: [...] } }
+	data,
 	isEdit,
 	onChange,
 	onDelete,
 	sectionId,
 	onDeleteFile,
-	// Убрали дубликат data
 }) => {
 	const [uploading, setUploading] = useState(false)
 	const [progress, setProgress] = useState(0)
 	const [fullScreenIdx, setFullScreenIdx] = useState(null)
-
-	// Правильная инициализация useState
 	const [photos, setPhotos] = useState([])
 
-	// Следим за входящими данными и вытаскиваем только file_path
 	useEffect(() => {
-		if (data) {
-			const urls = data.files.map(file => file)
-			setPhotos(urls)
+		if (data?.files) {
+			setPhotos(data.files)
 		} else {
 			setPhotos([])
 		}
@@ -84,11 +84,7 @@ export const PhotoBlock = ({
 			clearInterval(mockInterval)
 
 			const newPhotoUrl = URL.createObjectURL(file)
-
-			// Важно: если onChange ожидает обновленный объект в формате бэкенда,
-			// тебе нужно будет переписать этот коллбэк в родителе.
-			// Сейчас мы просто прокидываем наверх новый массив урлов.
-			onChange([...photos, newPhotoUrl])
+			onChange([...photos, { file_path: newPhotoUrl }])
 		} catch (error) {
 			console.error('Ошибка загрузки фото:', error)
 		} finally {
@@ -97,43 +93,55 @@ export const PhotoBlock = ({
 		}
 	}
 
-	const removePhoto = index => {
-		const newPhotos = photos.filter((_, i) => i !== index)
-		onChange(newPhotos)
+	// Определение колонок контейнера под фото
+	const getContainerClass = (index, total) => {
+		if (total === 1) return 'col-span-2'
+		if (total === 3 && index === 2) return 'col-span-2'
+		return 'col-span-1'
 	}
 
-	const getGridClass = index => {
-		if (photos.length === 1) return 'col-span-2 aspect-[32/9]'
-		if (photos.length === 3 && index === 2) return 'col-span-2 aspect-video'
-		return 'col-span-1 aspect-video'
+	// Определение колонок для блока загрузки в зависимости от количества фото
+	const getUploaderClass = total => {
+		if (total === 0 || total === 2) return 'col-span-2'
+		return 'col-span-1'
 	}
 
 	return (
 		<div className='flex gap-4 w-full items-start'>
 			{isEdit && <RemoveButton onDelete={onDelete} />}
 
-			<div className='grid grid-cols-2 w-full gap-4'>
+			<div className='grid grid-cols-2 w-full gap-4 items-center'>
 				{photos.map((item, idx) => {
+					const photoSrc = typeof item === 'string' ? item : item.file_path
+
 					return (
 						<motion.div
-							key={item.file_path}
+							key={item.id || item.file_path || idx}
 							layout
 							initial={{ opacity: 0, scale: 0.9 }}
 							animate={{ opacity: 1, scale: 1 }}
 							exit={{ opacity: 0, scale: 0.8 }}
-							className={`relative rounded-2xl overflow-hidden shadow-sm group ${getGridClass(idx)}`}
+							/* 
+							   Контейнер задает размер в сетке и фиксирует max-высоту (h-[350px]), 
+							   чтобы вертикальные 9x16 фото не растягивали сетку до бесконечности.
+							*/
+							className={`relative ${isEdit ? 'bg-[var(--middle)]/5 rounded-2xl' : 'bg-transparent'}   flex items-center justify-center h-[350px] w-full group ${getContainerClass(
+								idx,
+								photos.length,
+							)}`}
 						>
+							{/* Картинка с h-full, max-w-full и object-contain — без единого обреза */}
 							<img
-								src={item.file_path}
+								src={photoSrc}
 								onClick={() => !isEdit && setFullScreenIdx(idx)}
-								className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer'
+								className={`h-full max-w-full object-contain ${!isEdit && 'rounded-2xl'} transition-transform duration-300 group-hover:scale-[1.02] cursor-pointer`}
 								alt=''
 							/>
+
 							{isEdit && (
 								<button
-									onClick={() => onDeleteFile?.(item.id)}
-									// Абсолютное позиционирование, чтобы кнопка была поверх картинки
-									className='absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg opacity-0 group-hover:opacity-100 z-10'
+									onClick={() => onDeleteFile?.('image', item.id)}
+									className='absolute top-3 right-3 p-2 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg opacity-0 group-hover:opacity-100 z-10'
 								>
 									<X size={16} strokeWidth={3} />
 								</button>
@@ -145,13 +153,7 @@ export const PhotoBlock = ({
 				{isEdit && photos.length < 4 && (
 					<motion.div
 						layout
-						className={`${
-							photos.length === 0
-								? 'col-span-2'
-								: photos.length === 2
-									? 'col-span-2'
-									: 'col-span-1'
-						}`}
+						className={`h-[350px] ${getUploaderClass(photos.length)}`}
 					>
 						<FileUploaderZone
 							sectionId={sectionId}

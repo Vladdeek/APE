@@ -69,6 +69,7 @@ import {
 	AppendLectureContent,
 	DeleteBlock,
 	DeleteFile,
+	DeleteImage,
 	ReadLectureContent,
 	UpdateLectureContent,
 } from '../../service/APIs/LectureContent'
@@ -92,6 +93,7 @@ import { ChangeStatus } from '../../service/APIs/Moderation'
 import Modal from '../components/Modal'
 import { useClickOutside } from '../../service/Hooks/useClickOutside'
 import { useScrollListener } from '../../service/Hooks/useScrollListener'
+import { DynamicTable } from '../components/ConstructorViews/TableConstructor'
 
 const COMPONENT_MAP = {
 	text: TextEditor,
@@ -102,6 +104,7 @@ const COMPONENT_MAP = {
 	formula: Formula,
 	button: ButtonConstructor,
 	callout: Callout,
+	table: DynamicTable,
 }
 
 // Если LESSON_TYPES импортируется из другого места, этот массив можно удалить
@@ -277,9 +280,13 @@ const ContentView = ({
 		} catch (err) {}
 	}
 
-	const handleRemoveFile = async (blockId, fileId) => {
+	const handleRemoveFile = async (fileType = 'file', blockId, fileId) => {
 		try {
-			await DeleteFile(blockId, fileId)
+			if (fileType === 'image') {
+				await DeleteImage(blockId, fileId)
+			} else {
+				await DeleteFile(blockId, fileId)
+			}
 			readContent()
 		} catch (err) {}
 	}
@@ -299,7 +306,7 @@ const ContentView = ({
 	}
 
 	// 1. Выносим список типов, которым нужен дебаунс, в константу
-	const DEBOUNCED_TYPES = ['text', 'callout', 'formula', 'button']
+	const DEBOUNCED_TYPES = ['text', 'callout', 'formula', 'button', 'table']
 
 	// 2. Создаем дебаунс-функцию.
 	// Важно обернуть в useMemo, чтобы debounce не пересоздавался на каждом рендере
@@ -385,6 +392,7 @@ const ContentView = ({
 								'code',
 								'text',
 								'button',
+								'table',
 							].includes(type)
 
 							return (
@@ -405,7 +413,9 @@ const ContentView = ({
 										onDelete={() => handleRemove(block.id)}
 										courseId={courseId}
 										sectionId={activeSectionId}
-										onDeleteFile={data => handleRemoveFile(block.id, data)}
+										onDeleteFile={(fileType, fileId) =>
+											handleRemoveFile(fileType, block.id, fileId)
+										}
 									/>
 								</motion.div>
 							)
@@ -453,11 +463,11 @@ const ConstructorMenu = ({ onAdd }) => {
 			type: 'files',
 			icon: <Files size={32} />,
 		},
-		// {
-		// 	title: 'Таблица',
-		// 	type: 'table',
-		// 	icon: <Table size={32} />,
-		// },
+		{
+			title: 'Таблица',
+			type: 'table',
+			icon: <Table size={32} />,
+		},
 		// {
 		// 	title: 'Аудио',
 		// 	type: 'audio',

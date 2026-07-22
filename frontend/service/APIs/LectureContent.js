@@ -52,3 +52,9 @@ export const DeleteFile = async (block_content_id, file_id) => {
 	)
 	return response.data
 }
+export const DeleteImage = async (block_content_id, file_id) => {
+	const response = await api.delete(
+		`${API}/lecture-content/images-block/${block_content_id}/file/${file_id}`,
+	)
+	return response.data
+}
