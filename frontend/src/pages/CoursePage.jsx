@@ -809,7 +809,7 @@ const Content = ({
 
 	const handleDelete = async () => {
 		try {
-			await DeleteSection(id)
+			await DeleteSection(section_id)
 			onChange?.()
 		} catch (err) {
 		} finally {
@@ -818,7 +818,7 @@ const Content = ({
 	}
 	const handleRename = async () => {
 		try {
-			await RenameSection(id, newTitle)
+			await RenameSection(section_id, newTitle)
 			onChange?.()
 		} catch (err) {
 		} finally {
