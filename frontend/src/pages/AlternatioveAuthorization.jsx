@@ -1,21 +1,18 @@
-import { useLocation, useNavigate } from 'react-router-dom'
-import { GradientButton } from '../components/Buttons'
-import { InputDefault } from '../components/Inputs'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Login } from '../../service/APIs/Authorization'
 import { executeWithAuthCheck } from '../../service/utils/apiHelper'
 import Grainient from '../components/Backbround'
+import { InputDefault } from '../components/Inputs'
 
-const AuthForm = ({ linkClick }) => {
-	const location = useLocation()
+const AuthForm = () => {
 	const navigate = useNavigate()
-
-	const [rememberMe, setRememberMe] = useState(false)
 
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
 	})
+
 	const handleChange = e => {
 		const { name, value } = e.target
 		setFormData(prev => ({ ...prev, [name]: value }))
@@ -43,11 +40,9 @@ const AuthForm = ({ linkClick }) => {
 				await executeWithAuthCheck(() =>
 					Login(formData.email, formData.password),
 				)
-
 				navigate('/')
 			} catch (err) {
 				console.log('LOGIN ERROR:', err)
-				// Здесь можно вывести ошибку пользователю в UI
 			}
 		} else {
 			toast.error('Пожалуйста, используйте почту, заканчивающуюся на .ru')
@@ -57,56 +52,70 @@ const AuthForm = ({ linkClick }) => {
 	return (
 		<form
 			onSubmit={handleSubmitLogin}
-			className='bg-[var(--white)] rounded-4xl w-full h-full flex flex-col justify-center gap-5 p-10 shadow-2xl/10 border-1 border-[var(--middle)]/10'
+			className='w-full max-w-md mx-auto p-8 sm:p-10 bg-white backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 flex flex-col gap-6 transition-all'
 		>
-			<h2 className='font-bold text-4xl text-[var(--text-primary)] mb-5'>
-				Войти в систему ДПО
-			</h2>
+			{/* Header Section */}
+			<div className='flex flex-col items-center gap-3 text-center'>
+				{/* <div className='p-3 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner'>
+					<img
+						src='./logo.svg'
+						alt='Логотип МелГУ.ДПО'
+						className='w-16 h-16 object-contain'
+					/>
+				</div> */}
+				<div className='space-y-1'>
+					<h2 className='text-sm uppercase tracking-wider font-semibold text-[var(--black)] opacity-75'>
+						Система авторизации
+					</h2>
+					<p className='text-3xl font-extrabold text-[var(--black)] tracking-tight'>
+						МелГУ<span className='text-[var(--hero)]'>.ДПО</span>
+					</p>
+				</div>
+			</div>
 
-			<InputDefault
-				title='Почта'
-				name='email'
-				placeholder='Введите почту...'
-				value={formData.email}
-				onChange={handleChange}
-			/>
-
-			<InputDefault
-				title='Пароль'
-				name='password'
-				type='password'
-				placeholder='Введите пароль...'
-				value={formData.password}
-				onChange={handleChange}
-			/>
-
-			{/* <div className='flex justify-between items-center'>
-				<Checkbox
-					title='Запомнить меня'
-					checked={rememberMe}
-					onChange={() => setRememberMe(!rememberMe)}
+			{/* Inputs Container */}
+			<div className='flex flex-col gap-4'>
+				<InputDefault
+					title='Электронная почта'
+					name='email'
+					type='email'
+					placeholder='example@mail.ru'
+					value={formData.email}
+					onChange={handleChange}
 				/>
-				<Link onClick={linkClick} text='Не могу войти / Не помню пароль' />
-			</div> */}
-			<input
+
+				<InputDefault
+					title='Пароль'
+					name='password'
+					type='password'
+					placeholder='••••••••'
+					value={formData.password}
+					onChange={handleChange}
+				/>
+			</div>
+
+			{/* Submit Button */}
+			<button
 				disabled={!isAuthFormValid}
 				type='submit'
-				value={'Войти'}
-				className={`p-3 rounded-2xl w-full ${!isAuthFormValid ? 'bg-[var(--light-middle)] text-[var(--middle)]' : 'bg-gradient-to-r from-[var(--hero)] to-[var(--darkness-hero)] '}  transition-all text-white hover:opacity-90`}
-			/>
-
-			{/* <div className='flex items-center justify-between gap-3 my-3'>
-				<div className='bg-[var(--middle)] h-[1px] w-full'></div>
-				<p className='text-[var(--middle)]'>или</p>
-				<div className='bg-[var(--middle)] h-[1px] w-full'></div>
-			</div> */}
+				className={`
+					w-full py-4 px-6 rounded-xl font-semibold text-white tracking-wide transition-all duration-200 mt-2
+					${
+						!isAuthFormValid
+							? 'bg-[var(--light-middle)] text-[var(--middle)] cursor-not-allowed shadow-none'
+							: 'bg-gradient-to-r from-[var(--light-hero)] to-[var(--hero)] hover:brightness-110 active:scale-[0.98] cursor-pointer hover:shadow-[var(--hero-glow)]'
+					}
+				`}
+			>
+				Войти
+			</button>
 		</form>
 	)
 }
 
 const AlternativeAuthorization = () => {
 	return (
-		<div className='w-screen h-screen relative'>
+		<div className='w-screen h-screen relative overflow-hidden bg-slate-900'>
 			<Grainient
 				color1='#CCCCCC'
 				color2='#DDDDDD'
@@ -131,25 +140,20 @@ const AlternativeAuthorization = () => {
 				centerY={0}
 				zoom={0.9}
 			/>
-			<div className='absolute top-0 flex justify-center items-center z-100 w-full h-full'>
-				<div className='px-[2.5%] xl:px-[10%] 2xl:px-[18%] py-5 w-full h-screen grid lg:grid-cols-2 gap-5 max-lg:pb-[15%]'>
-					<div className='col-span-1 w-full h-full flex flex-col justify-between'>
-						<div className='flex gap-2 items-center'>
-							<img className={'w-15 h-15'} src='./logo.png' alt='' />
-							<p
-								className={`flex flex-col text-[var(--text-primary)] text-4xl font-bold `}
-							>
-								<span>МелГУ.ДПО</span>
-								{/* <span className='uppercase'>Университет</span> */}
-							</p>
-						</div>
+
+			<div className='absolute inset-0 flex justify-center items-center z-10 w-full h-full'>
+				<div className='container mx-auto px-4 sm:px-6 lg:px-8 h-full max-h-[900px] grid lg:grid-cols-2 gap-8 items-center'>
+					{/* Left Decorative Side */}
+					<div className='hidden lg:flex flex-col items-center justify-center p-8 h-full'>
 						<img
-							className='h-full object-contain aspect-square max-lg:hidden'
+							className='max-h-[500px] w-auto object-contain drop-shadow-2xl hover:scale-[1.02] transition-transform duration-300'
 							src='/image2.png'
-							alt=''
+							alt='Декоративное изображение'
 						/>
 					</div>
-					<div className='col-span-1 w-full h-full'>
+
+					{/* Right Form Side */}
+					<div className='w-full flex items-center justify-center p-4'>
 						<AuthForm />
 					</div>
 				</div>
@@ -157,4 +161,5 @@ const AlternativeAuthorization = () => {
 		</div>
 	)
 }
+
 export default AlternativeAuthorization
