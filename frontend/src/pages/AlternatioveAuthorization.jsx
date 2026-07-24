@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { GradientButton } from '../components/Buttons'
 import { InputDefault } from '../components/Inputs'
 import { useState } from 'react'
+import { Login } from '../../service/APIs/Authorization'
+import { executeWithAuthCheck } from '../../service/utils/apiHelper'
 
 const AuthForm = ({ linkClick }) => {
 	const location = useLocation()
@@ -85,10 +87,12 @@ const AuthForm = ({ linkClick }) => {
 				/>
 				<Link onClick={linkClick} text='Не могу войти / Не помню пароль' />
 			</div> */}
-
-			<GradientButton disabled={!isAuthFormValid} type='submit'>
-				Войти
-			</GradientButton>
+			<input
+				disabled={!isAuthFormValid}
+				type='submit'
+				value={'Войти'}
+				className={`p-3 rounded-2xl w-full ${!isAuthFormValid ? 'bg-[var(--light-middle)] text-[var(--middle)]' : 'bg-gradient-to-r from-[var(--hero)] to-[var(--darkness-hero)] '}  transition-all text-white hover:opacity-90`}
+			/>
 
 			{/* <div className='flex items-center justify-between gap-3 my-3'>
 				<div className='bg-[var(--middle)] h-[1px] w-full'></div>
