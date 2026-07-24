@@ -317,3 +317,23 @@ export const Toggle = ({
 		</button>
 	)
 }
+
+export const GradientButton = ({
+	children,
+	onClick,
+	rounded = 'rounded-2xl',
+	paddings = 'py-3.5',
+	width,
+	disabled = false,
+}) => {
+	return (
+		<button
+			disabled={disabled}
+			onClick={onClick}
+			type='button'
+			className={`${paddings} ${rounded} ${width} ${disabled ? 'bg-[var(--light-middle)] text-[var(--middle)]' : 'bg-gradient-to-r from-[var(--hero)] to-[var(--darkness-hero)] '}  transition-all text-white hover:opacity-90`}
+		>
+			{children}
+		</button>
+	)
+}

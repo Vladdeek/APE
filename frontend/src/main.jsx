@@ -31,12 +31,16 @@ import TaskChecking from './pages/TaskCheking'
 import { UserProvider } from '../service/context/UserContext'
 import { Toaster } from 'sonner'
 import { Redirector } from '../service/utils/Redirector'
+import AlternativeAuthorization from './pages/AlternatioveAuthorization'
 
 function MainApp() {
 	return (
 		<Suspense>
 			<Routes>
-				<Route path='/authorization' element={<Authorization />}></Route>
+				<Route
+					path='/authorization'
+					element={<AlternativeAuthorization />}
+				></Route>
 				<Route path='/' element={<DashboardLayout />}>
 					<Route path='/catalog/:type?' element={<Catalog />}></Route>
 					<Route path='/course/:courseId?' element={<CoursePage />} />
