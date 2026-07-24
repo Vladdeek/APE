@@ -32,6 +32,7 @@ import { UserProvider } from '../service/context/UserContext'
 import { Toaster } from 'sonner'
 import { Redirector } from '../service/utils/Redirector'
 import AlternativeAuthorization from './pages/AlternatioveAuthorization'
+import AlternativeAuthorization2 from './pages/AlternatioveAuthorization2'
 
 function MainApp() {
 	return (

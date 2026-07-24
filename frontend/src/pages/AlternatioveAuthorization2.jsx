@@ -104,14 +104,14 @@ const AuthForm = ({ linkClick }) => {
 	)
 }
 
-const AlternativeAuthorization = () => {
+const AlternativeAuthorization2 = () => {
 	return (
 		<div className='w-screen h-screen relative'>
 			<Grainient
-				color1='#CCCCCC'
-				color2='#DDDDDD'
-				color3='#BBBBBB'
-				timeSpeed={0.5}
+				color1='#FFFFFF'
+				color2='#2bb4f3'
+				color3='#FFFFFF'
+				timeSpeed={0.25}
 				colorBalance={0}
 				warpStrength={1}
 				warpFrequency={5}
@@ -121,7 +121,7 @@ const AlternativeAuthorization = () => {
 				blendSoftness={0.05}
 				rotationAmount={500}
 				noiseScale={2}
-				grainAmount={0.05}
+				grainAmount={0.1}
 				grainScale={2}
 				grainAnimated={false}
 				contrast={1.5}
@@ -132,29 +132,11 @@ const AlternativeAuthorization = () => {
 				zoom={0.9}
 			/>
 			<div className='absolute top-0 flex justify-center items-center z-100 w-full h-full'>
-				<div className='px-[2.5%] xl:px-[10%] 2xl:px-[18%] py-5 w-full h-screen grid lg:grid-cols-2 gap-5 max-lg:pb-[15%]'>
-					<div className='col-span-1 w-full h-full flex flex-col justify-between'>
-						<div className='flex gap-2 items-center'>
-							<img className={'w-15 h-15'} src='./logo.png' alt='' />
-							<p
-								className={`flex flex-col text-[var(--text-primary)] text-4xl font-bold `}
-							>
-								<span>МелГУ.ДПО</span>
-								{/* <span className='uppercase'>Университет</span> */}
-							</p>
-						</div>
-						<img
-							className='h-full object-contain aspect-square max-lg:hidden'
-							src='/image2.png'
-							alt=''
-						/>
-					</div>
-					<div className='col-span-1 w-full h-full'>
-						<AuthForm />
-					</div>
+				<div className='w-[25vw] h-[60vh]'>
+					<AuthForm />
 				</div>
 			</div>
 		</div>
 	)
 }
-export default AlternativeAuthorization
+export default AlternativeAuthorization2
